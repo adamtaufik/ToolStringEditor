@@ -32,7 +32,7 @@ Deleum Tool String Creator is a Python-based application designed to create and 
 ## 📸 Screenshots
 <!-- Add screenshots of the UI here -->
 ![Screenshot 1](assets/screenshots/main_window.png)
-![Screenshot 2](assets/screenshots/tool_library.png)
+![Screenshot 2](assets/screenshots/toolstring_editing.png)
 
 ## 📝 Changelog
 See [`CHANGELOG.md`](CHANGELOG.md) for version history.
