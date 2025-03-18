@@ -1,0 +1,15 @@
+# Byte-compiled / Virtual environments
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# Logs
+logs/
+*.log
+
+# Build artifacts
+build/
+dist/
+*.spec

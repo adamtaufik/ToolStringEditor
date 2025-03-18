@@ -1,0 +1,153 @@
+Category,Tool Name,Nominal Size,OD (Inches),Lower Connection,Length (ft),Weight (lbs)
+Basic Tools,Rope Socket,"1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",0.5,4.7
+Basic Tools,Rope Socket,"1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",0.5,3
+Basic Tools,Rope Socket,"1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",0.5,2.1
+Basic Tools,Knuckle Joint,"1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",0.5,4.7
+Basic Tools,Knuckle Joint,"1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",0.5,3
+Basic Tools,Knuckle Joint,"1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",0.5,2.1
+Basic Tools,Swivel Joint,"1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",0.5,4.7
+Basic Tools,Swivel Joint,"1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",0.5,3
+Basic Tools,Swivel Joint,"1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",0.5,2.1
+Basic Tools,2' Stem,"1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",2.0,18.8
+Basic Tools,2' Stem,"1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",2.0,12
+Basic Tools,2' Stem,"1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",2.0,8.3
+Basic Tools,3' Stem,"1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",3.0,28.1
+Basic Tools,3' Stem,"1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",3.0,18
+Basic Tools,3' Stem,"1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",3.0,12.5
+Basic Tools,5' Stem,"1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",5.0,46.9
+Basic Tools,5' Stem,"1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",5.0,30
+Basic Tools,5' Stem,"1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",5.0,20.8
+Basic Tools,"20"" Mechanical Spang Jar","1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",4.5,20
+Basic Tools,"20"" Mechanical Spang Jar","1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",4.5,18
+Basic Tools,"20"" Mechanical Spang Jar","1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",4.5,16
+Basic Tools,"30"" Mechanical Spang Jar","1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",6.0,30
+Basic Tools,"30"" Mechanical Spang Jar","1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",6.0,28
+Basic Tools,"30"" Mechanical Spang Jar","1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",6.0,26
+Basic Tools,"20"" Mechanical Tubular Jar","1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",4.5,20
+Basic Tools,"20"" Mechanical Tubular Jar","1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",4.5,18
+Basic Tools,"20"" Mechanical Tubular Jar","1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",4.5,16
+Basic Tools,"30"" Mechanical Tubular Jar","1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",6.0,30
+Basic Tools,"30"" Mechanical Tubular Jar","1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",6.0,28
+Basic Tools,"30"" Mechanical Tubular Jar","1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",6.0,26
+Basic Tools,Hydraulic Jar,"1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",,
+Basic Tools,Hydraulic Jar,"1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",,
+Basic Tools,Hydraulic Jar,"1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",,
+Basic Tools,Spring Jar,,,,,
+Basic Tools,Accelerator,,,,,
+Other Tools,Drift,"2.890""",2.890,N/A,1.0,10
+Other Tools,Drift,"2.867""",2.867,N/A,1.0,10
+Other Tools,Drift,"2.800""",2.800,N/A,1.0,10
+Other Tools,Drift,"2.735""",2.735,N/A,1.0,10
+Other Tools,Drift,"2.302""",2.302,N/A,1.0,10
+Other Tools,Drift,"1.860""",1.860,N/A,1.0,10
+Remedial Tools,Gauge Cutter,"2.890""",2.890,N/A,1.0,10
+Remedial Tools,Gauge Cutter,"2.867""",2.867,N/A,1.0,10
+Remedial Tools,Gauge Cutter,"2.800""",2.800,N/A,1.0,10
+Remedial Tools,Gauge Cutter,"2.735""",2.735,N/A,1.0,10
+Remedial Tools,Gauge Cutter,"2.302""",2.302,N/A,1.0,10
+Remedial Tools,Gauge Cutter,"1.860""",1.860,N/A,1.0,10
+Roller Tools,Roller Stem,,,,,
+Roller Tools,Roller Bogie,,,,,
+Roller Tools,Variball,,,,,
+Pulling Tools,GR,"3""",2.720,"5/8""-11 (For Prong)",1.5,15
+Pulling Tools,GR,"2.5""",2.250,"5/8""-11 (For Prong)",1.5,13
+Pulling Tools,GR,"2""",1.810,"5/8""-11 (For Prong)",1.5,11
+Pulling Tools,SB,"2.5""",2.188,Prong,1.3,15
+Pulling Tools,SB,"2""",1.776,Prong,1.3,13
+Pulling Tools,SB,"1.5""",1.437,Prong,1.3,11
+Pulling Tools,RB,"2.5""",2.180,Prong,1.3,15
+Pulling Tools,RB,"2""",1.770,Prong,1.3,13
+Pulling Tools,RB,"1.5""",1.430,Prong,1.3,11
+Pulling Tools,SS,"2.5""",2.180,Prong,1.3,15
+Pulling Tools,SS,"2""",1.770,Prong,1.3,13
+Pulling Tools,SS,"1.5""",1.430,Prong,1.3,11
+Pulling Tools,RS,"2.5""",2.180,Prong,1.3,15
+Pulling Tools,RS,"2""",1.770,Prong,1.3,13
+Pulling Tools,RS,"1.5""",1.430,Prong,1.3,11
+Pulling Tools,JDC,"3""",2.812,"5/8""-11 (For Prong)",1.2,17
+Pulling Tools,JDC,"2.5""",2.250,"1/2""-13 (For Prong)",1.2,15
+Pulling Tools,JDC,"2""",1.859,"1/2""-13 (For Prong)",1.2,13
+Pulling Tools,JDC,"1.5""",1.422,"1/2""-13 (For Prong)",1.1,11
+Pulling Tools,JUC,"3""",2.796,"5/8""-11 (For Prong)",1.2,17
+Pulling Tools,JUC,"2.5""",2.250,"1/2""-13 (For Prong)",1.2,15
+Pulling Tools,JUC,"2""",1.859,"1/2""-13 (For Prong)",1.2,13
+Pulling Tools,JUC,"1.5""",1.422,"1/2""-13 (For Prong)",1.1,11
+Pulling Tools,JDS,"3""",2.812,"5/8""-11 (For Prong)",1.2,17
+Pulling Tools,JDS,"2.5""",2.250,"1/2""-13 (For Prong)",1.2,15
+Pulling Tools,JDS,"2""",1.859,"1/2""-13 (For Prong)",1.2,13
+Pulling Tools,JDS,"1.5""",1.422,"1/2""-13 (For Prong)",1.1,11
+Pulling Tools,JUS,"3""",2.796,"5/8""-11 (For Prong)",1.2,17
+Pulling Tools,JUS,"2.5""",2.250,"1/2""-13 (For Prong)",1.2,15
+Pulling Tools,JUS,"2""",1.859,"1/2""-13 (For Prong)",1.2,13
+Pulling Tools,JUS,"1.5""",1.422,"1/2""-13 (For Prong)",1.1,11
+Pulling Tools,GS,"3""",2.720,"5/8""-11 (For Prong)",1.0,10
+Pulling Tools,GS,"2.5""",2.250,"5/8""-11 (For Prong)",1.0,8
+Pulling Tools,GS,"2""",1.810,"5/8""-11 (For Prong)",1.0,6
+Shifting Tools,42BO,"2.813""",2.718,"1-1/16"" SR",,
+Shifting Tools,42BO,"2.750""",2.718,"1-1/16"" SR",,
+Shifting Tools,42BO,"2.313""",2.156,"15/16"" SR",,
+Shifting Tools,42BO,"1.875""",1.840,"15/16"" SR",,
+Shifting Tools,142BO,"2.813""",2.780,"1-1/16"" SR",,
+Shifting Tools,142BO,"2.750""",2.720,"1-1/16"" SR",,
+Shifting Tools,142BO,"2.313""",2.280,"15/16"" SR",,
+Shifting Tools,142BO,"1.875""",1.843,"15/16"" SR",,
+Paradigm Tools,Cable Head,"1-11/16""",1.688,Sondex,1.0,5
+Paradigm Tools,PCH,"1-11/16""",1.688,ParaComm Pin,1.8,7.9
+Paradigm Tools,PPU,"1-11/16""",1.688,ParaComm Pin,4.0,16.5
+Sondex Tools,MBH030,"1-11/16""",1.688,Sondex,1.5,5.7
+Sondex Tools,PGR032,"1-11/16""",1.688,Sondex,1.9,9.4
+Sondex Tools,PRC,"1-11/16""",1.688,Sondex,,0
+Sondex Tools,MIT 24,"1-11/16""",1.688,Sondex,5.4,20.7
+Sondex Tools,UMT007,"1-11/16""",1.688,Sondex,1.0,5.9
+Sondex Tools,QPC201,"1-11/16""",1.688,Sondex,1.6,8.8
+Sondex Tools,PKJ013,"1-11/16""",1.688,Sondex,0.6,3.5
+Sondex Tools,ILS021,"1-11/16""",1.688,Sondex,1.4,6.5
+Sondex Tools,ILS022,"2-1/8""",2.125,Sondex,1.4,6.8
+Sondex Tools,FDR020,"1-11/16""",1.688,Sondex,1.9,9.6
+Sondex Tools,CTF004,"1-11/16""",1.688,To CFJM,1.5,5.4
+Sondex Tools,CFJM,"1-11/16""",1.688,N/A,0.8,2.2
+Sondex Tools,CFSM,"1-11/16""",1.688,N/A,,0
+Sondex Tools,CFBM,"1-11/16""",1.688,N/A,2.9,10
+Sondex Tools,Bull Nose,"1-11/16""",1.688,N/A,0.1,1
+Sondex Tools,ASB,"1-11/16""",1.688,"15/16"" SR",0.1,1
+Running Tools,X-Line,"2.813""",2.687,Prong,2.6,20
+Running Tools,X-Line,"2.750""",2.687,Prong,2.6,20
+Running Tools,X-Line,"2.313""",2.171,Prong,2.5,18
+Running Tools,X-Line,"1.875""",1.750,Prong,2.4,15
+Running Tools,JK-1,,,,,
+Running Tools,GA-2,,,,,
+Running Tools,D1T Running Tool,,,Prong,,
+Running Tools,SO Running Tool,,,Prong,,
+Running Tools,OK-6 Kickover Tool,,,,,
+Running Tools,Merla Kickover Tool,,,,,
+Remedial Tools,Gauge Cutter,,,,,
+Fishing Tools,Wire Finder,,,,,
+Remedial Tools,Wire Scratcher,"3.500""",,,,
+Fishing Tools,Lead Impression Block,"3.500""",3.500,,0.5,10
+Fishing Tools,Lead Impression Block,"3.00""",3.000,,0.5,10
+Fishing Tools,Lead Impression Block,"2.80""",2.800,,0.5,10
+Fishing Tools,Blind Box,,,,,
+Fishing Tools,Overshot,,,,,
+Fishing Tools,Fishing Magnet,"2.750""",2.750,,,
+Fishing Tools,Fishing Magnet,"2.250""",2.250,,,
+Fishing Tools,Catcher Sub,,,,,
+Fishing Tools,Bulldog Spear,,,,,
+Fishing Tools,Wire Grab,,,,,
+Fishing Tools,Alligator Grab,,,,,
+Fishing Tools,Tubing Broach,,,,,
+Fishing Tools,Go-Devil,,,,,
+Fishing Tools,Junk Basket,,,,,
+Fishing Tools,Die Collar,,,,,
+Fishing Tools,Screw Grab,,,,,
+Fishing Tools,Spear,,,,,
+Remedial Tools,Tubing Broach,,,,,
+Other Tools,Titan Sinker Bar,,,,,
+Other Tools,Sondex to GO X-over,,,,,
+Other Tools,GO to Sondex X-over,,,,,
+Other Tools,Titan Swivel,,,,,
+Other Tools,Titan Knuckle Joint,,,,,
+Other Tools,Tubing End Locator,,,,,
+Other Tools,X-Over,,,,,
+Remedial Tools,Sand Pump Bailer,,,,,
+Remedial Tools,Tubing Swage,,,,,
+Basic Tools,Knuckle Jar,,,,,
