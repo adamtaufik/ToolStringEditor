@@ -1,6 +1,6 @@
-# 🛠️ Deleum Tool String Creator
+# 🛠️ Deleum Tool String Editor
 
-Deleum Tool String Creator is a Python-based application designed to create and manage tool string configurations for wireline interventions. The software allows engineers to drag and drop tools, export tool strings to Excel/PDF, and maintain a database of available tools.
+Deleum Tool String Editor is a Python-based application designed to create and manage tool string configurations for wireline interventions. The software allows engineers to drag and drop tools, export tool strings to Excel/PDF, and maintain a database of available tools.
 
 ## 🚀 Features
 - **Drag & Drop Tool String Builder**
@@ -17,8 +17,8 @@ Deleum Tool String Creator is a Python-based application designed to create and 
 ### 🔹 **Setup**
 1. Clone this repository:
    ```sh
-   git clone https://github.com/adamtaufik/ToolStringCreator.git
-   cd ToolStringCreator
+   git clone https://github.com/adamtaufik/ToolStringEditor.git
+   cd ToolStringEditor
    ```
 2. Install dependencies:
    ```sh
