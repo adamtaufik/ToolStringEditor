@@ -10,4 +10,6 @@ def get_resource_path(relative_path):
         # Ensure base path is always the project root
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-    return os.path.join(base_path, relative_path)
+    joined_path = os.path.join(base_path, relative_path)
+    print(joined_path)
+    return joined_path

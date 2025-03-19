@@ -1,8 +1,7 @@
 import os
-import sys
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton, QComboBox
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QCursor
 from database.logic_database import get_tool_data
 from utils.get_resource_path import get_resource_path  # ✅ Import helper function
 
@@ -28,17 +27,18 @@ class ToolWidget(QWidget):
         # self.layout.setContentsMargins(5, 0, 5, 0)
         self.layout.setSpacing(11)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.layout.setContentsMargins(10, 0, 0, 0)
 
         # **Tool Image (Original Size, Expanded Background)**
         self.image_label = QLabel()
 
         image_file = f"{tool_name}.png".replace('"','').replace("'","")
         image_path = get_resource_path(os.path.join("assets", "images", image_file))
-        print(image_path)
-        pixmap = QPixmap(image_path)
-
-        if pixmap.isNull():
-            pixmap = QPixmap("images/Dummy Image.png")  # Fallback
+        if os.path.exists(image_path):
+            pixmap = QPixmap(image_path)
+        else:
+            dummy_path = get_resource_path(os.path.join("assets", "images", "Dummy Image.png"))
+            pixmap = QPixmap(dummy_path)  # Fallback
 
         # Store original image size
         self.original_width = pixmap.width()
@@ -49,7 +49,7 @@ class ToolWidget(QWidget):
         # self.image_label.setFixedSize(self.BACKGROUND_WIDTH, self.original_height)  # Expand background width only
         self.image_label.setFixedSize(self.original_width, self.original_height)  # Expand background width only
         self.image_label.setStyleSheet("background-color: transparent; border: none;")
-        
+
         self.layout.addWidget(self.image_label)
 
         # **Tool Name**
@@ -61,8 +61,13 @@ class ToolWidget(QWidget):
         
         # **Nominal Size Selector**
         self.nominal_size_selector = QComboBox()
-        self.nominal_size_selector.setFixedWidth(60)
-        self.nominal_size_selector.addItems(self.tool_data["Nominal Sizes"])  # Get sizes dynamically
+        self.nominal_size_selector.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.nominal_size_selector.setFixedWidth(70)
+
+        nominal_sizes = []
+        for size in self.tool_data.get("Nominal Sizes", []):
+            nominal_sizes.append(str(size))
+        self.nominal_size_selector.addItems(nominal_sizes)
         self.nominal_size_selector.setStyleSheet("color: black")
         self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
         self.nominal_size_selector.currentTextChanged.connect(self.drop_zone.update_summary)
@@ -84,19 +89,21 @@ class ToolWidget(QWidget):
 
         # **Weight Label**
         self.weight_label = QLabel("N/A")
-        self.weight_label.setFixedWidth(80)
+        self.weight_label.setFixedWidth(70)
         self.weight_label.setStyleSheet("border: none; color: black;")
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.weight_label)
 
         # **Lower Connection Selector**
         self.connection_label = QComboBox()
+        self.connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.connection_label.setFixedWidth(100)
         self.connection_label.setStyleSheet("color: black")
         self.layout.addWidget(self.connection_label)
 
         # **Move Up Button**
         self.up_button = QPushButton("↑")
+        self.up_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.up_button.setFixedSize(30, 30)
         self.up_button.setStyleSheet("color: black")
         self.up_button.clicked.connect(self.move_up)
@@ -104,6 +111,7 @@ class ToolWidget(QWidget):
 
         # **Move Down Button**
         self.down_button = QPushButton("↓")
+        self.down_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.down_button.setFixedSize(30, 30)
         self.down_button.setStyleSheet("color: black")
         self.down_button.clicked.connect(self.move_down)
@@ -111,6 +119,7 @@ class ToolWidget(QWidget):
 
         # **Remove Button**
         self.remove_button = QPushButton("X")
+        self.remove_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.remove_button.setFixedSize(30, 30)
         self.remove_button.setStyleSheet("font-weight: bold; background-color: red; color: white;")
         self.remove_button.clicked.connect(self.remove_tool)
@@ -120,34 +129,15 @@ class ToolWidget(QWidget):
         self.setLayout(self.layout)
         self.update_tool_info()
 
-    # def get_tool_image_path(self, tool_name):
-    #     """Returns the correct image path for a tool."""
-    #     image_path = f"images/{tool_name}.png"
-    #     image_path = image_path.replace('"','')
-    #
-    #     """ Get the absolute path to a resource, working for development and PyInstaller. """
-    #     if getattr(sys, 'frozen', False):
-    #     # If running as a bundled executable
-    #             base_path = sys._MEIPASS
-    #     else:
-    #             # If running in a normal Python environment
-    #             base_path = os.path.abspath(".")
-    #
-    #     image_path = os.path.join(base_path, image_path)
-    #
-    #
-    #     return image_path if os.path.exists(image_path) else "images/Dummy Image.png"
-
-
     def update_tool_info(self):
         """Updates OD, Length, Weight, and Lower Connection dynamically."""
         selected_size = self.nominal_size_selector.currentText()
         size_data = self.tool_data["Sizes"].get(selected_size, {})
 
         # Update labels
-        self.od_label.setText(f"{size_data.get('OD', 'N/A')} in")
-        self.length_label.setText(f"{size_data.get('Length', 'N/A')} ft")
-        self.weight_label.setText(f"{size_data.get('Weight', 'N/A')} lbs")
+        self.od_label.setText(f"{size_data.get('OD', 'N/A'):.3f} in")
+        self.length_label.setText(f"{size_data.get('Length', 'N/A'):.1f} ft")
+        self.weight_label.setText(f"{size_data.get('Weight', 'N/A'):.1f} lbs")
 
         # Update connection dropdown
         self.connection_label.clear()
@@ -156,7 +146,7 @@ class ToolWidget(QWidget):
     def move_up(self):
         """Moves the tool up in the DropZone."""
         index = self.drop_zone.layout.indexOf(self)
-        if index > 1:
+        if index > 0:
             self.drop_zone.layout.insertWidget(index - 1, self)
         self.drop_zone.update_summary()  # ✅ Update summary after movement
 

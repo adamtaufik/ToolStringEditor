@@ -45,6 +45,7 @@ def get_tool_data(tool_name=None):
     - If `tool_name` is **None**, returns a list of all available tools.
     - If `tool_name` is **provided**, returns detailed info for that specific tool.
     """
+    print(tool_name)
     if tool_name is None:
         return tool_data_df[["Tool Name", "Category"]].drop_duplicates()  # ✅ Returns all tools
 
@@ -59,16 +60,23 @@ def get_tool_data(tool_name=None):
     }
 
     for _, row in filtered_tools.iterrows():
+
         size = row["Nominal Size"]
+
         tool_info["Sizes"][size] = {
             "OD": row["OD (Inches)"],
             "Length": row["Length (ft)"],
             "Weight": row["Weight (lbs)"],
-            "Connections": row["Lower Connection"].split(",")
+            "Connections": str(row["Lower Connection"]).split(",")
         }
+    print('\n\nFor',tool_name,'...\n')
+    print(tool_info)
 
     return tool_info
 
 def get_full_tool_database():
     """Returns the full tool database."""
     return tool_data_df  # ✅ Just return the global dataframe
+
+def isNaN(value):
+    return value != value

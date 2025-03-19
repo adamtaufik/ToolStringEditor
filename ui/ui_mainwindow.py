@@ -1,30 +1,45 @@
 import os
 import subprocess
+
+from utils.get_resource_path import get_resource_path
+from utils.styles import GLASSMORPHISM_STYLE, DELEUM_STYLE, MESSAGEBOX_STYLE
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog, QLabel, 
-    QComboBox, QToolBar, QToolButton, QMessageBox
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog, QLabel,
+    QComboBox, QToolBar, QToolButton, QMessageBox, QPushButton, QSizePolicy, QGridLayout, QFrame
 )
 from PyQt6.QtCore import Qt, QSize, QThread, pyqtSignal
 from editor.loading_worker import LoadingDialog, LoadingWorker  # ✅ Import the loading animation worker
 from editor.logic_export import export_to_excel
-from PyQt6.QtGui import QAction, QKeySequence, QCursor
+from PyQt6.QtGui import QAction, QKeySequence, QCursor, QPixmap, QColor, QPainter
 from ui.ui_dropzone import DropZone
 from ui.ui_tool_library import ToolLibrary
 from ui.ui_database_window import DatabaseWindow
 from ui.ui_version_window import VersionWindow
 from ui.ui_help_window import HelpWindow
+from ui.ui_summary import SummaryWidget
 from database.logic_saveload import save_configuration, load_configuration
+
 
 class MainWindow(QMainWindow):
     """Main application window."""
+    MIN_WINDOW_HEIGHT = 670  # ✅ Minimum height of the window
+    TOOLBAR_HEIGHT = 30  # ✅ Fixed toolbar height
+    FOOTER_HEIGHT = 30  # ✅ Fixed footer height
+    icon_size = 264
     
     def __init__(self):
         super().__init__()
+
         self.current_file_name = None  # Track last saved or loaded filename
         self.setWindowTitle("Deleum Tool String Editor")
-        self.showMaximized()
-        self.setStyleSheet("background-color: #800020;")  # Burgundy color
+        self.setMinimumHeight(self.MIN_WINDOW_HEIGHT)  # ✅ Set minimum resizable height
+        # ✅ Start maximized properly using a delayed approach
+        QTimer.singleShot(0, self.force_maximize)
+
+        # ✅ Set initial theme
+        self.current_theme = "Deleum"
+        self.apply_theme()
 
         # **Create Main Widget**
         central_widget = QWidget()
@@ -44,11 +59,7 @@ class MainWindow(QMainWindow):
         # ✅ **Set up UI Components**
         self.setup_ui(main_layout)
 
-        # self.setStyleSheet("""
-        #     QToolTip {
-        #         color: white;
-        #     }
-        # """)
+
 
     def setup_ui(self, main_layout):
         """Sets up the main UI layout."""
@@ -73,11 +84,12 @@ class MainWindow(QMainWindow):
         self.sidebar_layout.addWidget(self.tool_library)
 
         sidebar_container.setLayout(self.sidebar_layout)
-        sidebar_container.setFixedWidth(220)
+        sidebar_container.setFixedWidth(270)
         content_layout.addWidget(sidebar_container)
 
         # **Drop Zone**
         content_layout.addWidget(self.drop_zone)
+        self.drop_zone.setFixedWidth(800)
 
         # **Right Sidebar (Well Details & Summary)**
         input_layout = self.setup_right_sidebar()
@@ -91,42 +103,42 @@ class MainWindow(QMainWindow):
         # ✅ **Populate Tools**
         self.tool_library.populate_tool_list("All Tools")
 
+        # ✅ Apply theme to icons immediately
+        self.summary_widget.update_icon_colors(self.current_theme)
+
+
+    def force_maximize(self):
+        """Forces the window to maximize properly after the UI initializes."""
+        self.showNormal()  # Reset window state
+        self.showMaximized()  # Apply true maximization
+
     def setup_right_sidebar(self):
         """Creates the right sidebar for well details & summary."""
+
+        # right_sidebar_layout = QVBoxLayout()
+
         input_layout = QVBoxLayout()
         input_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         input_layout.setContentsMargins(10, 10, 10, 10)
         input_layout.setSpacing(15)
+        # input_layout.s
 
-        line_edit_style = """
-            QLineEdit {
-                color: white;
-                border: 1px solid white;
-                padding: 5px;
-                background-color: transparent;
-                border-radius: 5px;
-            }
-            QLineEdit::placeholder {
-                color: rgba(255, 255, 255, 0.7);
-            }
-        """
+        self.well_details_label = QLabel("Well Details")
+        self.well_details_label.setStyleSheet("font: bold; font-size: 12pt;")
+        input_layout.addWidget(self.well_details_label)
 
-        self.client_name = QLineEdit(placeholderText="Client Name", styleSheet=line_edit_style)
-        input_layout.addWidget(self.client_name)
-
-        self.location = QLineEdit(placeholderText="Location", styleSheet=line_edit_style)
-        input_layout.addWidget(self.location)
-
-        self.well_no = QLineEdit(placeholderText="Well No.", styleSheet=line_edit_style)
-        input_layout.addWidget(self.well_no)
+        self.client_name = QLineEdit(placeholderText="Client Name")
+        self.location = QLineEdit(placeholderText="Location")
+        self.well_no = QLineEdit(placeholderText="Well No.")
+        self.operation_details = QLineEdit(placeholderText="Operation Details")
 
         self.well_type = QComboBox()
+        self.well_type.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.well_type.addItems(["Oil Producer", "Gas Producer", "Water Injection", "Gas Injection"])
         self.well_type.setStyleSheet("""
             QComboBox {
                 color: white;
                 background-color: transparent;
-                border: 1px solid white;
                 padding: 5px;
                 border-radius: 5px;
             }
@@ -135,46 +147,114 @@ class MainWindow(QMainWindow):
                 color: black;
             }
         """)
-        input_layout.addWidget(self.well_type)
 
-        self.operation_details = QLineEdit(placeholderText="Operation Details", styleSheet=line_edit_style)
+        input_layout.addWidget(self.client_name)
+        input_layout.addWidget(self.location)
+        input_layout.addWidget(self.well_no)
+        input_layout.addWidget(self.well_type)
         input_layout.addWidget(self.operation_details)
 
-        self.summary_label = QLabel("Max OD: \t\t0.000\"\nTotal Length: \t0.00 ft\nTotal Weight: \t0.00 lbs")
-        self.summary_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px;")
+        # **Separator Line**
+        line1 = QFrame()
+        line1.setFrameShape(QFrame.Shape.HLine)
+        line1.setFrameShadow(QFrame.Shadow.Sunken)
+        line1.setStyleSheet("background-color: white; height: 1px;")  # Make the line white and thick
+        input_layout.addWidget(line1)
+
+        self.summary_label = QLabel("Summary")
+        self.summary_label.setStyleSheet("font: bold; font-size: 12pt;")
         input_layout.addWidget(self.summary_label)
+
+        self.summary_widget = SummaryWidget(self.drop_zone)
+        input_layout.addWidget(self.summary_widget)
+        input_layout.setContentsMargins(3, 0, 8, 0)
 
         return input_layout
 
+    def load_summary_icons(self):
+        """Loads and updates summary icons based on the current theme."""
+
+        # ✅ Determine correct color based on theme
+        if self.current_theme in ["Deleum", "Glassmorphism"]:
+            icon_color = QColor("white")  # 🔹 Dark themes → Make black parts WHITE
+        else:
+            icon_color = QColor("black")  # 🔹 Light themes → Keep black parts BLACK
+
+        # ✅ Define icon paths
+        icon_paths = {
+            "od": get_resource_path("assets/images/icon_od.png"),
+            "length": get_resource_path("assets/images/icon_length.png"),
+            "weight": get_resource_path("assets/images/icon_weight.png")
+        }
+
+        # ✅ Apply colorized icons
+        self.set_icon(self.icon_od, icon_paths["od"], icon_color)
+        self.set_icon(self.icon_length, icon_paths["length"], icon_color)
+        self.set_icon(self.icon_weight, icon_paths["weight"], icon_color)
+
+    def set_icon(self, label, image_path, new_color):
+        """Loads an icon, recolors black to the given color while keeping transparency, and sets it to QLabel."""
+        pixmap = QPixmap(image_path)
+
+        if pixmap.isNull():
+            print(f"⚠️ WARNING: Icon not found at {image_path}")
+            return
+
+        # ✅ Create a new pixmap with the same size as original
+        colored_pixmap = QPixmap(pixmap.size())
+        colored_pixmap.fill(Qt.GlobalColor.transparent)  # ✅ Keep transparency
+
+        # ✅ Recolor only black parts while preserving transparency
+        painter = QPainter(colored_pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+        painter.drawPixmap(0, 0, pixmap)  # Draw original icon
+
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        painter.fillRect(colored_pixmap.rect(), new_color)  # Apply color ONLY to non-transparent areas
+
+        painter.end()  # ✅ Finish painting
+
+        # ✅ Set the final recolored icon to the QLabel
+        label.setPixmap(colored_pixmap.scaled(self.icon_size, self.icon_size, Qt.AspectRatioMode.KeepAspectRatio))
+
     def setup_footer(self, main_layout):
-        """Creates the footer layout."""
+        """Creates the footer layout with theme toggle."""
         footer_layout = QHBoxLayout()
-        footer_layout.addStretch()
-        footer_label = QLabel("Created by Adam Mohd Taufik - Operation Engineer  |  Version 1.0 (16/03/2025)")
+
+        # ✅ Theme Toggle Button (Lower Left)
+        self.theme_button = QPushButton("Theme: Deleum")
+        self.theme_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.theme_button.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                font-size: 10pt;
+            }
+            QPushButton:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+            }
+        """)
+        self.theme_button.clicked.connect(self.toggle_theme)
+        self.theme_button.setFixedHeight(self.FOOTER_HEIGHT)
+        footer_layout.addWidget(self.theme_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        footer_layout.addStretch()  # Pushes text to the right
+
+        # ✅ Footer Text (Lower Right)
+        footer_label = QLabel("Created by Adam Mohd Taufik - Operations Engineer  |  Version 1.0 (18/03/2025)")
         footer_label.setStyleSheet("font: italic; font-size: 10pt; color: white; padding: 5px;")
+        footer_label.setFixedHeight(self.FOOTER_HEIGHT)
         footer_layout.addWidget(footer_label, alignment=Qt.AlignmentFlag.AlignRight)
+
+        footer_layout.setContentsMargins(3, 0, 3, 3)
+
         main_layout.addLayout(footer_layout)
 
     def create_toolbar(self):
         """Creates a toolbar with buttons and keyboard shortcuts."""
         toolbar = QToolBar("Main Toolbar")
         toolbar.setMovable(False)
-        toolbar.setStyleSheet("""
-            QToolBar {
-                background-color: #5a001a;
-                spacing: 5px;
-            }
-            QToolButton {
-                color: white;
-                padding: 5px;
-                font-weight: bold;
-            }
-            QToolButton:hover {
-                background-color: #750024;
-                color: white;
-            }
-        """)
         toolbar.setIconSize(QSize(24, 24))
+        toolbar.setFixedHeight(self.TOOLBAR_HEIGHT)
 
         # ✅ Define actions with tooltips
         actions = {
@@ -190,28 +270,47 @@ class MainWindow(QMainWindow):
 
         for text, (func, tooltip, *shortcut) in actions.items():
             action = QAction(text, self)
-            action.setToolTip(tooltip)  # ✅ Set tooltip
+            action.setToolTip(tooltip)
             action.triggered.connect(func)
 
-            if shortcut:  # ✅ Assign shortcut if available
+            if shortcut:
                 action.setShortcut(shortcut[0])
 
-            toolbar.addAction(action)
-
-            toolbar.addAction(action)
+            toolbar.addAction(action)  # ✅ Ensure actions are added to the toolbar
             self.addAction(action)  # ✅ Ensure shortcuts work even when the toolbar is hidden
-    
+
         for child in toolbar.findChildren(QToolButton):
             child.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-    
+
         self.addToolBar(toolbar)
+
+    def toggle_theme(self):
+        """Toggles between Glassmorphism and Deleum themes."""
+        if self.current_theme == "Deleum":
+            self.current_theme = "Dark"
+            self.setStyleSheet(GLASSMORPHISM_STYLE)
+            self.theme_button.setText("Theme: Dark")  # ✅ Update button text
+        else:
+            self.current_theme = "Deleum"
+            self.setStyleSheet(DELEUM_STYLE)
+            self.theme_button.setText("Theme: Deleum")  # ✅ Update button text
+
+        # ✅ Update Summary Icons with New Theme
+        self.summary_widget.update_icon_colors(self.current_theme)
+
+    def apply_theme(self):
+        """Applies the current theme."""
+        if self.current_theme == "Dark":
+            self.setStyleSheet(GLASSMORPHISM_STYLE)
+        else:
+            self.setStyleSheet(DELEUM_STYLE)
 
     def export_configuration(self):
         """Exports the current tool string to an Excel file in a separate thread."""
 
         # Suggest filename based on client + location or last saved file
         default_name = self.current_file_name or f"{self.location.text()}_{self.well_no.text()}_{self.operation_details.text()}".replace(" ", "_")
-        default_path = os.path.join(os.getcwd(), default_name)  # Set default path
+        default_path = os.path.join(os.getcwd(), default_name.replace(".json",""))  # Set default path
 
         # ✅ Check if DropZone is empty
         if not self.drop_zone.tool_widgets:
@@ -219,7 +318,8 @@ class MainWindow(QMainWindow):
             msg_box.setIcon(QMessageBox.Icon.Warning)
             msg_box.setWindowTitle("Export Error")
             msg_box.setText("The tool string is empty. Please add tools before exporting.")
-            msg_box.setStyleSheet("background-color: lightgray; color: black")
+
+            msg_box.setStyleSheet(MESSAGEBOX_STYLE)
             msg_box.exec()
             return  # ✅ Stop export process if empty
 
@@ -254,21 +354,7 @@ class MainWindow(QMainWindow):
         msg.setText(
             f"Tool string exported successfully!\n\n📂 Folder location:\n{final_directory}\n\nWould you like to open the folder?")
 
-        msg.setStyleSheet("""
-            QMessageBox {
-                background-color: #f0f0f0;
-            }
-            QLabel {                  
-                background-color: #f0f0f0;
-                color: black;  /* Ensure text is readable */
-            }
-            QPushButton {
-                background-color: white;
-            }
-            QPushButton:hover {
-                background-color: #d6d6d6;
-            }
-        """)
+        msg.setStyleSheet(MESSAGEBOX_STYLE)
         msg.setIcon(QMessageBox.Icon.Information)
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
@@ -277,7 +363,10 @@ class MainWindow(QMainWindow):
 
         # ✅ Open actual save directory if user clicks "Yes"
         if response == QMessageBox.StandardButton.Yes:
-            subprocess.Popen(f'explorer "{final_directory}"')
+            try:
+                os.startfile(final_directory)  # ✅ Opens the correct folder
+            except Exception as e:
+                print(f"⚠️ ERROR: Unable to open folder: {e}")
 
     def save_configuration(self):
 
@@ -360,3 +449,4 @@ class ExportWorker(QThread):
                         self.parent.drop_zone)
 
         self.finished.emit(self.final_directory)  # ✅ Emit directory when done
+

@@ -2,6 +2,8 @@ from PyQt6.QtWidgets import QPushButton, QLabel, QHBoxLayout
 from PyQt6.QtCore import Qt, QMimeData
 from PyQt6.QtGui import QPixmap, QCursor, QDrag, QColor, QPalette
 
+feedback_style = "background-color: rgba(163, 163, 163, 1);"
+
 class DraggableButton(QPushButton):
     """A button that can be dragged to DropZone."""
     def __init__(self, tool_name, parent=None):
@@ -37,17 +39,23 @@ class DraggableButton(QPushButton):
                 background-color: lightgray !important;
                 border-radius: 5px;
                 padding: 5px;
-                color: black;
+                color: black !important;
                 text-align: left;
             }
             QPushButton:hover {
-                background-color: #d3d3d3 !important;  /* Slightly darker on hover */
+                background-color: rgba(255, 255, 255, 0.9) !important;  /* Slightly darker on hover */
             }
         """)
 
     def enterEvent(self, event):
         """Ensure cursor is always a hand when hovering over the tool."""
         self.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
+        self.setStyleSheet(feedback_style)
+        self.text_label.setStyleSheet(feedback_style)
+
+    def leaveEvent(self, event):
+        self.setStyleSheet("background-color: lightgray;")
+        self.text_label.setStyleSheet("background-color: lightgray;")
 
     def mousePressEvent(self, event):
         """Change cursor to grabbing hand when starting drag."""

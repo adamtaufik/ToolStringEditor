@@ -1,53 +1,32 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QScrollArea, QComboBox
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QCursor
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QScrollArea, QComboBox, QLabel
 from ui.ui_draggable_button import DraggableButton
 from database.logic_database import get_tool_data
+from utils.styles import GLASSMORPHISM_STYLE
 
 class ToolLibrary(QWidget):
     """Sidebar for listing available tools."""
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.setStyleSheet(GLASSMORPHISM_STYLE)
+
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        # self.sidebar_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        # self.layout.setContentsMargins(10, 10, 10, 10)
-        # self.layout.setSpacing(10)
 
         # **Search Bar**
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search tools...")
-        self.search_bar.setStyleSheet("""
-            QLineEdit {
-                color: white;
-                border: 1px solid white;
-                padding: 5px;
-                background-color: transparent;
-                border-radius: 5px;
-            }
-            QLineEdit::placeholder {
-                color: rgba(255, 255, 255, 0.7);
-            }
-        """)
         self.search_bar.textChanged.connect(self.update_tool_list)
         self.layout.addWidget(self.search_bar)
 
         # **Filter Dropdown**
         self.filter_combo = QComboBox()
+        self.filter_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         tool_data = get_tool_data()  
         self.filter_combo.addItems(["All Tools"] + tool_data["Category"].unique().tolist())
-        self.filter_combo.setStyleSheet("""
-            QComboBox {
-                color: white;
-                background-color: transparent;
-                border: 1px solid white;
-                padding: 5px;
-                border-radius: 5px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: white;
-                color: black;
-            }
-        """)
+
         self.filter_combo.currentTextChanged.connect(self.update_tool_list)
         self.layout.addWidget(self.filter_combo)
 
@@ -57,7 +36,14 @@ class ToolLibrary(QWidget):
         self.tool_list_widget = QWidget()
         self.tool_list_layout = QVBoxLayout(self.tool_list_widget)
         self.tool_list_scroll.setWidget(self.tool_list_widget)
+        self.tool_list_scroll.setStyleSheet("color: black;")
         self.layout.addWidget(self.tool_list_scroll)
+
+        # **Tool Count Label**
+        self.tool_count_label = QLabel("Showing 0 tools")
+        self.tool_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.tool_count_label.setStyleSheet("font-size: 10px; font-style: italic;")
+        self.layout.addWidget(self.tool_count_label)
 
         self.update_tool_list()
 
@@ -80,11 +66,20 @@ class ToolLibrary(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
+        tool_count = 0
         for tool_name in tool_data["Tool Name"].unique():
             tool_button = DraggableButton(tool_name)
             self.tool_list_layout.addWidget(tool_button)
+            tool_count += 1
+
+        self.tool_list_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # ✅ Update tool count label
+        self.tool_count_label.setText(f"Showing {tool_count} tools")
 
     def populate_tool_list(self, category):
+
+
         """Clears and repopulates the tool list based on category."""
         while self.tool_list_layout.count() > 0:
             item = self.tool_list_layout.takeAt(0)
@@ -95,8 +90,14 @@ class ToolLibrary(QWidget):
         if category != "All Tools":
             tools = tools[tools["Category"] == category]
 
+        tool_count = 0
         for tool_name in tools["Tool Name"].unique():
             tool_button = DraggableButton(tool_name)
             self.tool_list_layout.addWidget(tool_button)
+            tool_count += 1
+
+        self.tool_list_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # ✅ Update tool count label
+        self.tool_count_label.setText(f"Showing {tool_count} tools")
 
 

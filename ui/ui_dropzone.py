@@ -19,7 +19,7 @@ class DropZone(QFrame):
         self.main_window = parent
         self.setFrameStyle(QFrame.Shape.Panel | QFrame.Shadow.Sunken)
         self.setStyleSheet(self.dropzone_style_main)
-        self.setFixedSize(800, total_dropzone_height)  # Adjust DropZone size if needed
+        # self.setFixedSize(800, total_dropzone_height)  # Adjust DropZone size if needed
         self.setAcceptDrops(True)
 
         self.tool_widgets = []  # List to store tool widgets
@@ -54,6 +54,7 @@ class DropZone(QFrame):
 
         container_layout = QVBoxLayout()
         container_layout.addLayout(header_layout)
+        container_layout.setContentsMargins(0, 0, 0, 10)
         self.main_layout.addLayout(container_layout)
         # self.main_layout.addLayout(header_layout)
 
@@ -80,9 +81,14 @@ class DropZone(QFrame):
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.main_layout.addLayout(self.layout)
         self.main_layout.setContentsMargins(0, 5, 0, 5)
-        self.main_layout.setSpacing(0)  
+        self.main_layout.setSpacing(0)
 
-
+    # def sizeHint(self):
+    #     """Returns the suggested height for DropZone based on available space."""
+    #     if self.main_window:
+    #         # return self.main_window.height() - (self.main_window.TOOLBAR_HEIGHT + self.main_window.FOOTER_HEIGHT)
+    #         return self.main_window.height() - 60
+    #     return 400  # Fallback default height
 
     def clear_tools(self):
         """Removes all tools from the DropZone."""
@@ -91,6 +97,7 @@ class DropZone(QFrame):
             tool.deleteLater()
         self.tool_widgets.clear()
 
+        self.update_summary()
         self.update_placeholder()
 
     def dragEnterEvent(self, event):
@@ -110,7 +117,6 @@ class DropZone(QFrame):
         """Handles dropping tools into DropZone."""
         tool_name = event.mimeData().text()    
         new_tool = ToolWidget(tool_name, self)
-        
         if new_tool.tool_data:  # ✅ Check if tool data exists
             self.tool_widgets.append(new_tool)
             self.setStyleSheet(self.dropzone_style_main)
@@ -180,10 +186,10 @@ class DropZone(QFrame):
             total_length += length
             total_weight += weight
 
-        if self.main_window and hasattr(self.main_window, "summary_label"):
-            self.main_window.summary_label.setText(
-                f"Max OD: \t\t{max_od:.3f} in\nTotal Length: \t{total_length:.2f} ft\nTotal Weight: \t{total_weight:.2f} lbs"
-            )
+        print(f"Updating summary: Max OD={max_od}, Length={total_length}, Weight={total_weight}")
+
+        if hasattr(self.main_window, "summary_widget"):
+            self.main_window.summary_widget.update_summary(max_od, total_length, total_weight)
 
     def get_tools_data(self):
         """Returns all tool data for saving."""
@@ -226,12 +232,10 @@ def expand_and_center_images_dropzone(tool_widgets):
 
     min_image_height = max(tool.label.height() for tool in tool_widgets)  # Prevents images from being too small
 
-
     # ✅ Step 1: Expand background width while keeping images at original size
     for tool in tool_widgets:
         if tool.image_label.pixmap():
             original_pixmap = tool.image_label.pixmap()
-
             # **Expand background to max_width without changing image size**
             new_width = max_width  # Fixed background width
             new_height = original_pixmap.height()  # Keep original height initially

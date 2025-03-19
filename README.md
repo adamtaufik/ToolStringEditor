@@ -33,6 +33,7 @@ Deleum Tool String Editor is a Python-based application designed to create and m
 <!-- Add screenshots of the UI here -->
 ![Screenshot 1](assets/screenshots/main_window.png)
 ![Screenshot 2](assets/screenshots/toolstring_editing.png)
+![Screenshot 3](assets/screenshots/dark_mode.png)
 
 ## 📝 Changelog
 See [`CHANGELOG.md`](CHANGELOG.md) for version history.
