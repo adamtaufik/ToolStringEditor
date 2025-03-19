@@ -14,7 +14,7 @@ class DropZone(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.dropzone_style_main = "background-color: white; border: 2px solid gray; border-radius: 5px;"
+        self.dropzone_style_main = "background-color: white; border: 0px solid gray; border-radius: 10px;"
 
         self.main_window = parent
         self.setFrameStyle(QFrame.Shape.Panel | QFrame.Shadow.Sunken)
@@ -42,7 +42,8 @@ class DropZone(QFrame):
             font-weight: bold; 
             font-size: 8pt;
             background-color: #f0f0f0; 
-            border-bottom: 2px solid black; 
+            border: 0px white;
+            border-bottom: 2px solid #A9A9A9; 
             color: black;
             border-radius: 5px;
             """)

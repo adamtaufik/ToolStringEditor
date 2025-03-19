@@ -24,12 +24,12 @@ if __name__ == "__main__":
 
     # ✅ Set "Loading..." font size
     loading_font = QFont("Roboto", 14, QFont.Weight.Bold)  # Increased font size
+    splash.setFont(loading_font)  # Apply the font to the message
 
     # ✅ Simulate Loading Process
     for _ in range(100):
         time.sleep(0.02)  # Adjust loading time
         splash.showMessage(f"Loading... {_}%", alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
-        splash.setFont(loading_font)  # Apply the font to the message
 
     # # ✅ Set a universal font
     font_selected = "Roboto"

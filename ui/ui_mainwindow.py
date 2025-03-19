@@ -77,7 +77,7 @@ class MainWindow(QMainWindow):
 
         # **Tool Library**
         self.tool_library_label = QLabel("Tool Library")
-        self.tool_library_label.setStyleSheet("font-weight: bold; color: white; font-size: 14px;")
+        self.tool_library_label.setStyleSheet("font-weight: bold; color: white; font-size: 16px;")
         self.sidebar_layout.addWidget(self.tool_library_label)
 
         self.tool_library = ToolLibrary(self)  # ✅ Initialize Tool Library
@@ -134,7 +134,14 @@ class MainWindow(QMainWindow):
 
         self.well_type = QComboBox()
         self.well_type.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.well_type.addItems(["Oil Producer", "Gas Producer", "Water Injection", "Gas Injection"])
+        self.well_type.addItems([
+            "Oil Producer",
+            "Gas Producer",
+            "Water Injection",
+            "Gas Injection",
+            "Development Well",
+            "Exploration Well",
+            "CCUS Well"])
         self.well_type.setStyleSheet("""
             QComboBox {
                 color: white;
@@ -167,7 +174,7 @@ class MainWindow(QMainWindow):
 
         self.summary_widget = SummaryWidget(self.drop_zone)
         input_layout.addWidget(self.summary_widget)
-        input_layout.setContentsMargins(3, 0, 8, 0)
+        input_layout.setContentsMargins(3, 10, 8, 0)
 
         return input_layout
 
