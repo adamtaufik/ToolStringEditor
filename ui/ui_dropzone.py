@@ -61,12 +61,12 @@ class DropZone(QFrame):
 
 
         # **Stretch placeholder (initially empty, later added/removed)**
-        self.top_spacer = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.top_spacer = QSpacerItem(20, 15, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         self.main_layout.addItem(self.top_spacer)  # Initially added
 
         # **Placeholder Label**
         self.placeholder_label = QLabel("Drag tools here")
-        self.placeholder_label.setStyleSheet("color: gray; font-style: italic; font-size: 32px; background-color: transparent; border: none;")
+        self.placeholder_label.setStyleSheet("color: lightgray; font-size: 50px; background-color: transparent; border: none;")
         self.placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.main_layout.addWidget(self.placeholder_label)  # Initially shown
 
