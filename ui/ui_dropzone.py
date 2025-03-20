@@ -31,9 +31,9 @@ class DropZone(QFrame):
         # **Header Row**
         header_layout = QHBoxLayout()
         headers = [
-            ("Diagram", 80), ("Tool", 120), ("Nom. Size", 80),
+            ("Diagram", 84), ("Tool", 124), ("Nom. Size", 80),
             ("OD (in.)", 70), ("Length (ft)", 70), ("Weight (lbs)", 80),
-            ("Lower Connection", 100), ("Move", 70), ("Del", 40)
+            ("Lower Connection", 100), ("Move", 78), ("Del", 33)
         ]
 
         for header_text, width in headers:

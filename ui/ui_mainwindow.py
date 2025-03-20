@@ -247,8 +247,8 @@ class MainWindow(QMainWindow):
         footer_layout.addStretch()  # Pushes text to the right
 
         # ✅ Footer Text (Lower Right)
-        footer_label = QLabel("Created by Adam Mohd Taufik - Operations Engineer  |  Version 1.0 (18/03/2025)")
-        footer_label.setStyleSheet("font: italic; font-size: 10pt; color: white; padding: 5px;")
+        footer_label = QLabel("Created by Adam Mohd Taufik - Operations Engineer  |  Version 1.0 (20/03/2025)")
+        footer_label.setStyleSheet("font-size: 10pt; color: white; padding: 5px;")
         footer_label.setFixedHeight(self.FOOTER_HEIGHT)
         footer_layout.addWidget(footer_label, alignment=Qt.AlignmentFlag.AlignRight)
 

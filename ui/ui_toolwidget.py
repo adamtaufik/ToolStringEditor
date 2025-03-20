@@ -1,7 +1,7 @@
 import os
-from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton, QComboBox
+from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton, QComboBox, QGraphicsDropShadowEffect
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QCursor
+from PyQt6.QtGui import QPixmap, QCursor, QColor
 from database.logic_database import get_tool_data
 from utils.get_resource_path import get_resource_path  # ✅ Import helper function
 
@@ -13,8 +13,15 @@ class ToolWidget(QWidget):
         super().__init__(drop_zone)
         self.tool_name = tool_name
         self.drop_zone = drop_zone
-        
-        
+
+        shadow = []
+        for i in range(4):
+            # **Soft Shadow Effect**
+            shadow.append(QGraphicsDropShadowEffect())
+            shadow[i].setBlurRadius(10)  # Softness of the shadow
+            shadow[i].setXOffset(2)  # Horizontal shadow offset
+            shadow[i].setYOffset(2)  # Vertical shadow offset
+            shadow[i].setColor(QColor(50, 50, 50, 100))  # Shadow color with transparency
 
         # **Retrieve tool data**
         self.tool_data = get_tool_data(tool_name)
@@ -54,21 +61,24 @@ class ToolWidget(QWidget):
 
         # **Tool Name**
         self.label = QLabel(tool_name)
-        self.label.setFixedSize(120, 40)
-        self.label.setWordWrap(True)       
-        self.label.setStyleSheet("border: 2px solid black; background-color: lightgray; text-align: center; color: black;")
+        self.label.setFixedSize(120, 35)
+        self.label.setWordWrap(True)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensures text is centered
+        self.label.setStyleSheet("border: 0px solid black; border-bottom: 1px solid #A9A9A9; background-color: lightgray; color: black;")
         self.layout.addWidget(self.label)
-        
+
+        self.label.setGraphicsEffect(shadow[0])
+
         # **Nominal Size Selector**
         self.nominal_size_selector = QComboBox()
         self.nominal_size_selector.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.nominal_size_selector.setFixedWidth(70)
+        self.nominal_size_selector.setFixedWidth(80)
 
         nominal_sizes = []
         for size in self.tool_data.get("Nominal Sizes", []):
             nominal_sizes.append(str(size))
         self.nominal_size_selector.addItems(nominal_sizes)
-        self.nominal_size_selector.setStyleSheet("color: black")
+        self.nominal_size_selector.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
         self.nominal_size_selector.currentTextChanged.connect(self.drop_zone.update_summary)
         self.layout.addWidget(self.nominal_size_selector)
@@ -98,32 +108,63 @@ class ToolWidget(QWidget):
         self.connection_label = QComboBox()
         self.connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.connection_label.setFixedWidth(100)
-        self.connection_label.setStyleSheet("color: black")
+        self.connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.layout.addWidget(self.connection_label)
 
         # **Move Up Button**
         self.up_button = QPushButton("↑")
         self.up_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.up_button.setFixedSize(30, 30)
-        self.up_button.setStyleSheet("color: black")
+        self.up_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #87CEEB;  /* Slightly darker blue */
+            }
+        """)
         self.up_button.clicked.connect(self.move_up)
         self.layout.addWidget(self.up_button)
+        self.up_button.setGraphicsEffect(shadow[1])
 
         # **Move Down Button**
         self.down_button = QPushButton("↓")
         self.down_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.down_button.setFixedSize(30, 30)
-        self.down_button.setStyleSheet("color: black")
+        self.down_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #87CEEB;  /* Slightly darker blue */
+            }
+        """)
         self.down_button.clicked.connect(self.move_down)
         self.layout.addWidget(self.down_button)
+        self.down_button.setGraphicsEffect(shadow[2])
 
         # **Remove Button**
         self.remove_button = QPushButton("X")
         self.remove_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.remove_button.setFixedSize(30, 30)
-        self.remove_button.setStyleSheet("font-weight: bold; background-color: red; color: white;")
+        self.remove_button.setStyleSheet("""
+            QPushButton {
+                font-weight: bold;
+                background-color: red;
+                color: white;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #CC0000;  /* Darker red */
+            }
+        """)
         self.remove_button.clicked.connect(self.remove_tool)
         self.layout.addWidget(self.remove_button)
+        self.remove_button.setGraphicsEffect(shadow[3])
 
         # **Apply layout and update details**
         self.setLayout(self.layout)
