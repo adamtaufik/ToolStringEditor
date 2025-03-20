@@ -29,6 +29,7 @@ class DraggableButton(QPushButton):
         self.text_label = QLabel(self.tool_name, self)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignCenter)
         self.text_label.setStyleSheet("background-color: lightgray;")
+        self.text_label.setWordWrap(True)
         layout.addWidget(self.text_label)
 
         self.setLayout(layout)
