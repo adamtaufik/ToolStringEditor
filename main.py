@@ -37,7 +37,6 @@ if __name__ == "__main__":
     modern_font.setPointSize(10)  # Adjust size as needed
     app.setFont(modern_font)
 
-
     window = MainWindow()
     window.setWindowIcon(app_icon)
     splash.finish(window)  # Close splash when main window is ready

@@ -1,24 +1,24 @@
 import os
-import subprocess
 
-from utils.get_resource_path import get_resource_path
-from utils.styles import GLASSMORPHISM_STYLE, DELEUM_STYLE, MESSAGEBOX_STYLE
 from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import Qt, QSize, QThread, pyqtSignal
+from PyQt6.QtGui import QAction, QKeySequence, QCursor, QPixmap, QColor, QPainter
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog, QLabel,
-    QComboBox, QToolBar, QToolButton, QMessageBox, QPushButton, QSizePolicy, QGridLayout, QFrame
+    QComboBox, QToolBar, QToolButton, QMessageBox, QPushButton, QFrame
 )
-from PyQt6.QtCore import Qt, QSize, QThread, pyqtSignal
-from editor.loading_worker import LoadingDialog, LoadingWorker  # ✅ Import the loading animation worker
+
+from database.logic_saveload import save_configuration, load_configuration
+from editor.loading_worker import LoadingWorker  # ✅ Import the loading animation worker
 from editor.logic_export import export_to_excel
-from PyQt6.QtGui import QAction, QKeySequence, QCursor, QPixmap, QColor, QPainter
-from ui.ui_dropzone import DropZone
-from ui.ui_tool_library import ToolLibrary
 from ui.ui_database_window import DatabaseWindow
-from ui.ui_version_window import VersionWindow
+from ui.ui_dropzone import DropZone
 from ui.ui_help_window import HelpWindow
 from ui.ui_summary import SummaryWidget
-from database.logic_saveload import save_configuration, load_configuration
+from ui.ui_tool_library import ToolLibrary
+from ui.ui_version_window import VersionWindow
+from utils.get_resource_path import get_resource_path
+from utils.styles import GLASSMORPHISM_STYLE, DELEUM_STYLE, MESSAGEBOX_STYLE
 
 
 class MainWindow(QMainWindow):
