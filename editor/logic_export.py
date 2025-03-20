@@ -34,7 +34,8 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     os.makedirs(final_directory, exist_ok=True)
 
     print('getting the png path')
-    png_path = os.path.join(final_directory, f"{toolstring_title}.png")
+    # png_path = os.path.join(final_directory, f"{toolstring_title}.png")
+    png_path = excel_path.replace(".xlsx",".png")
 
     # **Define border style**
     thin_border = Border(
@@ -112,18 +113,25 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     max_od = max(od_list)
 
     for column in ['C', 'D', 'E', 'F', 'G']:
-        cell = column + '40'
-        ws[cell].font = Font(bold=True)
+        cell1 = column + '39'
+        cell2 = column + '40'
+        ws[cell1].font = Font(bold=True)
+        ws[cell2].font = Font(bold=True)
         if column == 'C':
-            ws[cell] = "Max OD"
+            ws[cell1] = "Max OD (in)"
+            ws[cell2] = "Max OD (mm)"
         elif column == 'D':
-            ws[cell] = max_od
+            ws[cell1] = max_od
+            ws[cell2] = round(max_od*25.4,1)
         if column == 'E':
-            ws[cell] = "Total Length & Weight"
+            ws[cell1] = "Total Length (ft) & Weight (lbs)"
+            ws[cell2] = "Total Length (m) & Weight (kg)"
         elif column == 'F':
-            ws[cell] = total_length
+            ws[cell1] = total_length
+            ws[cell2] = round(total_length*0.3048,1)
         elif column == 'G':
-            ws[cell] = total_weight
+            ws[cell1] = total_weight
+            ws[cell2] = round(total_weight*0.453592,1)
 
     # **Apply Borders & Alignment**
     for row in ws.iter_rows(min_row=1, max_row=40, min_col=1, max_col=7):
