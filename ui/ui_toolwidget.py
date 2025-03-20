@@ -39,6 +39,8 @@ class ToolWidget(QWidget):
         # **Tool Image (Original Size, Expanded Background)**
         self.image_label = QLabel()
 
+        if "X-Over" in tool_name:
+            tool_name = "X-Over"
         image_file = f"{tool_name}.png".replace('"','').replace("'","")
         image_path = get_resource_path(os.path.join("assets", "images", image_file))
         if os.path.exists(image_path):
@@ -77,6 +79,7 @@ class ToolWidget(QWidget):
         nominal_sizes = []
         for size in self.tool_data.get("Nominal Sizes", []):
             nominal_sizes.append(str(size))
+        print(nominal_sizes)
         self.nominal_size_selector.addItems(nominal_sizes)
         self.nominal_size_selector.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
@@ -182,7 +185,10 @@ class ToolWidget(QWidget):
 
         # Update connection dropdown
         self.connection_label.clear()
-        self.connection_label.addItems(size_data.get("Connections", []))
+        if size_data.get("Connections", []) != ['nan']:
+            self.connection_label.addItems(size_data.get("Connections", []))
+        else:
+            self.connection_label.addItems(['-'])
 
     def move_up(self):
         """Moves the tool up in the DropZone."""
