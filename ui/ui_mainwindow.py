@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt, QSize, QThread, pyqtSignal
 from PyQt6.QtGui import QAction, QKeySequence, QCursor, QPixmap, QColor, QPainter
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog, QLabel,
-    QComboBox, QToolBar, QToolButton, QMessageBox, QPushButton, QFrame
+    QComboBox, QToolBar, QToolButton, QMessageBox, QPushButton, QFrame, QTextEdit
 )
 
 from database.logic_saveload import save_configuration, load_configuration
@@ -58,8 +58,6 @@ class MainWindow(QMainWindow):
 
         # ✅ **Set up UI Components**
         self.setup_ui(main_layout)
-
-
 
     def setup_ui(self, main_layout):
         """Sets up the main UI layout."""
@@ -119,9 +117,8 @@ class MainWindow(QMainWindow):
 
         input_layout = QVBoxLayout()
         input_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        input_layout.setContentsMargins(10, 10, 10, 10)
-        input_layout.setSpacing(15)
-        # input_layout.s
+        input_layout.setContentsMargins(10, 0, 10, 0)
+        input_layout.setSpacing(10)
 
         self.well_details_label = QLabel("Well Details")
         self.well_details_label.setStyleSheet("font: bold; font-size: 12pt;")
@@ -174,6 +171,18 @@ class MainWindow(QMainWindow):
 
         self.summary_widget = SummaryWidget(self.drop_zone)
         input_layout.addWidget(self.summary_widget)
+
+        # **Separator Line**
+        line2 = QFrame()
+        line2.setFrameShape(QFrame.Shape.HLine)
+        line2.setFrameShadow(QFrame.Shadow.Sunken)
+        line2.setStyleSheet("background-color: white; height: 1px;")  # Make the line white and thick
+        input_layout.addWidget(line2)
+
+        # Use this custom widget in your sidebar setup
+        self.comments = LimitedTextEdit(max_lines=5)
+        input_layout.addWidget(self.comments, alignment=Qt.AlignmentFlag.AlignTop)
+
         input_layout.setContentsMargins(3, 10, 8, 0)
 
         return input_layout
@@ -376,7 +385,6 @@ class MainWindow(QMainWindow):
                 print(f"⚠️ ERROR: Unable to open folder: {e}")
 
     def save_configuration(self):
-
         file_name, _ = QFileDialog.getSaveFileName(
             self, "Save Configuration", self.current_file_name or "", "JSON Files (*.json)"
         )
@@ -389,6 +397,7 @@ class MainWindow(QMainWindow):
                 self.well_no.text(),
                 self.well_type.currentText(),
                 self.operation_details.text(),
+                self.comments.toPlainText(),  # ✅ Save comments
                 self.drop_zone
             )
 
@@ -408,6 +417,7 @@ class MainWindow(QMainWindow):
                 self.well_no,
                 self.well_type,
                 self.operation_details,
+                self.comments,  # ✅ Load comments
                 self.drop_zone
             )
 
@@ -447,13 +457,46 @@ class ExportWorker(QThread):
     def run(self):
         """Runs the export logic in a background thread."""
         print('running export_to_excel')
+        print(f"The client name being sent to the function is:\n{self.parent.client_name.text()}\n")
+        print(f"The comments being sent to the function is:\n{self.parent.comments.toPlainText()}\n")
         export_to_excel(self.excel_path, self.pdf_path,
                         self.parent.client_name.text(),
                         self.parent.location.text(),
                         self.parent.well_no.text(),
                         self.parent.well_type.currentText(),
                         self.parent.operation_details.text(),
+                        self.parent.comments.toPlainText(),
                         self.parent.drop_zone)
 
         self.finished.emit(self.final_directory)  # ✅ Emit directory when done
 
+class LimitedTextEdit(QTextEdit):
+    def __init__(self, max_lines=5):
+        super().__init__()
+        self.max_lines = max_lines
+        self.setPlaceholderText(f"Remarks (max {max_lines} lines)")
+        self.setFixedHeight(5 * 20)  # Approx height for 5 lines
+        self.textChanged.connect(self.limit_lines)
+
+        # **Apply Rounded Border Style**
+        self.setStyleSheet("""
+            QTextEdit {
+                border-radius: 8px;
+                padding: 5px;
+                background-color: white;
+            }
+        """)
+
+    def limit_lines(self):
+        """Restrict text to a maximum of `max_lines` lines."""
+        text = self.toPlainText()
+        lines = text.split("\n")
+
+        if len(lines) > self.max_lines:
+            # Keep only the first `max_lines` lines
+            self.setPlainText("\n".join(lines[:self.max_lines]))
+
+            # Move cursor to end of text
+            cursor = self.textCursor()
+            cursor.movePosition(cursor.MoveOperation.End)
+            self.setTextCursor(cursor)

@@ -6,7 +6,7 @@ from PyQt6.QtGui import QPixmap, QColor, QImage
 from PyQt6.QtCore import Qt
 from utils.get_resource_path import get_resource_path
 
-icon_size = 64
+icon_size = 45
 
 class SummaryWidget(QWidget):
     """Displays summary information with icons, aligned using a grid layout."""
@@ -16,7 +16,7 @@ class SummaryWidget(QWidget):
         self.parent_widget = parent
 
         self.layout = QGridLayout(self)
-        self.layout.setSpacing(10)  # ✅ More vertical space between rows
+        self.layout.setSpacing(5)  # ✅ More vertical space between rows
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # **Create Summary Items**
@@ -61,6 +61,7 @@ class SummaryWidget(QWidget):
         self.weight_layout.addWidget(self.total_weight_value)
         self.weight_layout.addWidget(self.total_weight_metric)
         self.layout.addLayout(self.weight_layout, 4, 1)
+
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         self.update_summary(0,0,0)

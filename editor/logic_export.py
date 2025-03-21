@@ -12,13 +12,14 @@ from editor.logic_utils import get_number
 from ui.ui_toolwidget import ToolWidget
 from utils.get_resource_path import get_resource_path
 
-def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_type, operation_details, drop_zone):
+def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_type, operation_details, comments, drop_zone):
     """Exports tool string configuration to Excel and PDF."""
 
     wb = Workbook()
     ws = wb.active
     ws.title = "Tool String"
-    last_row = 66
+    last_row = 55
+    last_column = 'G'
 
     well_details = [client_name, location, well_no, well_type, operation_details]
 
@@ -123,8 +124,8 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     max_od = max(od_list)
 
     for column in ['C', 'D', 'E', 'F', 'G']:
-        cell1 = column + str(last_row - 1)
-        cell2 = column + str(last_row)
+        cell1 = column + str(last_row - 7)
+        cell2 = column + str(last_row-6)
         ws[cell1].font = Font(bold=True)
         ws[cell2].font = Font(bold=True)
         if column == 'C':
@@ -142,6 +143,11 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
         elif column == 'G':
             ws[cell1] = total_weight
             ws[cell2] = round(total_weight*0.453592,1)
+
+    cell_remarks_title = 'C' + str(last_row - 5)
+    cell_remarks_content = 'C' + str(last_row-4)
+    ws[cell_remarks_title] = "Remarks"
+    ws[cell_remarks_title].font = Font(bold=True)
 
     # **Apply Borders & Alignment**
     for row in ws.iter_rows(min_row=1, max_row=last_row, min_col=1, max_col=7):
@@ -171,6 +177,15 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     ws.merge_cells("A4:G4")
     ws.merge_cells("A5:G5")
     ws.merge_cells(f"A7:B{last_row}")
+    ws.merge_cells(f"{cell_remarks_title}:{last_column}{last_row - 5}")
+    ws.merge_cells(f"{cell_remarks_content}:{last_column}{last_row}")
+
+    ws[cell_remarks_content] = comments.replace("\n", "\n")  # Ensures new lines are preserved
+    # Enable text wrapping and set left alignment
+    ws[cell_remarks_content].alignment = Alignment(
+        wrapText=True,  # ✅ Allows multi-line text
+        horizontal="left",  # ✅ Left-align text
+    )
 
     # **Insert Tool String Image**
     cell = "B8"
@@ -181,7 +196,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
         tool_image.save(png_path)
 
         pil_img = PILImage.open(png_path)
-        max_height = 1100
+        max_height = 900
         if pil_img.height > max_height:
             scale_factor = max_height / pil_img.height
             new_width = int(pil_img.width * scale_factor)
@@ -197,14 +212,16 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     ws.row_dimensions[1].height = last_row
     ws.column_dimensions['A'].width = 4.22
     ws.column_dimensions['B'].width = 4.22 + img.width / 7
-    print('getting logo')
     logo_path = get_resource_path(os.path.join("assets", "images", "logo_report.png"))
-    print(logo_path)
-    print('adding logo')
     # ✅ Load the logo as an ExcelImage before adding it to the worksheet
     logo_img = ExcelImage(logo_path)
     ws.add_image(logo_img, "A1")
-    print('logo added')
+
+    footer_cell = last_column + str(last_row + 2)
+    ws[footer_cell] = "This report was computer generated using Deleum Tool String Editor"
+    ws[footer_cell].alignment = Alignment(
+        horizontal="right",  # ✅ Left-align text
+    )
 
     # **Page Layout Settings**
     ws.page_setup.paperSize = ws.PAPERSIZE_A4

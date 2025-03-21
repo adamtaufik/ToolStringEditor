@@ -2,7 +2,7 @@ import json
 from ui.ui_toolwidget import ToolWidget
 from ui.ui_dropzone import expand_and_center_images_dropzone  # ✅ Import image processing function
 
-def save_configuration(file_name, client_name, location, well_no, well_type, operation_details, drop_zone):
+def save_configuration(file_name, client_name, location, well_no, well_type, operation_details, comments, drop_zone):
     """Saves configuration including client info and all tools."""
     config_data = {
         "client_name": client_name,
@@ -10,6 +10,7 @@ def save_configuration(file_name, client_name, location, well_no, well_type, ope
         "well_no": well_no,
         "well_type": well_type,
         "operation_details": operation_details,
+        "comments": comments,  # ✅ Include comments
         "tools": []
     }
 
@@ -28,7 +29,7 @@ def save_configuration(file_name, client_name, location, well_no, well_type, ope
         json.dump(config_data, f, indent=4)
 
 
-def load_configuration(file_name, client_name_input, location_input, well_no_input, well_type_input, operation_details_input, drop_zone):
+def load_configuration(file_name, client_name_input, location_input, well_no_input, well_type_input, operation_details_input, comments_widget, drop_zone):
     """Loads configuration and restores tools in DropZone."""
     with open(file_name, 'r') as f:
         config_data = json.load(f)
@@ -39,6 +40,7 @@ def load_configuration(file_name, client_name_input, location_input, well_no_inp
     well_no_input.setText(config_data.get("well_no", ""))
     well_type_input.setCurrentText(config_data.get("well_type", "Oil Producer"))
     operation_details_input.setText(config_data.get("operation_details", ""))
+    comments_widget.setPlainText(config_data.get("comments", ""))
 
     # ✅ Clear existing tools before loading new ones
     drop_zone.clear_tools()
