@@ -32,9 +32,9 @@ class ToolWidget(QWidget):
         # **Main Layout**
         self.layout = QHBoxLayout(self)
         # self.layout.setContentsMargins(5, 0, 5, 0)
-        self.layout.setSpacing(11)
+        self.layout.setSpacing(10)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.layout.setContentsMargins(10, 0, 0, 0)
+        self.layout.setContentsMargins(7, 0, 0, 0)
 
         # **Tool Image (Original Size, Expanded Background)**
         self.image_label = QLabel()
@@ -106,12 +106,19 @@ class ToolWidget(QWidget):
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.weight_label)
 
+        # **Top Connection Selector**
+        self.top_connection_label = QLabel("N/A")
+        self.top_connection_label.setFixedWidth(100)
+        self.top_connection_label.setStyleSheet("border: none; color: black;")
+        self.top_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(self.top_connection_label)
+
         # **Lower Connection Selector**
-        self.connection_label = QComboBox()
-        self.connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.connection_label.setFixedWidth(100)
-        self.connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
-        self.layout.addWidget(self.connection_label)
+        self.lower_connection_label = QComboBox()
+        self.lower_connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.lower_connection_label.setFixedWidth(100)
+        self.lower_connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
+        self.layout.addWidget(self.lower_connection_label)
 
         # **Move Up Button**
         self.up_button = QPushButton("↑")
@@ -183,11 +190,13 @@ class ToolWidget(QWidget):
         self.weight_label.setText(f"{size_data.get('Weight', 'N/A'):.1f} lbs")
 
         # Update connection dropdown
-        self.connection_label.clear()
+        self.lower_connection_label.clear()
         if size_data.get("Connections", []) != ['nan']:
-            self.connection_label.addItems(size_data.get("Connections", []))
+            self.lower_connection_label.addItems(size_data.get("Connections", []))
+            self.top_connection_label.setText("Upcoming")
         else:
-            self.connection_label.addItems(['-'])
+            self.lower_connection_label.addItems(['-'])
+            self.top_connection_label.setText("-")
 
     def move_up(self):
         """Moves the tool up in the DropZone."""
@@ -220,5 +229,5 @@ class ToolWidget(QWidget):
             "od": self.od_label.text(),
             "length": self.length_label.text(),
             "weight": self.weight_label.text(),
-            "connection": self.connection_label.currentText()
+            "connection": self.lower_connection_label.currentText()
         }

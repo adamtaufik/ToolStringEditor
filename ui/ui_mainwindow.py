@@ -82,12 +82,12 @@ class MainWindow(QMainWindow):
         self.sidebar_layout.addWidget(self.tool_library)
 
         sidebar_container.setLayout(self.sidebar_layout)
-        sidebar_container.setFixedWidth(270)
+        sidebar_container.setFixedWidth(230)
         content_layout.addWidget(sidebar_container)
 
         # **Drop Zone**
         content_layout.addWidget(self.drop_zone)
-        self.drop_zone.setFixedWidth(800)
+        self.drop_zone.setFixedWidth(900)
 
         # **Right Sidebar (Well Details & Summary)**
         input_layout = self.setup_right_sidebar()
@@ -119,6 +119,7 @@ class MainWindow(QMainWindow):
         input_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         input_layout.setContentsMargins(10, 0, 10, 0)
         input_layout.setSpacing(10)
+        # input_layout.setFixedWidth(230)
 
         self.well_details_label = QLabel("Well Details")
         self.well_details_label.setStyleSheet("font: bold; font-size: 12pt;")

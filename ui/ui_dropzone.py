@@ -33,7 +33,7 @@ class DropZone(QFrame):
         headers = [
             ("Diagram", 84), ("Tool", 124), ("Nom. Size", 80),
             ("OD (in.)", 70), ("Length (ft)", 70), ("Weight (lbs)", 80),
-            ("Lower Connection", 100), ("Move", 78), ("Del", 33)
+            ("Top Connection", 100), ("Lower Connection", 100), ("Move", 78), ("Del", 33)
         ]
 
         for header_text, width in headers:

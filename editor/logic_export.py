@@ -19,7 +19,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     ws = wb.active
     ws.title = "Tool String"
     last_row = 55
-    last_column = 'G'
+    last_column = 'H'
 
     well_details = [client_name, location, well_no, well_type, operation_details]
 
@@ -56,8 +56,8 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
 
     # **Client Information Section**
     client_info = [
-        ["Client Name", "", "Location", "", "Well No.", "Well Type", "Date"],
-        [well_details[0], "", well_details[1], "", well_details[2], well_details[3], today]
+        ["Client Name", "", "Location", "", "Well No.", "Well Type", "Wire", "Date"],
+        [well_details[0], "", well_details[1], "", well_details[2], well_details[3], "0.125 ZAPP", today]
     ]
 
     for row_idx, row_data in enumerate(client_info, start=2):
@@ -80,11 +80,12 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
             size = widget.nominal_size_selector.currentText()
             od = widget.od_label.text()
             od = get_number(od)  # Ensure numeric value
-            lower_connection = widget.connection_label.currentText()
+            top_connection = widget.top_connection_label.currentText()
+            lower_connection = widget.lower_connection_label.currentText()
             length = widget.length_label.text()
             weight = widget.weight_label.text()
             weight = get_number(weight)  # Ensure numeric value
-            data.append(["", "", f"{tool_name} ({size})", od, lower_connection, length, weight])
+            data.append(["", "", f"{tool_name} ({size})", od, top_connection, lower_connection, length, weight])
 
             if "X-Over" in tool_name:
                 tool_name = "X-Over"
@@ -102,7 +103,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
 
 
     # **Table Headers**
-    headers = ["Diagram", "", "Description", "OD (inches)", "Lower Connection", "Length (ft)", "Weight (lbs)"]
+    headers = ["Diagram", "", "Description", "OD (in)", "Top Connection","Lower Connection", "Length (ft)", "Weight (lbs)"]
 
     for col_num, header in enumerate(headers, start=1):
         cell = ws.cell(row=6, column=col_num, value=header)
@@ -118,14 +119,37 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     for row_data in data:
         ws.append(row_data)
         od_list.append(row_data[3])
-        total_length += get_number(row_data[5])
-        total_weight += row_data[6]
+        total_length += get_number(row_data[6])
+        total_weight += row_data[7]
 
     max_od = max(od_list)
 
-    for column in ['C', 'D', 'E', 'F', 'G']:
+    cell_remarks_title = 'C' + str(last_row - 5)
+    cell_remarks_content = 'C' + str(last_row - 4)
+    ws[cell_remarks_title] = "Remarks"
+    ws[cell_remarks_title].font = Font(bold=True)
+
+    # **Apply Borders & Alignment**
+    for row in ws.iter_rows(min_row=1, max_row=last_row, min_col=1, max_col=8):
+        for cell in row:
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # **Auto-adjust Column Widths**
+    for col in ws.iter_cols(min_col=3, max_col=8):
+        max_length = 0
+        try:
+            col_letter = col[0].column_letter
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[col_letter].width = max_length + 2
+        except:
+            pass
+
+    for column in ['C', 'D', 'E', 'F', 'G','H']:
         cell1 = column + str(last_row - 7)
-        cell2 = column + str(last_row-6)
+        cell2 = column + str(last_row - 6)
         ws[cell1].font = Font(bold=True)
         ws[cell2].font = Font(bold=True)
         if column == 'C':
@@ -137,48 +161,34 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
         if column == 'E':
             ws[cell1] = "Total Length (ft) & Weight (lbs)"
             ws[cell2] = "Total Length (m) & Weight (kg)"
-        elif column == 'F':
+            ws.merge_cells(f"{cell1}:F{last_row-7}")
+            ws.merge_cells(f"{cell2}:F{last_row-6}")
+        elif column == 'G':
             ws[cell1] = total_length
             ws[cell2] = round(total_length*0.3048,1)
-        elif column == 'G':
+        elif column == 'H':
             ws[cell1] = total_weight
             ws[cell2] = round(total_weight*0.453592,1)
 
-    cell_remarks_title = 'C' + str(last_row - 5)
-    cell_remarks_content = 'C' + str(last_row-4)
-    ws[cell_remarks_title] = "Remarks"
-    ws[cell_remarks_title].font = Font(bold=True)
-
-    # **Apply Borders & Alignment**
-    for row in ws.iter_rows(min_row=1, max_row=last_row, min_col=1, max_col=7):
-        for cell in row:
-            cell.border = thin_border
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-
-    # **Auto-adjust Column Widths**
-    for col in ws.iter_cols(min_col=3, max_col=7):
-        max_length = 0
-        try:
-            col_letter = col[0].column_letter
-            for cell in col:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
-            ws.column_dimensions[col_letter].width = max_length + 2
-        except:
-            pass
-
     # **Merging Cells**
-    ws.merge_cells("A1:G1")
+    ws.merge_cells(f"A1:{last_column}1")
     ws.merge_cells("A2:B2")
     ws.merge_cells("A3:B3")
     ws.merge_cells("A6:B6")
+    ws.merge_cells("A6:B6")
     ws.merge_cells("C2:D2")
     ws.merge_cells("C3:D3")
-    ws.merge_cells("A4:G4")
-    ws.merge_cells("A5:G5")
+    ws.merge_cells(f"A4:{last_column}4")
+    ws.merge_cells(f"A5:{last_column}5")
     ws.merge_cells(f"A7:B{last_row}")
     ws.merge_cells(f"{cell_remarks_title}:{last_column}{last_row - 5}")
     ws.merge_cells(f"{cell_remarks_content}:{last_column}{last_row}")
+
+    #
+    # ws["E48"].alignment = Alignment(horizontal="center")
+    # ws["E49"].alignment = Alignment(horizontal="center")
+    # ws["F48"].alignment = Alignment(horizontal="center")
+    # ws["F49"].alignment = Alignment(horizontal="center")
 
     ws[cell_remarks_content] = comments.replace("\n", "\n")  # Ensures new lines are preserved
     # Enable text wrapping and set left alignment
@@ -219,9 +229,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
 
     footer_cell = last_column + str(last_row + 2)
     ws[footer_cell] = "This report was computer generated using Deleum Tool String Editor"
-    ws[footer_cell].alignment = Alignment(
-        horizontal="right",  # ✅ Left-align text
-    )
+    ws[footer_cell].alignment = Alignment(horizontal="right",)
 
     # **Page Layout Settings**
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
@@ -229,7 +237,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     ws.page_setup.fitToPage = True
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 0
-    ws.print_area = f"A1:G{ws.max_row}"
+    ws.print_area = f"A1:{last_column}{ws.max_row}"
     # **Save Excel File**
     print('saving to excel')
     wb.save(excel_path)
