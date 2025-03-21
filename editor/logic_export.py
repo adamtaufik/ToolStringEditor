@@ -1,6 +1,7 @@
 import os
 import time
 import win32com.client
+from PyQt6.QtGui import QPixmap
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image as ExcelImage
 from openpyxl.styles import Font, Border, Side, Alignment
@@ -17,6 +18,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     wb = Workbook()
     ws = wb.active
     ws.title = "Tool String"
+    last_row = 66
 
     well_details = [client_name, location, well_no, well_type, operation_details]
 
@@ -25,15 +27,11 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     for detail in well_details[1:]:  # Skip client name
         if detail and detail not in ["Oil Producer", "Gas Producer"]:
             toolstring_title += f" - {detail}"
-    print('filename generated')
     # ✅ Generate directories and filenames
-    print('getting current directory')
     current_directory = os.getcwd()
-    print('creating final directory')
     final_directory = os.path.join(current_directory, toolstring_title)
     os.makedirs(final_directory, exist_ok=True)
 
-    print('getting the png path')
     # png_path = os.path.join(final_directory, f"{toolstring_title}.png")
     png_path = excel_path.replace(".xlsx",".png")
 
@@ -86,9 +84,21 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
             weight = widget.weight_label.text()
             weight = get_number(weight)  # Ensure numeric value
             data.append(["", "", f"{tool_name} ({size})", od, lower_connection, length, weight])
-    
+
+            if "X-Over" in tool_name:
+                tool_name = "X-Over"
+            image_file = f"{tool_name}.png".replace('"', '').replace("'", "")
+            image_path = get_resource_path(os.path.join("assets", "images", image_file))
+            if os.path.exists(image_path):
+                pixmap = QPixmap(image_path)
+            else:
+                dummy_path = get_resource_path(os.path.join("assets", "images", "Dummy Image.png"))
+                pixmap = QPixmap(dummy_path)  # Fallback
+
             if widget.image_label.pixmap() and not widget.image_label.pixmap().isNull():
-                tool_images.append(widget.image_label.pixmap().toImage())
+                # tool_images.append(widget.image_label.pixmap().toImage())
+                tool_images.append(pixmap.toImage())
+
 
     # **Table Headers**
     headers = ["Diagram", "", "Description", "OD (inches)", "Lower Connection", "Length (ft)", "Weight (lbs)"]
@@ -113,8 +123,8 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     max_od = max(od_list)
 
     for column in ['C', 'D', 'E', 'F', 'G']:
-        cell1 = column + '39'
-        cell2 = column + '40'
+        cell1 = column + str(last_row - 1)
+        cell2 = column + str(last_row)
         ws[cell1].font = Font(bold=True)
         ws[cell2].font = Font(bold=True)
         if column == 'C':
@@ -134,7 +144,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
             ws[cell2] = round(total_weight*0.453592,1)
 
     # **Apply Borders & Alignment**
-    for row in ws.iter_rows(min_row=1, max_row=40, min_col=1, max_col=7):
+    for row in ws.iter_rows(min_row=1, max_row=last_row, min_col=1, max_col=7):
         for cell in row:
             cell.border = thin_border
             cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -160,7 +170,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     ws.merge_cells("C3:D3")
     ws.merge_cells("A4:G4")
     ws.merge_cells("A5:G5")
-    ws.merge_cells("A7:B40")
+    ws.merge_cells(f"A7:B{last_row}")
 
     # **Insert Tool String Image**
     cell = "B8"
@@ -171,7 +181,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
         tool_image.save(png_path)
 
         pil_img = PILImage.open(png_path)
-        max_height = 620
+        max_height = 1100
         if pil_img.height > max_height:
             scale_factor = max_height / pil_img.height
             new_width = int(pil_img.width * scale_factor)
@@ -184,11 +194,11 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
         ws.add_image(img, cell)
         print('image added')
 
-    ws.row_dimensions[1].height = 40
+    ws.row_dimensions[1].height = last_row
     ws.column_dimensions['A'].width = 4.22
     ws.column_dimensions['B'].width = 4.22 + img.width / 7
     print('getting logo')
-    logo_path = get_resource_path(os.path.join("assets", "images", "logo_full.png"))
+    logo_path = get_resource_path(os.path.join("assets", "images", "logo_report.png"))
     print(logo_path)
     print('adding logo')
     # ✅ Load the logo as an ExcelImage before adding it to the worksheet

@@ -17,14 +17,14 @@ Basic Tools,3' Normal Stem,"1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",3.0,12.5
 Basic Tools,5' Normal Stem,"1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",5.0,46.9
 Basic Tools,5' Normal Stem,"1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",5.0,30.0
 Basic Tools,5' Normal Stem,"1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",5.0,20.8
-Basic Tools,"20"" Mechanical Spang Jar","1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",3.0,28.1
-Basic Tools,"20"" Mechanical Spang Jar","1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",3.0,18.0
-Basic Tools,"20"" Mechanical Spang Jar","1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",3.0,12.5
-Basic Tools,"30"" Mechanical Spang Jar","1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",4.0,37.5
-Basic Tools,"30"" Mechanical Spang Jar","1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",4.0,24.0
-Basic Tools,"30"" Mechanical Spang Jar","1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",4.0,16.7
-Basic Tools,"20"" Tubular Jar","1-7/8""",1.875,"1-7/8"" HDQRJ",5.3,23.1
-Basic Tools,"30"" Tubular Jar","2-1/2""",2.500,"2-1/2"" HDQRJ",4.0,37.5
+Basic Tools,"20"" Mechanical Link Jar (Spang)","1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",3.0,28.1
+Basic Tools,"20"" Mechanical Link Jar (Spang)","1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",3.0,18.0
+Basic Tools,"20"" Mechanical Link Jar (Spang)","1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",3.0,12.5
+Basic Tools,"30"" Mechanical Link Jar (Spang)","1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",4.0,37.5
+Basic Tools,"30"" Mechanical Link Jar (Spang)","1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",4.0,24.0
+Basic Tools,"30"" Mechanical Link Jar (Spang)","1-1/4""",1.250,"15/16"" SR, 1-1/4"" QLS",4.0,16.7
+Basic Tools,"20"" Mechanical Tubular Jar","1-7/8""",1.875,"1-7/8"" HDQRJ",5.3,23.1
+Basic Tools,"30"" Mechanical Tubular Jar","2-1/2""",2.500,"2-1/2"" HDQRJ",4.0,37.5
 Basic Tools,Hydraulic Jar,"1-7/8""",1.875,"1-1/16"" SR, 1-7/8"" QLS",3.6,28.1
 Basic Tools,Hydraulic Jar,"1-3/4""",1.750,"1-7/8"" QRJ",3.6,8.5
 Basic Tools,Hydraulic Jar,"1-1/2""",1.500,"15/16"" SR, 1-1/2"" QLS",3.6,18.0
@@ -287,7 +287,6 @@ Well-Sun Tools,RCT02,"2-1/8""",2.125,1-3/16”-12 (GO 'A'),3.0,24.0
 Well-Sun Tools,RBT01,"3-1/8""",3.125,1-3/16”-12 (GO 'A'),9.1,105.8
 Well-Sun Tools,BWS01,1.693,1.693,N/A,0.2,1.1
 EV Tools,Optis® M160 Memory Camera,"1-11/16""",1.688,N/A,14.4,83.6
-Owen Oil Tools,Perforation Gun,TBC,,,,0.0
 Well Conveyor,SBC 2W Drive Module,"1.654""",1.654,ACME,5.3,28.7
 Well Conveyor,SBC Brain,"1.654""",1.654,ACME,2.1,8.4
 Well Conveyor,SBC Bull Nose,"1.654""",1.654,N/A,0.1,1.3

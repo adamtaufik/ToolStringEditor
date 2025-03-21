@@ -55,7 +55,6 @@ class ToolWidget(QWidget):
 
         # **Create Transparent Background**
         self.image_label.setPixmap(pixmap)
-        # self.image_label.setFixedSize(self.BACKGROUND_WIDTH, self.original_height)  # Expand background width only
         self.image_label.setFixedSize(self.original_width, self.original_height)  # Expand background width only
         self.image_label.setStyleSheet("background-color: transparent; border: none;")
 
