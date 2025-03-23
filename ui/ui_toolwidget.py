@@ -31,7 +31,6 @@ class ToolWidget(QWidget):
 
         # **Main Layout**
         self.layout = QHBoxLayout(self)
-        # self.layout.setContentsMargins(5, 0, 5, 0)
         self.layout.setSpacing(10)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.layout.setContentsMargins(7, 0, 0, 0)
@@ -78,13 +77,11 @@ class ToolWidget(QWidget):
         nominal_sizes = []
         for size in self.tool_data.get("Nominal Sizes", []):
             nominal_sizes.append(str(size))
-        print(nominal_sizes)
         self.nominal_size_selector.addItems(nominal_sizes)
         self.nominal_size_selector.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
         self.nominal_size_selector.currentTextChanged.connect(self.drop_zone.update_summary)
         self.layout.addWidget(self.nominal_size_selector)
-        print("nominal size selector added")
 
         # **OD Label**
         self.od_label = QLabel("N/A")
@@ -92,7 +89,6 @@ class ToolWidget(QWidget):
         self.od_label.setStyleSheet("border: none; color: black;")
         self.od_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.od_label)
-        print("od label added")
 
         # **Length Label**
         self.length_label = QLabel("N/A")
@@ -100,7 +96,6 @@ class ToolWidget(QWidget):
         self.length_label.setStyleSheet("border: none; color: black;")
         self.length_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.length_label)
-        print("length label added")
 
         # **Weight Label**
         self.weight_label = QLabel("N/A")
@@ -108,7 +103,6 @@ class ToolWidget(QWidget):
         self.weight_label.setStyleSheet("border: none; color: black;")
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.weight_label)
-        print("weight label added")
 
         # **Top Connection Selector**
         self.top_connection_label = QLabel("N/A")
@@ -116,7 +110,6 @@ class ToolWidget(QWidget):
         self.top_connection_label.setStyleSheet("border: none; color: black;")
         self.top_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.top_connection_label)
-        print("top connection added")
 
         # **Lower Connection Selector**
         self.lower_connection_label = QComboBox()
@@ -124,7 +117,6 @@ class ToolWidget(QWidget):
         self.lower_connection_label.setFixedWidth(120)
         self.lower_connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.layout.addWidget(self.lower_connection_label)
-        print("lower connection added")
 
         # **Move Up Button**
         self.up_button = QPushButton("↑")
@@ -180,35 +172,26 @@ class ToolWidget(QWidget):
         self.remove_button.clicked.connect(self.remove_tool)
         self.layout.addWidget(self.remove_button)
         self.remove_button.setGraphicsEffect(shadow[3])
-        print("buttons added")
 
         # **Apply layout and update details**
         self.setLayout(self.layout)
-        print("starting to update tools")
         self.update_tool_info()
-        print("tools updated successfully")
 
     def update_tool_info(self):
         """Updates OD, Length, Weight, and Lower Connection dynamically."""
         selected_size = self.nominal_size_selector.currentText()
-        print("got the selected size")
         size_data = self.tool_data["Sizes"].get(selected_size, {})
 
         # Update labels
         self.od_label.setText(f"{size_data.get('OD', 'N/A'):.3f} in")
         self.length_label.setText(f"{size_data.get('Length', 'N/A'):.1f} ft")
         self.weight_label.setText(f"{size_data.get('Weight', 'N/A'):.1f} lbs")
-        print("set the od, length and weight")
 
         # Update connection dropdown
         self.lower_connection_label.clear()
-        print("cleared the lower connection")
 
         lower_connections = size_data.get("Lower Connections", [])
         top_connections = size_data.get("Top Connections", [])
-
-        print("lower conns:", lower_connections)
-        print("top conns:", top_connections)
 
         if lower_connections and lower_connections != ['nan']:
             modified_lower_connections = []
@@ -216,8 +199,8 @@ class ToolWidget(QWidget):
             for conn in lower_connections:
                 if conn.endswith("SR"):
                     modified_lower_connections.append(conn + " Box")  # SR type → Lower gets Box
-                elif conn == "Sondex":
-                    modified_lower_connections.append(conn + " Pin")  # Sondex → Lower gets Pin
+                elif conn in ["Sondex", "GO 'A'"]:
+                    modified_lower_connections.append(conn + " Pin")  # Sondex & GO 'A' → Lower gets Pin
                 else:
                     modified_lower_connections.append(conn)  # Keep as is
 
@@ -225,7 +208,6 @@ class ToolWidget(QWidget):
 
             # If lower and top connections are the same, link updates
             if lower_connections == top_connections:
-                print("Top and lower connections are equal; linking updates.")
                 self.lower_connection_label.currentTextChanged.connect(self.sync_top_connection)
 
                 selected_lower = self.lower_connection_label.currentText()
