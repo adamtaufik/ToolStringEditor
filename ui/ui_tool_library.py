@@ -24,7 +24,7 @@ class ToolLibrary(QWidget):
         # **Filter Dropdown**
         self.filter_combo = QComboBox()
         self.filter_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        tool_data = get_tool_data()  
+        tool_data = get_tool_data()
         self.filter_combo.addItems(["All Tools"] + tool_data["Category"].unique().tolist())
 
         self.filter_combo.currentTextChanged.connect(self.update_tool_list)

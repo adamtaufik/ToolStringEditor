@@ -70,7 +70,6 @@ class SummaryWidget(QWidget):
         """Creates a structured layout for each summary item."""
 
         # **Load & Set Icon**
-        # icon_path = get_resource_path(f"assets/images/{icon_name}")
         icon_path = get_resource_path(os.path.join("assets", "images", icon_name))
 
         icon_label = QLabel()
@@ -86,7 +85,6 @@ class SummaryWidget(QWidget):
 
         metric_label = QLabel("0.00")  # Default value
         metric_label.setStyleSheet("font-size: 12px; ")  # ✅ Larger value below
-
 
         return icon_label, label, value_label, metric_label
 

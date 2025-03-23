@@ -6,7 +6,7 @@ from PyQt6.QtGui import QPixmap
 from ui.ui_toolwidget import ToolWidget
 
 total_dropzone_height = 650  
-diagram_width = 80  
+diagram_width = 70
 
 
 class DropZone(QFrame):
@@ -31,9 +31,9 @@ class DropZone(QFrame):
         # **Header Row**
         header_layout = QHBoxLayout()
         headers = [
-            ("Diagram", 84), ("Tool", 124), ("Nom. Size", 80),
+            ("Diagram", 74), ("Tool", 124), ("Nom. Size", 80),
             ("OD (in.)", 70), ("Length (ft)", 70), ("Weight (lbs)", 80),
-            ("Top Connection", 100), ("Lower Connection", 100), ("Move", 78), ("Del", 33)
+            ("Top Connection", 90), ("Lower Connection", 120), ("Move", 78), ("Del", 33)
         ]
 
         for header_text, width in headers:

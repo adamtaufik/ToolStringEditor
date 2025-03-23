@@ -67,7 +67,8 @@ def get_tool_data(tool_name=None):
             "OD": row["OD (Inches)"],
             "Length": row["Length (ft)"],
             "Weight": row["Weight (lbs)"],
-            "Connections": str(row["Lower Connection"]).split(",")
+            "Top Connections": str(row["Top Connection"]).split(","),
+            "Lower Connections": str(row["Lower Connection"]).split(",")
         }
     print('\n\nFor',tool_name,'...\n')
     print(tool_info)

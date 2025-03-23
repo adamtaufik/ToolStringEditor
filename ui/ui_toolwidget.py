@@ -7,7 +7,7 @@ from utils.get_resource_path import get_resource_path  # ✅ Import helper funct
 
 class ToolWidget(QWidget):
     """Widget representing a tool inside the DropZone."""
-    BACKGROUND_WIDTH = 100  # Expanded background width for uniformity
+    BACKGROUND_WIDTH = 90  # Expanded background width for uniformity
     
     def __init__(self, tool_name, drop_zone):
         super().__init__(drop_zone)
@@ -84,6 +84,7 @@ class ToolWidget(QWidget):
         self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
         self.nominal_size_selector.currentTextChanged.connect(self.drop_zone.update_summary)
         self.layout.addWidget(self.nominal_size_selector)
+        print("nominal size selector added")
 
         # **OD Label**
         self.od_label = QLabel("N/A")
@@ -91,6 +92,7 @@ class ToolWidget(QWidget):
         self.od_label.setStyleSheet("border: none; color: black;")
         self.od_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.od_label)
+        print("od label added")
 
         # **Length Label**
         self.length_label = QLabel("N/A")
@@ -98,6 +100,7 @@ class ToolWidget(QWidget):
         self.length_label.setStyleSheet("border: none; color: black;")
         self.length_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.length_label)
+        print("length label added")
 
         # **Weight Label**
         self.weight_label = QLabel("N/A")
@@ -105,20 +108,23 @@ class ToolWidget(QWidget):
         self.weight_label.setStyleSheet("border: none; color: black;")
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.weight_label)
+        print("weight label added")
 
         # **Top Connection Selector**
         self.top_connection_label = QLabel("N/A")
-        self.top_connection_label.setFixedWidth(100)
+        self.top_connection_label.setFixedWidth(90)
         self.top_connection_label.setStyleSheet("border: none; color: black;")
         self.top_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.top_connection_label)
+        print("top connection added")
 
         # **Lower Connection Selector**
         self.lower_connection_label = QComboBox()
         self.lower_connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.lower_connection_label.setFixedWidth(100)
+        self.lower_connection_label.setFixedWidth(120)
         self.lower_connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.layout.addWidget(self.lower_connection_label)
+        print("lower connection added")
 
         # **Move Up Button**
         self.up_button = QPushButton("↑")
@@ -174,29 +180,74 @@ class ToolWidget(QWidget):
         self.remove_button.clicked.connect(self.remove_tool)
         self.layout.addWidget(self.remove_button)
         self.remove_button.setGraphicsEffect(shadow[3])
+        print("buttons added")
 
         # **Apply layout and update details**
         self.setLayout(self.layout)
+        print("starting to update tools")
         self.update_tool_info()
+        print("tools updated successfully")
 
     def update_tool_info(self):
         """Updates OD, Length, Weight, and Lower Connection dynamically."""
         selected_size = self.nominal_size_selector.currentText()
+        print("got the selected size")
         size_data = self.tool_data["Sizes"].get(selected_size, {})
 
         # Update labels
         self.od_label.setText(f"{size_data.get('OD', 'N/A'):.3f} in")
         self.length_label.setText(f"{size_data.get('Length', 'N/A'):.1f} ft")
         self.weight_label.setText(f"{size_data.get('Weight', 'N/A'):.1f} lbs")
+        print("set the od, length and weight")
 
         # Update connection dropdown
         self.lower_connection_label.clear()
-        if size_data.get("Connections", []) != ['nan']:
-            self.lower_connection_label.addItems(size_data.get("Connections", []))
-            self.top_connection_label.setText("Upcoming")
+        print("cleared the lower connection")
+
+        lower_connections = size_data.get("Lower Connections", [])
+        top_connections = size_data.get("Top Connections", [])
+
+        print("lower conns:", lower_connections)
+        print("top conns:", top_connections)
+
+        if lower_connections and lower_connections != ['nan']:
+            modified_lower_connections = []
+
+            for conn in lower_connections:
+                if conn.endswith("SR"):
+                    modified_lower_connections.append(conn + " Box")  # SR type → Lower gets Box
+                elif conn == "Sondex":
+                    modified_lower_connections.append(conn + " Pin")  # Sondex → Lower gets Pin
+                else:
+                    modified_lower_connections.append(conn)  # Keep as is
+
+            self.lower_connection_label.addItems(modified_lower_connections)
+
+            # If lower and top connections are the same, link updates
+            if lower_connections == top_connections:
+                print("Top and lower connections are equal; linking updates.")
+                self.lower_connection_label.currentTextChanged.connect(self.sync_top_connection)
+
+                selected_lower = self.lower_connection_label.currentText()
+
+                if selected_lower.endswith(" Box"):
+                    self.top_connection_label.setText(selected_lower.replace(" Box", " Pin"))
+                elif selected_lower.endswith(" Pin"):
+                    self.top_connection_label.setText(selected_lower.replace(" Pin", " Box"))
+                else:
+                    self.top_connection_label.setText(selected_lower)
+            else:
+                if top_connections == ['nan']:
+                    self.top_connection_label.setText("N/A")
+                else:
+                    self.top_connection_label.setText(top_connections[0])
         else:
             self.lower_connection_label.addItems(['-'])
             self.top_connection_label.setText("-")
+
+    def sync_top_connection(self):
+        """Synchronizes top connection label with selected lower connection when they are equal."""
+        self.top_connection_label.setText(self.lower_connection_label.currentText())
 
     def move_up(self):
         """Moves the tool up in the DropZone."""

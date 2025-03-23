@@ -406,6 +406,15 @@ class MainWindow(QMainWindow):
             base_name = os.path.basename(file_name)
             self.setWindowTitle(f"Deleum Tool String Editor - {base_name}")
 
+            # ✅ Show success message
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Save Successful")
+            msg.setText(
+                f"Tool string saved successfully!")
+
+            msg.setStyleSheet(MESSAGEBOX_STYLE)
+            msg.setIcon(QMessageBox.Icon.Information)
+
     def load_configuration(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Load Configuration", "", "JSON Files (*.json)")
 

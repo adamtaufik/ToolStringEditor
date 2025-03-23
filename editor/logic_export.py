@@ -23,16 +23,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
 
     well_details = [client_name, location, well_no, well_type, operation_details]
 
-    # ✅ Generate Filename
-    toolstring_title = "Tool_String"
-    for detail in well_details[1:]:  # Skip client name
-        if detail and detail not in ["Oil Producer", "Gas Producer"]:
-            toolstring_title += f" - {detail}"
-    # ✅ Generate directories and filenames
-    current_directory = os.getcwd()
-    final_directory = os.path.join(current_directory, toolstring_title)
-    os.makedirs(final_directory, exist_ok=True)
-
     # png_path = os.path.join(final_directory, f"{toolstring_title}.png")
     png_path = excel_path.replace(".xlsx",".png")
 
@@ -80,7 +70,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
             size = widget.nominal_size_selector.currentText()
             od = widget.od_label.text()
             od = get_number(od)  # Ensure numeric value
-            top_connection = widget.top_connection_label.currentText()
+            top_connection = widget.top_connection_label.text()
             lower_connection = widget.lower_connection_label.currentText()
             length = widget.length_label.text()
             weight = widget.weight_label.text()
@@ -183,12 +173,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     ws.merge_cells(f"A7:B{last_row}")
     ws.merge_cells(f"{cell_remarks_title}:{last_column}{last_row - 5}")
     ws.merge_cells(f"{cell_remarks_content}:{last_column}{last_row}")
-
-    #
-    # ws["E48"].alignment = Alignment(horizontal="center")
-    # ws["E49"].alignment = Alignment(horizontal="center")
-    # ws["F48"].alignment = Alignment(horizontal="center")
-    # ws["F49"].alignment = Alignment(horizontal="center")
 
     ws[cell_remarks_content] = comments.replace("\n", "\n")  # Ensures new lines are preserved
     # Enable text wrapping and set left alignment
