@@ -1,4 +1,5 @@
 import os
+import psutil
 
 from PyQt6.QtCore import QTimer
 from PyQt6.QtCore import Qt, QSize, QThread, pyqtSignal
@@ -9,7 +10,7 @@ from PyQt6.QtWidgets import (
 )
 
 from database.logic_saveload import save_configuration, load_configuration
-from editor.loading_worker import LoadingWorker  # ✅ Import the loading animation worker
+from editor.loading_worker import LoadingWorker
 from editor.logic_export import export_to_excel
 from ui.ui_database_window import DatabaseWindow
 from ui.ui_dropzone import DropZone
@@ -346,6 +347,22 @@ class MainWindow(QMainWindow):
         if not excel_path:
             return  # ✅ Exit if user cancels
 
+        # Before saving
+        if self.is_file_open(excel_path):
+            print(f"⚠️ The file {excel_path} is open in Excel. Please close it and try again.")
+
+            # ✅ Show success message
+            msg_error = QMessageBox(self)
+            msg_error.setWindowTitle("Export failed")
+            msg_error.setText(f"⚠️ The file {excel_path} is open in Excel. Please close it and try again.")
+
+            msg_error.setStyleSheet(MESSAGEBOX_STYLE)
+            msg_error.setIcon(QMessageBox.Icon.Warning)
+
+            msg_error.exec()
+
+            return  # Stop execution
+
         pdf_path = excel_path.replace(".xlsx", ".pdf")
         final_directory = os.path.dirname(excel_path)  # ✅ Extract directory
 
@@ -357,6 +374,16 @@ class MainWindow(QMainWindow):
         self.export_thread = ExportWorker(self, excel_path, pdf_path, final_directory)
         self.export_thread.finished.connect(self.on_export_finished)
         self.export_thread.start()
+
+    def is_file_open(self, file_path):
+        """Check if a file is open in another program."""
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                if "EXCEL.EXE" in proc.info['name'].upper():
+                    return True  # Excel is open, likely locking the file
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+        return False
 
     def on_export_finished(self, final_directory):
         """Called when the export thread is finished."""
@@ -407,13 +434,14 @@ class MainWindow(QMainWindow):
             self.setWindowTitle(f"Deleum Tool String Editor - {base_name}")
 
             # ✅ Show success message
-            msg = QMessageBox(self)
-            msg.setWindowTitle("Save Successful")
-            msg.setText(
-                f"Tool string saved successfully!")
+            msg_save = QMessageBox(self)
+            msg_save.setWindowTitle("Save Successful")
+            msg_save.setText("Tool string saved successfully!")
 
-            msg.setStyleSheet(MESSAGEBOX_STYLE)
-            msg.setIcon(QMessageBox.Icon.Information)
+            msg_save.setStyleSheet(MESSAGEBOX_STYLE)
+            msg_save.setIcon(QMessageBox.Icon.Information)
+
+            msg_save.exec()
 
     def load_configuration(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Load Configuration", "", "JSON Files (*.json)")

@@ -21,7 +21,8 @@ def save_configuration(file_name, client_name, location, well_no, well_type, ope
             "od": tool.od_label.text(),
             "length": tool.length_label.text(),
             "weight": tool.weight_label.text(),
-            "connection": tool.connection_label.currentText()
+            "top_connection": tool.top_connection_label.text(),
+            "lower_connection": tool.lower_connection_label.currentText()
         }
         config_data["tools"].append(tool_data)
 
@@ -52,7 +53,8 @@ def load_configuration(file_name, client_name_input, location_input, well_no_inp
         new_tool.od_label.setText(tool_data["od"])
         new_tool.length_label.setText(tool_data["length"])
         new_tool.weight_label.setText(tool_data["weight"])
-        new_tool.connection_label.setCurrentText(tool_data["connection"])
+        new_tool.top_connection_label.setText(tool_data["top_connection"])
+        new_tool.lower_connection_label.setCurrentText(tool_data["lower_connection"])
 
         drop_zone.tool_widgets.append(new_tool)
         drop_zone.layout.addWidget(new_tool)

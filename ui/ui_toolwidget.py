@@ -193,7 +193,11 @@ class ToolWidget(QWidget):
         lower_connections = size_data.get("Lower Connections", [])
         top_connections = size_data.get("Top Connections", [])
 
-        if lower_connections and lower_connections != ['nan']:
+        if lower_connections == ['nan']:
+            lower_connections[0] = "N/A"
+
+        # if lower_connections and lower_connections != ['nan']:
+        if lower_connections:
             modified_lower_connections = []
 
             for conn in lower_connections:

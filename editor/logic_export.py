@@ -11,6 +11,8 @@ from editor.logic_image_processing import expand_and_center_images, combine_tool
 from editor.logic_utils import get_number
 from ui.ui_toolwidget import ToolWidget
 from utils.get_resource_path import get_resource_path
+from io import BytesIO
+
 
 def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_type, operation_details, comments, drop_zone):
     """Exports tool string configuration to Excel and PDF."""
@@ -18,7 +20,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     wb = Workbook()
     ws = wb.active
     ws.title = "Tool String"
-    last_row = 55
+    last_row = 52
     last_column = 'H'
 
     well_details = [client_name, location, well_no, well_type, operation_details]
@@ -185,31 +187,44 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     cell = "B8"
     if tool_images:
         print('formating images')
-        centered_images = expand_and_center_images(tool_images,50)
+        centered_images = expand_and_center_images(tool_images,80)
         tool_image = combine_tool_images(centered_images)
+        tool_image = remove_white_background(tool_image)
         tool_image.save(png_path)
 
         pil_img = PILImage.open(png_path)
-        max_height = 900
+        max_height = 850
         if pil_img.height > max_height:
             scale_factor = max_height / pil_img.height
             new_width = int(pil_img.width * scale_factor)
             pil_img = pil_img.resize((new_width, max_height), PILImage.LANCZOS)
             pil_img.save(png_path)
 
-        print('retrieving image')
         img = ExcelImage(png_path)
-        print('adding image to excel')
         ws.add_image(img, cell)
-        print('image added')
 
-    ws.row_dimensions[1].height = last_row
-    ws.column_dimensions['A'].width = 4.22
-    ws.column_dimensions['B'].width = 4.22 + img.width / 7
+    ws.column_dimensions['A'].width = 2.15
+    ws.column_dimensions['B'].width = 2.15 + img.width / 7
+
+    ws.row_dimensions[1].height = 55
+    row_1_height = ws.row_dimensions[1].height
+    # Open the logo image
     logo_path = get_resource_path(os.path.join("assets", "images", "logo_report.png"))
-    # ✅ Load the logo as an ExcelImage before adding it to the worksheet
-    logo_img = ExcelImage(logo_path)
-    ws.add_image(logo_img, "A1")
+    logo_img = PILImage.open(logo_path)
+    # Calculate scaling factor to fit within row 1 height
+    max_logo_height = row_1_height * 1.25  # Adjust scaling factor as needed
+    scale_factor = min(1, max_logo_height / logo_img.height)  # Ensures the logo doesn't exceed row height
+    # Resize the logo while maintaining aspect ratio
+    new_width = int(logo_img.width * scale_factor)
+    new_height = int(logo_img.height * scale_factor)
+    logo_img = logo_img.resize((new_width, new_height), PILImage.LANCZOS)
+    # ✅ Save resized image to memory instead of disk
+    img_bytes = BytesIO()
+    logo_img.save(img_bytes, format="PNG")  # Store image in memory
+    img_bytes.seek(0)  # Reset file pointer
+    # Load resized image into Excel
+    excel_logo = ExcelImage(img_bytes)  # ✅ Use in-memory image instead of file
+    ws.add_image(excel_logo, "A1")
 
     footer_cell = last_column + str(last_row + 2)
     ws[footer_cell] = "This report was computer generated using Deleum Tool String Editor"
@@ -224,6 +239,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     ws.print_area = f"A1:{last_column}{ws.max_row}"
     # **Save Excel File**
     print('saving to excel')
+
     wb.save(excel_path)
     print(f"✅ Excel export successful: {excel_path}")
 
@@ -232,6 +248,22 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
 
     # ✅ **Convert Excel to PDF**
     export_to_pdf(excel_path, pdf_path)
+
+def remove_white_background(image):
+    """Removes white background and makes it transparent."""
+    image = image.convert("RGBA")  # Ensure image supports transparency
+    data = image.getdata()  # Get pixel data
+
+    new_data = []
+    for item in data:
+        # If pixel is white (or near white), make it transparent
+        if item[:3] == (255, 255, 255):  # Exact white
+            new_data.append((255, 255, 255, 0))  # Transparent
+        else:
+            new_data.append(item)  # Keep original color
+
+    image.putdata(new_data)  # Apply transparency
+    return image
 
 def export_to_pdf(excel_path, pdf_path):
     """Converts an Excel file to PDF and ensures Excel closes properly."""
