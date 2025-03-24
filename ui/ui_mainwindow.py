@@ -3,7 +3,7 @@ import psutil
 
 from PyQt6.QtCore import QTimer
 from PyQt6.QtCore import Qt, QSize, QThread, pyqtSignal
-from PyQt6.QtGui import QAction, QKeySequence, QCursor, QPixmap, QColor, QPainter
+from PyQt6.QtGui import QAction, QKeySequence, QCursor, QPixmap, QColor, QPainter, QDoubleValidator
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog, QLabel,
     QComboBox, QToolBar, QToolButton, QMessageBox, QPushButton, QFrame, QTextEdit
@@ -129,6 +129,7 @@ class MainWindow(QMainWindow):
         self.client_name = QLineEdit(placeholderText="Client Name")
         self.location = QLineEdit(placeholderText="Location")
         self.well_no = QLineEdit(placeholderText="Well No.")
+        self.max_angle = AngleInput()
         self.operation_details = QLineEdit(placeholderText="Operation Details")
 
         self.well_type = QComboBox()
@@ -156,7 +157,15 @@ class MainWindow(QMainWindow):
 
         input_layout.addWidget(self.client_name)
         input_layout.addWidget(self.location)
-        input_layout.addWidget(self.well_no)
+
+        little_layout = QHBoxLayout()
+        little_layout.setContentsMargins(0, 0, 0, 0)
+        little_layout.setSpacing(5)
+
+        little_layout.addWidget(self.well_no)
+        little_layout.addWidget(self.max_angle)
+        input_layout.addLayout(little_layout)
+
         input_layout.addWidget(self.well_type)
         input_layout.addWidget(self.operation_details)
 
@@ -423,6 +432,7 @@ class MainWindow(QMainWindow):
                 self.client_name.text(),
                 self.location.text(),
                 self.well_no.text(),
+                self.max_angle.text(),
                 self.well_type.currentText(),
                 self.operation_details.text(),
                 self.comments.toPlainText(),  # ✅ Save comments
@@ -453,6 +463,7 @@ class MainWindow(QMainWindow):
                 self.client_name,
                 self.location,
                 self.well_no,
+                self.max_angle,
                 self.well_type,
                 self.operation_details,
                 self.comments,  # ✅ Load comments
@@ -501,6 +512,7 @@ class ExportWorker(QThread):
                         self.parent.client_name.text(),
                         self.parent.location.text(),
                         self.parent.well_no.text(),
+                        self.parent.max_angle.text(),
                         self.parent.well_type.currentText(),
                         self.parent.operation_details.text(),
                         self.parent.comments.toPlainText(),
@@ -538,3 +550,34 @@ class LimitedTextEdit(QTextEdit):
             cursor = self.textCursor()
             cursor.movePosition(cursor.MoveOperation.End)
             self.setTextCursor(cursor)
+
+
+class AngleInput(QLineEdit):
+    """Custom QLineEdit that only accepts numbers and appends a degree symbol (°)."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        # ✅ Only allow numbers (supports decimals)
+        self.setValidator(QDoubleValidator(0.0, 360.0, 2, notation=QDoubleValidator.Notation.StandardNotation))
+
+        # ✅ Set placeholder text
+        self.setPlaceholderText("Max Angle (°)")
+
+        # ✅ Connect editingFinished signal to append the degree symbol
+        self.editingFinished.connect(self.add_degree_symbol)
+
+    def add_degree_symbol(self):
+        """Appends the degree symbol to the number, ensuring it's formatted properly."""
+        text = self.text().strip()
+
+        # ✅ Only modify if the input is a valid number
+        if text and text[-1] != "°":
+            self.setText(f"{text}°")
+
+    def keyPressEvent(self, event):
+        """Override keyPressEvent to allow backspacing when degree symbol is present."""
+        if event.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
+            if self.text().endswith("°"):
+                self.setText(self.text()[:-1])  # Remove degree symbol before deleting
+        super().keyPressEvent(event)

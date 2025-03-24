@@ -14,18 +14,18 @@ from utils.get_resource_path import get_resource_path
 from io import BytesIO
 
 
-def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_type, operation_details, comments, drop_zone):
+def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_angle, well_type, operation_details, comments, drop_zone):
     """Exports tool string configuration to Excel and PDF."""
 
     wb = Workbook()
     ws = wb.active
     ws.title = "Tool String"
-    last_row = 52
     last_column = 'H'
+    last_row = 52
 
-    well_details = [client_name, location, well_no, well_type, operation_details]
+    if drop_zone.layout.count() > 18:
+        last_row += 2 * (drop_zone.layout.count() - 18) - 1
 
-    # png_path = os.path.join(final_directory, f"{toolstring_title}.png")
     png_path = excel_path.replace(".xlsx",".png")
 
     # **Define border style**
@@ -42,14 +42,14 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
 
     ws["A4"] = "Operation Details"
     ws["A4"].font = Font(bold=True)
-    ws["A5"] = well_details[4]
+    ws["A5"] = operation_details
     
     today = datetime.today().strftime('%d-%m-%Y')
 
     # **Client Information Section**
     client_info = [
-        ["Client Name", "", "Location", "", "Well No.", "Well Type", "Wire", "Date"],
-        [well_details[0], "", well_details[1], "", well_details[2], well_details[3], "0.125 ZAPP", today]
+        ["Client Name", "", "Location", "", "Well No.", "Well Type", "Max Angle", "Date"],
+        [client_name, "", location, "", well_no, well_type, max_angle, today]
     ]
 
     for row_idx, row_data in enumerate(client_info, start=2):
@@ -60,39 +60,11 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
             if row_idx == 2:
                 cell.font = Font(bold=True)
 
-    # **Tool Data**
-    data = []
-    tool_images = []
+    # **Extract Tool Data**
+    data, tool_images = extract_tool_data(drop_zone)  # ✅ Call helper function
 
-    print('getting info from the tool list')
-    for i in range(drop_zone.layout.count()):  # ❌ Remove self.
-        widget = drop_zone.layout.itemAt(i).widget()
-        if isinstance(widget, ToolWidget):
-            tool_name = widget.tool_name
-            size = widget.nominal_size_selector.currentText()
-            od = widget.od_label.text()
-            od = get_number(od)  # Ensure numeric value
-            top_connection = widget.top_connection_label.text()
-            lower_connection = widget.lower_connection_label.currentText()
-            length = widget.length_label.text()
-            weight = widget.weight_label.text()
-            weight = get_number(weight)  # Ensure numeric value
-            data.append(["", "", f"{tool_name} ({size})", od, top_connection, lower_connection, length, weight])
-
-            if "X-Over" in tool_name:
-                tool_name = "X-Over"
-            image_file = f"{tool_name}.png".replace('"', '').replace("'", "")
-            image_path = get_resource_path(os.path.join("assets", "images", image_file))
-            if os.path.exists(image_path):
-                pixmap = QPixmap(image_path)
-            else:
-                dummy_path = get_resource_path(os.path.join("assets", "images", "Dummy Image.png"))
-                pixmap = QPixmap(dummy_path)  # Fallback
-
-            if widget.image_label.pixmap() and not widget.image_label.pixmap().isNull():
-                # tool_images.append(widget.image_label.pixmap().toImage())
-                tool_images.append(pixmap.toImage())
-
+    # ✅ You can now use `tool_images` for image processing
+    print("Tool data extracted successfully!")
 
     # **Table Headers**
     headers = ["Diagram", "", "Description", "OD (in)", "Top Connection","Lower Connection", "Length (ft)", "Weight (lbs)"]
@@ -109,6 +81,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, well_t
     od_list = []
 
     for row_data in data:
+        ws.append([])
         ws.append(row_data)
         od_list.append(row_data[3])
         total_length += get_number(row_data[6])
@@ -303,3 +276,48 @@ def export_to_pdf(excel_path, pdf_path):
 
     print(f"Excel Path: {excel_path}")
     print(f"PDF Path: {pdf_path}")
+
+def extract_tool_data(drop_zone):
+    """Extracts tool details and images from the drop zone."""
+    data = []
+    tool_images = []
+
+    for i in range(drop_zone.layout.count()):
+        widget = drop_zone.layout.itemAt(i).widget()
+
+        # ✅ Ensure the widget is a ToolWidget
+        if not isinstance(widget, ToolWidget):
+            continue
+
+        # **Extract Tool Information**
+        tool_name = widget.tool_name
+        size = widget.nominal_size_selector.currentText()
+        od = get_number(widget.od_label.text())  # Ensure OD is numeric
+        top_connection = widget.top_connection_label.text()
+        lower_connection = widget.lower_connection_label.currentText()
+        length = widget.length_label.text()
+        weight = get_number(widget.weight_label.text())  # Ensure weight is numeric
+
+        # **Append tool details to the list**
+        data.append(["", "", f"{tool_name} ({size})", od, top_connection, lower_connection, length, weight])
+
+        # **Retrieve Tool Image**
+        image_path = get_tool_image_path(tool_name)
+
+        if os.path.exists(image_path):
+            pixmap = QPixmap(image_path)
+        else:
+            pixmap = QPixmap(get_resource_path("assets/images/Dummy Image.png"))  # Fallback image
+
+        # **Store tool image only if it's valid**
+        if widget.image_label.pixmap() and not widget.image_label.pixmap().isNull():
+            tool_images.append(pixmap.toImage())
+
+    return data, tool_images
+
+
+def get_tool_image_path(tool_name):
+    """Returns the correct image path for a tool, handling special cases like X-Over."""
+    if "X-Over" in tool_name:
+        tool_name = "X-Over"  # Normalize X-Over naming
+    return get_resource_path(f"assets/images/{tool_name}.png")

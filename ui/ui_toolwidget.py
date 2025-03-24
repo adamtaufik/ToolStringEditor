@@ -223,6 +223,19 @@ class ToolWidget(QWidget):
                 else:
                     self.top_connection_label.setText(selected_lower)
             else:
+
+                modified_top_connections = []
+
+                for conn in top_connections:
+                    if conn.endswith("SR"):
+                        modified_top_connections.append(conn + " Pin")  # SR type → Lower gets Box
+                    elif conn in ["Sondex", "GO 'A'"]:
+                        modified_top_connections.append(conn + " Box")  # Sondex & GO 'A' → Lower gets Pin
+                    else:
+                        modified_top_connections.append(conn)  # Keep as is
+
+                top_connections = modified_top_connections
+
                 if top_connections == ['nan']:
                     self.top_connection_label.setText("N/A")
                 else:
