@@ -67,7 +67,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     print("Tool data extracted successfully!")
 
     # **Table Headers**
-    headers = ["Diagram", "", "Description", "OD (in)", "Top Connection","Lower Connection", "Length (ft)", "Weight (lbs)"]
+    headers = ["Diagram", "", "Description", "OD (in)", "Top Connection","Bottom Connection", "Length (ft)", "Weight (lbs)"]
 
     for col_num, header in enumerate(headers, start=1):
         cell = ws.cell(row=6, column=col_num, value=header)
