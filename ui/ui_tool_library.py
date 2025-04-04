@@ -34,9 +34,10 @@ class ToolLibrary(QWidget):
         self.tool_list_scroll = QScrollArea()
         self.tool_list_scroll.setWidgetResizable(True)
         self.tool_list_widget = QWidget()
+        self.tool_list_widget.setStyleSheet("background-color: white; ")
         self.tool_list_layout = QVBoxLayout(self.tool_list_widget)
         self.tool_list_scroll.setWidget(self.tool_list_widget)
-        self.tool_list_scroll.setStyleSheet("color: black;")
+        self.tool_list_scroll.setStyleSheet("color: black; ")
         self.layout.addWidget(self.tool_list_scroll)
 
         # **Tool Count Label**

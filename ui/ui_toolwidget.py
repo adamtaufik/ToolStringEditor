@@ -72,7 +72,7 @@ class ToolWidget(QWidget):
         # **Nominal Size Selector**
         self.nominal_size_selector = QComboBox()
         self.nominal_size_selector.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.nominal_size_selector.setFixedWidth(80)
+        self.nominal_size_selector.setFixedWidth(85)
 
         nominal_sizes = []
         for size in self.tool_data.get("Nominal Sizes", []):
