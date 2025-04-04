@@ -80,8 +80,11 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     total_weight = 0.0
     od_list = []
 
+    print("length of data:",len(data))
+
     for row_data in data:
-        ws.append([])
+        if len(data) < 19:
+            ws.append([])
         ws.append(row_data)
         od_list.append(row_data[3])
         total_length += get_number(row_data[6])
@@ -176,8 +179,8 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
         img = ExcelImage(png_path)
         ws.add_image(img, cell)
 
-    ws.column_dimensions['A'].width = 2.15
-    ws.column_dimensions['B'].width = 2.15 + img.width / 7
+    ws.column_dimensions['A'].width = 4.51
+    ws.column_dimensions['B'].width = 4.51 + img.width / 7
 
     ws.row_dimensions[1].height = 55
     row_1_height = ws.row_dimensions[1].height

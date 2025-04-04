@@ -358,12 +358,16 @@ class MainWindow(QMainWindow):
 
         # Before saving
         if self.is_file_open(excel_path):
-            print(f"⚠️ The file {excel_path} is open in Excel. Please close it and try again.")
+            # print(f"⚠️ The file {excel_path} is open in Excel. Please close it and try again.")
+
+            print(f"Excel is currently open. Please close any Excel windows and try again.")
 
             # ✅ Show success message
             msg_error = QMessageBox(self)
             msg_error.setWindowTitle("Export failed")
-            msg_error.setText(f"⚠️ The file {excel_path} is open in Excel. Please close it and try again.")
+            # msg_error.setText(f"⚠️ The file {excel_path} is open in Excel. Please close it and try again.")
+
+            msg_error.setText(f"Excel is currently open. Please close any Excel windows and try again.")
 
             msg_error.setStyleSheet(MESSAGEBOX_STYLE)
             msg_error.setIcon(QMessageBox.Icon.Warning)
