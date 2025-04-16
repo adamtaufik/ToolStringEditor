@@ -305,7 +305,11 @@ def extract_tool_data(drop_zone):
         data.append(["", "", f"{tool_name} ({size})", od, top_connection, lower_connection, length, weight])
 
         # **Retrieve Tool Image**
-        image_path = get_tool_image_path(tool_name)
+
+        if "X-Over" in tool_name:
+            tool_name = "X-Over"
+        image_file = f"{tool_name}.png".replace('"','').replace("'","")
+        image_path = get_resource_path(os.path.join("assets", "images", image_file))
 
         if os.path.exists(image_path):
             pixmap = QPixmap(image_path)

@@ -60,6 +60,12 @@ class MainWindow(QMainWindow):
         # ✅ **Set up UI Components**
         self.setup_ui(main_layout)
 
+    def return_to_main_menu(self):
+        from ui.ui_start_window import StartWindow  # ⬅️ move import here to avoid circular import
+        self.start_window = StartWindow(app_icon=self.windowIcon())
+        self.start_window.show()
+        self.close()
+
     def setup_ui(self, main_layout):
         """Sets up the main UI layout."""
 
@@ -306,6 +312,12 @@ class MainWindow(QMainWindow):
             toolbar.addAction(action)  # ✅ Ensure actions are added to the toolbar
             self.addAction(action)  # ✅ Ensure shortcuts work even when the toolbar is hidden
 
+        # ✅ Add the "Return to Menu" button
+        return_action = QAction("Main Menu", self)
+        return_action.setToolTip("Return to start menu")
+        return_action.triggered.connect(self.return_to_main_menu)
+        toolbar.addAction(return_action)
+
         for child in toolbar.findChildren(QToolButton):
             child.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
@@ -401,9 +413,11 @@ class MainWindow(QMainWindow):
     def on_export_finished(self, final_directory):
         """Called when the export thread is finished."""
 
-        # ✅ **Stop Loading Animation Safely**
-        if hasattr(self, 'loading_worker'):
-            self.loading_worker.stop_dialog()
+        # # ✅ **Stop Loading Animation Safely**
+        # if hasattr(self, 'loading_worker'):
+        #     self.loading_worker.stop_dialog()
+
+        self.loading_worker.stop_dialog()
 
         # ✅ Show success message
         msg = QMessageBox(self)
