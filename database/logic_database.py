@@ -5,8 +5,6 @@ from PyQt6.QtWidgets import QDialog, QVBoxLayout, QTableWidget, QTableWidgetItem
 
 csv_path = get_resource_path(os.path.join("assets","resources", "tool_database.csv"))
 
-print(f"Looking for database at: {csv_path}")
-
 # Ensure the file exists before reading
 if not os.path.exists(csv_path):
     raise FileNotFoundError(f"Database file not found: {csv_path}")
@@ -45,7 +43,6 @@ def get_tool_data(tool_name=None):
     - If `tool_name` is **None**, returns a list of all available tools.
     - If `tool_name` is **provided**, returns detailed info for that specific tool.
     """
-    print(tool_name)
     if tool_name is None:
         return tool_data_df[["Tool Name", "Category"]].drop_duplicates()  # ✅ Returns all tools
 
@@ -70,8 +67,6 @@ def get_tool_data(tool_name=None):
             "Top Connections": str(row["Top Connection"]).split(","),
             "Lower Connections": str(row["Lower Connection"]).split(",")
         }
-    print('\n\nFor',tool_name,'...\n')
-    print(tool_info)
 
     return tool_info
 

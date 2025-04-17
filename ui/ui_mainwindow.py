@@ -273,7 +273,7 @@ class MainWindow(QMainWindow):
         footer_layout.addStretch()  # Pushes text to the right
 
         # ✅ Footer Text (Lower Right)
-        footer_label = QLabel("Created by Adam Mohd Taufik - Operations Engineer  |  Version 1.0 (20/03/2025)")
+        footer_label = QLabel("Created by Adam Mohd Taufik - Operations Engineer  |  Version 1.0 (17/04/2025)")
         footer_label.setStyleSheet("font-size: 10pt; color: white; padding: 5px;")
         footer_label.setFixedHeight(self.FOOTER_HEIGHT)
         footer_layout.addWidget(footer_label, alignment=Qt.AlignmentFlag.AlignRight)
@@ -524,8 +524,6 @@ class ExportWorker(QThread):
     def run(self):
         """Runs the export logic in a background thread."""
         print('running export_to_excel')
-        print(f"The client name being sent to the function is:\n{self.parent.client_name.text()}\n")
-        print(f"The comments being sent to the function is:\n{self.parent.comments.toPlainText()}\n")
         export_to_excel(self.excel_path, self.pdf_path,
                         self.parent.client_name.text(),
                         self.parent.location.text(),

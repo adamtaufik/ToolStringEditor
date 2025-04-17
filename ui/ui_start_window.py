@@ -44,7 +44,8 @@ class StartWindow(QWidget):
         self.buttons = [
             ("Wireline Tool String Editor", self.launch_editor),
             ("Hydrostatic Pressure Calculator", self.open_hydrostatic_app),
-            ("SGS/FGS (Coming Soon)", None)
+            ("SGS/FGS (Coming Soon)", None),
+            ("PCE Stack Up Editor (Coming Soon)", None)
         ]
 
         self.angle = 0
@@ -67,6 +68,7 @@ class StartWindow(QWidget):
                     background-color: #f0e0e6;
                 }
             """)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
             if callback:
                 btn.clicked.connect(callback)
             self.button_widgets.append(btn)
@@ -84,6 +86,19 @@ class StartWindow(QWidget):
 
         main_layout.addSpacing(30)
         main_layout.addLayout(self.menu_layout)
+
+        # Footer
+        footer = QLabel("Created by Adam Mohd Taufik - Operations Engineer  |  Version 1.0 (17/04/2025)")
+        footer.setAlignment(Qt.AlignmentFlag.AlignRight)
+        footer.setStyleSheet("font-size: 10px; color: black; padding: 5px;")
+
+        # Wrap footer in layout to ensure it's right-aligned at the bottom
+        footer_layout = QVBoxLayout()
+        footer_layout.addStretch()
+        footer_layout.addWidget(footer)
+
+        main_layout.addStretch()
+        main_layout.addLayout(footer_layout)
 
     def animate_revolve(self):
         self.angle += 1

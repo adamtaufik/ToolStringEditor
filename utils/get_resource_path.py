@@ -11,5 +11,4 @@ def get_resource_path(relative_path):
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
     joined_path = os.path.join(base_path, relative_path)
-    print(joined_path)
     return joined_path

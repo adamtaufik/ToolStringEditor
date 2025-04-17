@@ -127,7 +127,6 @@ class HydrostaticPressureApp(QWidget):
 
         # ✅ Calculate button
         calculate_btn = QPushButton("Calculate")
-        calculate_btn.clicked.connect(self.calculate_pressure)
         calculate_btn.setFixedSize(180, 45)
         calculate_btn.setStyleSheet("""
             QPushButton {
@@ -145,8 +144,6 @@ class HydrostaticPressureApp(QWidget):
         main_layout.addWidget(calculate_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         content_layout.addLayout(main_layout, stretch=3)
-
-
 
         # ✅ Sidebar for fluid selection on the right
         sidebar_layout = QVBoxLayout()
