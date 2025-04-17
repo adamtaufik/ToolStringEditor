@@ -3,6 +3,7 @@ from PyQt6.QtGui import QPixmap, QFont, QTransform
 from PyQt6.QtCore import Qt, QTimer
 from ui.ui_mainwindow import MainWindow
 from ui.ui_hydrostatic_app import HydrostaticPressureApp
+from ui.ui_sgs_fgs_app import SGSFGSApp
 from utils.get_resource_path import get_resource_path
 import os
 import math
@@ -44,7 +45,7 @@ class StartWindow(QWidget):
         self.buttons = [
             ("Wireline Tool String Editor", self.launch_editor),
             ("Hydrostatic Pressure Calculator", self.open_hydrostatic_app),
-            ("SGS/FGS (Coming Soon)", None),
+            ("SGS/FGS Data Interpreter", self.open_sgsfgs_app),
             ("PCE Stack Up Editor (Coming Soon)", None)
         ]
 
@@ -120,4 +121,9 @@ class StartWindow(QWidget):
     def open_hydrostatic_app(self):
         self.hydro_window = HydrostaticPressureApp()
         self.hydro_window.show()
+        self.close()
+
+    def open_sgsfgs_app(self):
+        self.sgsfgs_app = SGSFGSApp()
+        self.sgsfgs_app.show()
         self.close()
