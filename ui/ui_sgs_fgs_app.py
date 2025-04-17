@@ -103,7 +103,12 @@ class SGSFGSApp(QWidget):
                     self.table.setItem(i, 2, QTableWidgetItem(str(gradient)))
 
             ax = self.figure.add_subplot(111)
-            plot_survey(ax, tvd_list, pressure_list, self.survey_type.currentText(), trendline=True)
+            trendline = True
+
+            if self.survey_type.currentText() == "Flowing Gradient Survey (FGS)":
+                trendline = False
+
+            plot_survey(ax, tvd_list, pressure_list, self.survey_type.currentText(), trendline)
             self.canvas.draw()
 
         except ValueError as e:
