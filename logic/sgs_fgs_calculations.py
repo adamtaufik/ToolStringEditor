@@ -12,19 +12,27 @@ def calculate_gradients(tvd_list, pressure_list):
 
 
 def validate_table_data(table):
-    tvd_list, pressure_list = [], []
-    for row in range(table.rowCount()):
-        tvd_item = table.item(row, 0) or QTableWidgetItem("")
-        p_item = table.item(row, 1) or QTableWidgetItem("")
+    tvd_list = []
+    pressure_list = []
+    temperature_list = []
 
-        if tvd_item and p_item:
-            try:
-                tvd = float(tvd_item.text())
-                p = float(p_item.text())
-                tvd_list.append(tvd)
-                pressure_list.append(p)
-            except ValueError:
-                raise ValueError(f"Non-numeric input at row {row+1}")
-    if len(tvd_list) < 2:
-        raise ValueError("At least 2 rows of data required.")
-    return tvd_list, pressure_list
+    for row in range(table.rowCount()):
+        tvd_item = table.item(row, 0)
+        pressure_item = table.item(row, 1)
+        temp_item = table.item(row, 2)
+
+        if not tvd_item or not pressure_item or not temp_item:
+            raise ValueError(f"Missing data at row {row+1}.")
+
+        try:
+            tvd = float(tvd_item.text())
+            pressure = float(pressure_item.text())
+            temperature = float(temp_item.text())
+        except ValueError:
+            raise ValueError(f"Invalid numeric data at row {row+1}.")
+
+        tvd_list.append(tvd)
+        pressure_list.append(pressure)
+        temperature_list.append(temperature)
+
+    return tvd_list, pressure_list, temperature_list
