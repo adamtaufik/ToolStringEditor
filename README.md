@@ -22,7 +22,7 @@ Deleum Tool String Editor is a Python-based application designed to create and m
    ```
 2. Install dependencies:
    ```sh
-   pip install pandas openpyxl pyqt6 pyqt6-qt6 pyqt6-tools pillow pywin32
+   pip install pandas openpyxl pyqt6 pyqt6-qt6 pyqt6-tools pillow pywin32 matplotlib
    ```
 3. Run the application:
    ```sh
