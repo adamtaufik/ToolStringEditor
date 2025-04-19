@@ -13,12 +13,15 @@ def get_fluid_name(gradient):
         return f"Unknown Fluid ({abs_gradient:.2f} psi/ft)"
 
 def plot_survey(ax, tvd_list, pressure_list, survey_type, trendline,
-                temperature_list=None, fgs_temp_list=None):
+                temperature_list=None):
 
     ax.clear()
     ax.invert_yaxis()
 
-    print('7')
+    SGS = False
+    if survey_type.startswith("Static"):
+        SGS = True
+
     # Sort TVD descending
     combined = list(zip(tvd_list, pressure_list))
     combined.sort(reverse=True, key=lambda x: x[0])
@@ -26,21 +29,18 @@ def plot_survey(ax, tvd_list, pressure_list, survey_type, trendline,
     tvd = np.array(tvd)
     pressure = np.array(pressure)
 
-    print('8')
     # Plot pressure data
     marker = 'o' if survey_type.startswith("Static") else '^'
-    if survey_type.startswith("Static"):
+    if SGS:
         ax.scatter(pressure, tvd, marker=marker, label="SGS Pressure")
     else:
-        ax.plot(pressure, tvd, marker=marker, label="FGS Pressure")
+        ax.plot(pressure, tvd, color='red', marker=marker, label="FGS Pressure")
 
-    print('9')
     # Trendline logic for pressure
     if trendline:
         min_error = float('inf')
         best_split = None
 
-        print('10')
         for i in range(5, len(tvd) - 5):
             m1, c1 = np.polyfit(tvd[:i], pressure[:i], 1)
             m2, c2 = np.polyfit(tvd[i:], pressure[i:], 1)
@@ -71,7 +71,7 @@ def plot_survey(ax, tvd_list, pressure_list, survey_type, trendline,
                 # m1 is steeper → gas
                 p1_range = np.linspace(pressure_min, pressure_fluid + delta_pressure, 100)
                 tvd1_range = (p1_range - c2) / m2
-                ax.plot(p1_range, tvd1_range, '--', color='orange', label=gas_label)
+                ax.plot(p1_range, tvd1_range, '--', color='red', label=gas_label)
 
                 p2_range = np.linspace(pressure_fluid - delta_pressure, pressure_max, 100)
                 tvd2_range = (p2_range - c1) / m1
@@ -80,19 +80,31 @@ def plot_survey(ax, tvd_list, pressure_list, survey_type, trendline,
                 # m2 is steeper → gas
                 p2_range = np.linspace(pressure_min, pressure_fluid + delta_pressure, 100)
                 tvd2_range = (p2_range - c2) / m2
-                ax.plot(p2_range, tvd2_range, '--', color='orange', label=gas_label)
+                ax.plot(p2_range, tvd2_range, '--', color='red', label=gas_label)
 
                 p1_range = np.linspace(pressure_fluid - delta_pressure, pressure_max, 100)
                 tvd1_range = (p1_range - c1) / m1
                 ax.plot(p1_range, tvd1_range, '--', color='green', label=liquid_label)
 
-            ax.plot(pressure_fluid, tvd_fluid, 'ro', label='Fluid Level')
+            # Lock current axis limits to prevent auto-resize
+            x_min, x_max = ax.get_xlim()
+            y_min, y_max = ax.get_ylim()
+
+            # Plot the fluid level marker first
+            ax.plot(pressure_fluid, tvd_fluid, 'kD', label='Fluid Level')
+
+            # Then reapply the axis limits to prevent auto-scaling
+            ax.set_xlim(x_min, x_max)
+            ax.set_ylim(y_min, y_max)
+
+            # Now draw the horizontal fluid level line from left edge
+            ax.hlines(y=tvd_fluid, xmin=x_min, xmax=pressure_fluid, colors='purple', linestyles='--')
+
             ax.annotate(f"Fluid Level\nTVD: {tvd_fluid:.0f} ft\nP: {pressure_fluid:.0f} psi",
                         (pressure_fluid, tvd_fluid),
                         textcoords="offset points", xytext=(10, -10),
-                        ha='left', color='red')
+                        ha='left', color='purple')
 
-    print('11')
     # === SECONDARY X-AXIS FOR TEMPERATURE === #
     if temperature_list is not None:
         ax_temp = ax.twiny()
@@ -106,23 +118,32 @@ def plot_survey(ax, tvd_list, pressure_list, survey_type, trendline,
             tvd_temp = np.array(tvd_temp)
             temp = np.array(temp)
 
-            print('12')
-
             try:
-                ax_temp.plot(temp, tvd_temp, color='blue', label='SGS Temperature', marker='s', linestyle='None')
-                # === SGS Temperature Linear Trendline ===
-                # Fit linear trendline (1st degree polynomial)
-                sgs_fit_coeffs = np.polyfit(tvd_temp, temp, 1)
-                sgs_slope, sgs_intercept = sgs_fit_coeffs
+                if SGS:
+                    temp_label="SGS Temperature"
+                else:
+                    temp_label="FGS Temperature"
 
-                # Calculate fitted temps using the linear fit
-                sgs_temp_fit = np.polyval(sgs_fit_coeffs, tvd_temp)
+                if SGS:
 
-                # Plot the linear trendline
-                ax_temp.plot(sgs_temp_fit, tvd_temp, color='lightblue', linestyle=':', linewidth=2,
-                             label=f'Temp. Gradient ({sgs_slope * 100:.2f} °F/100ft)')
+                    ax_temp.plot(temp, tvd_temp, color='blue', label=temp_label, marker='s', linestyle='None')
+                    # === SGS Temperature Linear Trendline ===
+                    # Fit linear trendline (1st degree polynomial)
+                    sgs_fit_coeffs = np.polyfit(tvd_temp, temp, 1)
+                    sgs_slope, sgs_intercept = sgs_fit_coeffs
 
-                ax_temp.set_xlabel("Temperature (°F)")
+                    # Calculate fitted temps using the linear fit
+                    sgs_temp_fit = np.polyval(sgs_fit_coeffs, tvd_temp)
+
+                    # Plot the linear trendline
+                    ax_temp.plot(sgs_temp_fit, tvd_temp, color='lightblue', linestyle=':', linewidth=2,
+                                 label=f'Temp. Gradient ({sgs_slope * 100:.2f} °F/100ft)')
+
+                    ax_temp.set_xlabel("Temperature (°F)")
+
+                else:
+                    ax_temp.plot(temp, tvd_temp, color='blue', label=temp_label, marker='s')
+
             except Exception as e:
                 print("Error during temperature plotting:", str(e))
                 return ax
@@ -132,21 +153,6 @@ def plot_survey(ax, tvd_list, pressure_list, survey_type, trendline,
             ax_temp.set_ylim(ax.get_ylim())
         else:
             print("Temperature list mismatch or empty.")
-
-        print('13')
-        # Optional curved trendline for FGS
-        if fgs_temp_list is not None:
-            fgs_combined = list(zip(tvd_list, fgs_temp_list))
-            fgs_combined.sort(reverse=True, key=lambda x: x[0])
-
-            if fgs_combined:  # Ensure it's not empty
-                tvd_fgs, temp_fgs = zip(*fgs_combined)
-                tvd_fgs = np.array(tvd_fgs)
-                temp_fgs = np.array(temp_fgs)
-
-                coeffs = np.polyfit(tvd_fgs, temp_fgs, deg=2)
-                fitted_temp = np.polyval(coeffs, tvd_fgs)
-                ax_temp.plot(fitted_temp, tvd_fgs, color='purple', linestyle='--', label='FGS Temp Fit')
 
     ax.set_title(f"{survey_type} Pressure vs TVD")
     ax.set_xlabel("Pressure (psi)")

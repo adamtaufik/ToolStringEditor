@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QMessageBox, QTableWidget, QTableWidgetItem, QHBoxLayout, QSpinBox, QFileDialog, QApplication
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QKeyEvent, QColor, QShortcut, QKeySequence
+from PyQt6.QtGui import QKeyEvent, QColor, QShortcut, QKeySequence, QGuiApplication, QImage
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
@@ -83,6 +83,10 @@ class SGSFGSApp(QWidget):
         plot_button.clicked.connect(self.plot_graph)
         button_layout.addWidget(plot_button)
 
+        copy_graph_button = QPushButton("Copy Graph to Clipboard")
+        copy_graph_button.clicked.connect(self.copy_graph_to_clipboard)
+        button_layout.addWidget(copy_graph_button)
+
         export_csv_button = QPushButton("Export to CSV")
         export_csv_button.clicked.connect(lambda: export_to_csv(self.table, self))
         button_layout.addWidget(export_csv_button)
@@ -123,8 +127,7 @@ class SGSFGSApp(QWidget):
             ax = self.figure.add_subplot(111)
             trendline = self.survey_type.currentText() != "Flowing Gradient Survey (FGS)"
 
-            plot_survey(ax, tvd_list, pressure_list, self.survey_type.currentText(), trendline, temperature_list, fgs_temp_list=None)
-            # plot_survey(ax, tvd_list, pressure_list, self.survey_type.currentText(), trendline, temperature_list, fgs_temp_list=fgs_temp)
+            plot_survey(ax, tvd_list, pressure_list, self.survey_type.currentText(), trendline, temperature_list)
             self.canvas.draw()
 
         except ValueError as e:
@@ -168,7 +171,7 @@ class SGSFGSApp(QWidget):
             print("Calling recalculate_gradients")
             self.recalculate_gradients()
 
-            self.table.blockSignals(False)  # ✅ ONLY unblock after all data + calculations are done
+            self.table.blockSignals(False)
 
 
         except Exception as e:
@@ -193,6 +196,22 @@ class SGSFGSApp(QWidget):
 
         QApplication.clipboard().setText(copied_text.strip())
 
+    def copy_graph_to_clipboard(self):
+        """Copy the matplotlib figure to clipboard as image."""
+        try:
+            # Convert canvas to image
+            self.canvas.draw()  # Ensure it's up to date
+            width, height = self.canvas.get_width_height()
+            buf = self.canvas.buffer_rgba()
+            image = QImage(buf, width, height, QImage.Format.Format_RGBA8888)
+
+            # Set image to clipboard
+            QGuiApplication.clipboard().setImage(image)
+            QMessageBox.information(self, "Copied", "📋 Graph copied to clipboard successfully!")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to copy graph:\n{str(e)}")
+
     def recalculate_gradients(self):
 
         self.style_gradient_columns()
@@ -206,7 +225,20 @@ class SGSFGSApp(QWidget):
             # Pressure gradient
             for i, gradient in enumerate(pressure_gradients, start=1):
                 if i < self.table.rowCount():
+
+                    abs_gradient = abs(gradient)
+                    if abs_gradient <= 0.10:
+                        cell_color = 'pink'
+                    elif abs_gradient <= 0.39:
+                        cell_color = 'lightgreen'
+                    elif abs_gradient <= 0.46:
+                        cell_color = 'lightblue'
+                    else:
+                        cell_color = 'lightgrey'
+
                     self.table.setItem(i, 3, QTableWidgetItem(f"{gradient:.4f}"))
+                    item = self.table.item(i, 3)
+                    item.setBackground(QColor(cell_color))
 
             # Temperature gradient
             for i in range(1, len(tvd_list)):
@@ -214,8 +246,12 @@ class SGSFGSApp(QWidget):
                     temp_grad = ((temperature_list[i] - temperature_list[i - 1]) /
                                  (tvd_list[i] - tvd_list[i - 1])) * 100
                     self.table.setItem(i, 4, QTableWidgetItem(f"{temp_grad:.2f}"))
+                    item = self.table.item(i, 4)
+                    item.setBackground(QColor("lightblue"))
                 except ZeroDivisionError:
                     self.table.setItem(i, 4, QTableWidgetItem("∞"))
+                    item = self.table.item(i, 4)
+                    item.setBackground(QColor("lightgray"))
 
             self.table.blockSignals(False)
 
