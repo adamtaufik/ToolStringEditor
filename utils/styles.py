@@ -74,11 +74,17 @@ GLASSMORPHISM_STYLE = """
 
 DELEUM_STYLE = """
     QMainWindow {
-        background: #800020;
+        background: #3d000f;
+    }
+    SGSFGSApp {
+        background: #3d000f;
+    }
+    HydrostaticPressureApp {
+        background: #3d000f;
     }
     
     QToolTip {
-        background-color: #800020;
+        background-color: #3d000f;
         color: white;
         border: 1px solid gray;
         padding: 5px;

@@ -12,3 +12,6 @@ def get_resource_path(relative_path):
 
     joined_path = os.path.join(base_path, relative_path)
     return joined_path
+
+def get_icon_path(name):
+    return get_resource_path(os.path.join("assets", "icons", f"{name}.png"))
