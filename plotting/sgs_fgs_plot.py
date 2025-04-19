@@ -127,7 +127,6 @@ def plot_survey(ax, tvd_list, pressure_list, survey_type, trendline,
                 print("Error during temperature plotting:", str(e))
                 return ax
 
-            # ax_temp.scatter(temp, tvd_temp, color='blue', label='SGS Temperature', marker='s')
             ax_temp.set_xlabel("Temperature (°F)")
             ax_temp.set_xlim(min(temp), max(temp))
             ax_temp.set_ylim(ax.get_ylim())
@@ -149,9 +148,6 @@ def plot_survey(ax, tvd_list, pressure_list, survey_type, trendline,
                 fitted_temp = np.polyval(coeffs, tvd_fgs)
                 ax_temp.plot(fitted_temp, tvd_fgs, color='purple', linestyle='--', label='FGS Temp Fit')
 
-        # ax_temp.legend(loc='upper center')
-
-    print('14')
     ax.set_title(f"{survey_type} Pressure vs TVD")
     ax.set_xlabel("Pressure (psi)")
     ax.set_ylabel("TVD (ft)")

@@ -2,12 +2,10 @@ from PyQt6.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QLineEdit, QPushButton, QComboBox,
     QMessageBox, QTableWidget, QTableWidgetItem, QHBoxLayout, QSpinBox, QFileDialog, QApplication
 )
-from PyQt6.QtCore import QTimer
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeyEvent, QColor, QShortcut, QKeySequence
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-# from ui.ui_start_window import StartWindow
 
 from logic.sgs_fgs_calculations import validate_table_data, calculate_gradients
 from plotting.sgs_fgs_plot import plot_survey
@@ -62,8 +60,6 @@ class SGSFGSApp(QWidget):
         copy_shortcut.activated.connect(self.copy_to_clipboard)  # You can define this later
 
         print('b')
-        # Enable word wrap for header labels
-        # self.table.horizontalHeader().setWordWrap(True)
         self.style_gradient_columns()
 
         content_layout.addWidget(self.table)
@@ -122,30 +118,10 @@ class SGSFGSApp(QWidget):
 
     def plot_graph(self):
         try:
-            print('1')
             tvd_list, pressure_list, temperature_list = validate_table_data(self.table)
-            print('2')
-            gradients = calculate_gradients(tvd_list, pressure_list)
 
-            # Calculate and populate pressure gradients
-            for i, gradient in enumerate(gradients, start=1):
-                if i < self.table.rowCount():
-                    self.table.setItem(i, 3, QTableWidgetItem(f"{gradient:.4f}"))
-
-            # Calculate and populate temperature gradients
-            for i in range(1, len(tvd_list)):
-                try:
-                    temp_grad = ((temperature_list[i] - temperature_list[i - 1]) /
-                                 (tvd_list[i] - tvd_list[i - 1])) * 100
-                    self.table.setItem(i, 4, QTableWidgetItem(f"{temp_grad:.2f}"))
-                except ZeroDivisionError:
-                    self.table.setItem(i, 4, QTableWidgetItem("∞"))
-
-            print('5')
             ax = self.figure.add_subplot(111)
             trendline = self.survey_type.currentText() != "Flowing Gradient Survey (FGS)"
-
-            print('6')
 
             plot_survey(ax, tvd_list, pressure_list, self.survey_type.currentText(), trendline, temperature_list, fgs_temp_list=None)
             # plot_survey(ax, tvd_list, pressure_list, self.survey_type.currentText(), trendline, temperature_list, fgs_temp_list=fgs_temp)
@@ -182,13 +158,18 @@ class SGSFGSApp(QWidget):
                         print(f"Setting cell ({i},{j}): {cell.strip()}")
                         self.table.setItem(i, j, QTableWidgetItem(cell.strip()))
 
-            self.table.setItem(0, 3, QTableWidgetItem(""))  # clear first gradient cell
-            self.table.blockSignals(False)
+            # Clear first gradient row
+            self.table.setItem(0, 3, QTableWidgetItem(""))
+            self.table.setItem(0, 4, QTableWidgetItem(""))
 
             print("Calling style_gradient_columns")
             self.style_gradient_columns()
+
             print("Calling recalculate_gradients")
             self.recalculate_gradients()
+
+            self.table.blockSignals(False)  # ✅ ONLY unblock after all data + calculations are done
+
 
         except Exception as e:
             self.table.blockSignals(False)
@@ -242,18 +223,15 @@ class SGSFGSApp(QWidget):
             self.table.blockSignals(False)
 
     def style_gradient_columns(self):
-        pass
-        # try:
-        #     for row in range(self.table.rowCount()):
-        #         for col in [3, 4]:  # Gradient columns
-        #             if not self.table.item(row, col):
-        #                 self.table.setItem(row, col, QTableWidgetItem(""))
-        #
-        #             item = self.table.item(row, col)
-        #             if item:
-        #                 item.setBackground(QColor("lightgray"))  # <- most reliable
-        # except Exception as e:
-        #     print(f"Error in style_gradient_columns: {e}")
+        # pass
+        try:
+            for row in range(self.table.rowCount()):
+                for col in [3, 4]:  # Gradient columns
+                    if not self.table.item(row, col):
+                        self.table.setItem(row, col, QTableWidgetItem(""))
 
-
-
+                    item = self.table.item(row, col)
+                    if item:
+                        item.setBackground(QColor("lightgray"))  # <- most reliable
+        except Exception as e:
+            print(f"Error in style_gradient_columns: {e}")
