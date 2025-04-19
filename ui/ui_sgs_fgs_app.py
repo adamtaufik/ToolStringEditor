@@ -2,8 +2,9 @@ from PyQt6.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QLineEdit, QPushButton, QComboBox,
     QMessageBox, QTableWidget, QTableWidgetItem, QHBoxLayout, QSpinBox, QFileDialog, QApplication
 )
+from PyQt6.QtCore import QTimer
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QKeyEvent, QColor
+from PyQt6.QtGui import QKeyEvent, QColor, QShortcut, QKeySequence
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 # from ui.ui_start_window import StartWindow
@@ -54,6 +55,11 @@ class SGSFGSApp(QWidget):
             "Pressure\nGradient (psi/ft)", "Temperature\nGradient\n(°F/100ft)"
         ])
         self.table.cellChanged.connect(self.recalculate_gradients)
+
+        paste_shortcut = QShortcut(QKeySequence("Ctrl+V"), self.table)
+        paste_shortcut.activated.connect(self.paste_from_clipboard)
+        copy_shortcut = QShortcut(QKeySequence("Ctrl+C"), self.table)
+        copy_shortcut.activated.connect(self.copy_to_clipboard)  # You can define this later
 
         print('b')
         # Enable word wrap for header labels
@@ -189,6 +195,23 @@ class SGSFGSApp(QWidget):
             QMessageBox.critical(self, "Paste Failed", f"Could not paste data:\n{str(e)}")
             print(f"Exception during paste: {e}")
 
+    def copy_to_clipboard(self):
+        selected_ranges = self.table.selectedRanges()
+        if not selected_ranges:
+            return
+
+        copied_text = ""
+
+        for range_ in selected_ranges:
+            for row in range(range_.topRow(), range_.bottomRow() + 1):
+                row_text = []
+                for col in range(range_.leftColumn(), range_.rightColumn() + 1):
+                    item = self.table.item(row, col)
+                    row_text.append(item.text() if item else "")
+                copied_text += '\t'.join(row_text) + '\n'
+
+        QApplication.clipboard().setText(copied_text.strip())
+
     def recalculate_gradients(self):
 
         self.style_gradient_columns()
@@ -231,5 +254,6 @@ class SGSFGSApp(QWidget):
         #                 item.setBackground(QColor("lightgray"))  # <- most reliable
         # except Exception as e:
         #     print(f"Error in style_gradient_columns: {e}")
+
 
 
