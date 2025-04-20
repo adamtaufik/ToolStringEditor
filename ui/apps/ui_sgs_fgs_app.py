@@ -14,6 +14,7 @@ from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
 from utils.get_resource_path import get_icon_path
+from utils.styles import combo_style
 from utils.theme_manager import apply_theme, toggle_theme
 
 
@@ -41,6 +42,7 @@ class SGSFGSApp(QWidget):
             (get_icon_path('save'), "Save", lambda: QMessageBox.information(self, "Save", "Save not implemented yet."), "Save the current file (Ctrl+S)"),
             (get_icon_path('load'), "Load", lambda: QMessageBox.information(self, "Load", "Load not implemented yet."), "Open a file (Ctrl+O)"),
             (get_icon_path('plot'), "Plot", self.plot_graph, "Plot a graph from the current data"),
+            (get_icon_path('copy'), "Copy as Image", self.copy_graph_to_clipboard, "Copy current graph as PNG"),
             (get_icon_path('export'), "Export", lambda: export_to_pdf(self.canvas, self.table, self), "Generate a PDF report"),
             # (get_icon_path('home'), "Main Menu", self.return_to_main_menu, "Return to the main menu"),
         ]
@@ -67,6 +69,7 @@ class SGSFGSApp(QWidget):
         # Controls (survey type + row selector)
         control_layout = QHBoxLayout()
         self.survey_type = QComboBox()
+        self.survey_type.setStyleSheet(combo_style)
         self.survey_type.setCursor(Qt.CursorShape.PointingHandCursor)
         self.survey_type.addItems(["Static Gradient Survey (SGS)", "Flowing Gradient Survey (FGS)"])
         self.row_selector = QSpinBox()
@@ -238,8 +241,30 @@ class SGSFGSApp(QWidget):
 
             # Set image to clipboard
             QGuiApplication.clipboard().setImage(image)
-            QMessageBox.information(self, "Copied", "📋 Graph copied to clipboard successfully!")
 
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Copied")
+            msg_box.setText("📋 Graph copied to clipboard successfully!")
+            msg_box.setStyleSheet("""
+                QMessageBox {
+                    color: black;
+                }
+                QMessageBox QLabel {
+                    color: black;
+                }
+                QPushButton {
+                    color: black;
+                    border: 1px solid black;
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #c9c9c9;
+                    cursor: pointer;
+                }
+            """)
+
+            reply = msg_box.exec()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to copy graph:\n{str(e)}")
 

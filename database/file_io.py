@@ -1,6 +1,7 @@
 import json
+
+from editor.logic_image_processing import expand_and_center_images_dropzone
 from ui.components.tool_widget import ToolWidget
-from ui.components.ui_dropzone import expand_and_center_images_dropzone  # ✅ Import image processing function
 
 def save_configuration(file_name, client_name, location, well_no, max_angle, well_type, operation_details, comments, drop_zone):
     """Saves configuration including client info and all tools."""
@@ -62,7 +63,7 @@ def load_configuration(file_name, client_name_input, location_input, well_no_inp
         drop_zone.layout.addWidget(new_tool)
 
     # ✅ Ensure images are expanded & centered immediately
-    expand_and_center_images_dropzone(drop_zone.tool_widgets)
+    expand_and_center_images_dropzone(drop_zone.tool_widgets, drop_zone.diagram_width, drop_zone.total_dropzone_height)
 
     # ✅ Force the UI to refresh
     drop_zone.update()

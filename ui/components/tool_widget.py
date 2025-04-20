@@ -1,13 +1,18 @@
 import os
+from os import remove
+
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton, QComboBox, QGraphicsDropShadowEffect
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QCursor, QColor
 from database.logic_database import get_tool_data
-from utils.get_resource_path import get_resource_path  # ✅ Import helper function
+from editor.logic_image_processing import expand_and_center_images_dropzone
+from utils.get_resource_path import get_resource_path, get_icon_path  # ✅ Import helper function
+from utils.styles import combo_style
+
 
 class ToolWidget(QWidget):
     """Widget representing a tool inside the DropZone."""
-    BACKGROUND_WIDTH = 90  # Expanded background width for uniformity
+    BACKGROUND_WIDTH = 80  # Expanded background width for uniformity
     
     def __init__(self, tool_name, drop_zone):
         super().__init__(drop_zone)
@@ -29,9 +34,10 @@ class ToolWidget(QWidget):
             print(f"⚠️ WARNING: No data found for tool '{tool_name}'!")
             return
 
+
         # **Main Layout**
         self.layout = QHBoxLayout(self)
-        self.layout.setSpacing(10)
+        self.layout.setSpacing(5)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.layout.setContentsMargins(7, 0, 0, 0)
 
@@ -61,7 +67,7 @@ class ToolWidget(QWidget):
 
         # **Tool Name**
         self.label = QLabel(tool_name)
-        self.label.setFixedSize(120, 35)
+        self.label.setFixedSize(118, 35)
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensures text is centered
         self.label.setStyleSheet("border: 0px solid black; border-bottom: 1px solid #A9A9A9; background-color: lightgray; color: black;")
@@ -72,13 +78,14 @@ class ToolWidget(QWidget):
         # **Nominal Size Selector**
         self.nominal_size_selector = QComboBox()
         self.nominal_size_selector.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.nominal_size_selector.setFixedWidth(85)
+        self.nominal_size_selector.setFixedWidth(90)
 
         nominal_sizes = []
         for size in self.tool_data.get("Nominal Sizes", []):
             nominal_sizes.append(str(size))
         self.nominal_size_selector.addItems(nominal_sizes)
-        self.nominal_size_selector.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
+        self.nominal_size_selector.setStyleSheet(combo_style)
+        # self.nominal_size_selector.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
         self.nominal_size_selector.currentTextChanged.connect(self.drop_zone.update_summary)
         self.layout.addWidget(self.nominal_size_selector)
@@ -92,14 +99,14 @@ class ToolWidget(QWidget):
 
         # **Length Label**
         self.length_label = QLabel("N/A")
-        self.length_label.setFixedWidth(70)
+        self.length_label.setFixedWidth(65)
         self.length_label.setStyleSheet("border: none; color: black;")
         self.length_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.length_label)
 
         # **Weight Label**
         self.weight_label = QLabel("N/A")
-        self.weight_label.setFixedWidth(70)
+        self.weight_label.setFixedWidth(72)
         self.weight_label.setStyleSheet("border: none; color: black;")
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.weight_label)
@@ -114,14 +121,17 @@ class ToolWidget(QWidget):
         # **Lower Connection Selector**
         self.lower_connection_label = QComboBox()
         self.lower_connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.lower_connection_label.setFixedWidth(120)
-        self.lower_connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
+        self.lower_connection_label.setFixedWidth(130)
+        self.lower_connection_label.setStyleSheet(combo_style)
+        # self.lower_connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.layout.addWidget(self.lower_connection_label)
+
+        self.layout.addSpacing(7)
 
         # **Move Up Button**
         self.up_button = QPushButton("↑")
         self.up_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.up_button.setFixedSize(30, 30)
+        self.up_button.setFixedSize(28, 30)
         self.up_button.setStyleSheet("""
             QPushButton {
                 background-color: lightblue;
@@ -139,7 +149,7 @@ class ToolWidget(QWidget):
         # **Move Down Button**
         self.down_button = QPushButton("↓")
         self.down_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.down_button.setFixedSize(30, 30)
+        self.down_button.setFixedSize(28, 30)
         self.down_button.setStyleSheet("""
             QPushButton {
                 background-color: lightblue;
@@ -153,6 +163,8 @@ class ToolWidget(QWidget):
         self.down_button.clicked.connect(self.move_down)
         self.layout.addWidget(self.down_button)
         self.down_button.setGraphicsEffect(shadow[2])
+
+        self.layout.addSpacing(7)
 
         # **Remove Button**
         self.remove_button = QPushButton("X")
@@ -268,16 +280,8 @@ class ToolWidget(QWidget):
             self.drop_zone.tool_widgets.remove(self)
         self.setParent(None)
         self.deleteLater()
+        expand_and_center_images_dropzone(self.drop_zone.tool_widgets,
+                                          self.drop_zone.diagram_width,
+                                          self.drop_zone.total_dropzone_height)
         self.drop_zone.update_placeholder()  # ✅ Ensure placeholder updates
         self.drop_zone.update_summary()  # ✅ Ensure summary updates
-
-    def get_data(self):
-        """Returns tool data for saving."""
-        return {
-            "tool_name": self.tool_name,
-            "nominal_size": self.nominal_size_selector.currentText(),
-            "od": self.od_label.text(),
-            "length": self.length_label.text(),
-            "weight": self.weight_label.text(),
-            "connection": self.lower_connection_label.currentText()
-        }

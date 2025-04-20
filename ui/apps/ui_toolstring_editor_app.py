@@ -2,7 +2,7 @@ import os
 
 # PyQt6 core modules
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCursor, QPixmap, QColor
+from PyQt6.QtGui import QCursor, QPixmap, QColor, QGuiApplication
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog,
     QLabel, QComboBox, QMessageBox, QFrame
@@ -36,7 +36,7 @@ from utils.theme_manager import toggle_theme, apply_theme
 
 class ToolStringEditor(QMainWindow):
     """Main application window."""
-    MIN_WINDOW_HEIGHT = 670  # ✅ Minimum height of the window
+    MIN_WINDOW_HEIGHT = 800  # ✅ Minimum height of the window
     TOOLBAR_HEIGHT = 30  # ✅ Fixed toolbar height
     FOOTER_HEIGHT = 30  # ✅ Fixed footer height
     icon_size = 264
@@ -47,6 +47,7 @@ class ToolStringEditor(QMainWindow):
         self.current_file_name = None  # Track last saved or loaded filename
         # self.setWindowTitle("Deleum Tool String Editor")
         self.setMinimumHeight(self.MIN_WINDOW_HEIGHT)  # ✅ Set minimum resizable height
+        self.setMinimumWidth(1366)
 
         # ✅ Set initial theme
         self.current_theme = "Deleum"
@@ -66,8 +67,9 @@ class ToolStringEditor(QMainWindow):
         items = [
             (get_icon_path('save'), "Save", self.save_configuration, "Save the current file (Ctrl+S)", "Ctrl+S"),
             (get_icon_path('load'), "Load", self.load_configuration, "Open a file (Ctrl+O)", "Ctrl+O"),
+            (get_icon_path('copy'), "Copy as Image", self.copy_dropzone_to_clipboard, "Copy current tool config as PNG (Ctrl+C)", "Ctrl+C"),
             (get_icon_path('clear'), "Clear", self.drop_zone.clear_tools, "Clear all tools"),
-            (get_icon_path('export'), "Export", self.export_configuration, "Export the tool string"),
+            (get_icon_path('export'), "Export", self.export_configuration, "Export to Excel and PDF"),
             (get_icon_path('help'), "Help", self.show_help_window, "Open help documentation"),
             (get_icon_path('database'), "Tool Database", self.show_database_window, "Open tool database")
         ]
@@ -118,12 +120,12 @@ class ToolStringEditor(QMainWindow):
         self.sidebar_layout.addWidget(self.tool_library)
 
         sidebar_container.setLayout(self.sidebar_layout)
-        sidebar_container.setFixedWidth(230)
+        # sidebar_container.setFixedWidth(230)
         content_layout.addWidget(sidebar_container)
 
         # **Drop Zone**
         content_layout.addWidget(self.drop_zone)
-        self.drop_zone.setFixedWidth(900)
+        self.drop_zone.setFixedWidth(870)
 
         content_layout.addSpacing(5)
 
@@ -144,6 +146,47 @@ class ToolStringEditor(QMainWindow):
         # ✅ Apply theme to icons immediately
         self.summary_widget.update_icon_colors(self.current_theme)
 
+    def copy_dropzone_to_clipboard(self):
+        """Capture the drop zone as an image and copy it to the clipboard."""
+        try:
+            # Grab the drop zone's visible area as a pixmap
+            pixmap = self.drop_zone.grab()
+
+            # Convert QPixmap to QImage
+            image = pixmap.toImage()
+
+            # Copy to clipboard
+            QGuiApplication.clipboard().setImage(image)
+
+            # Optional confirmation (you can use your styled QMessageBox)
+
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Copied")
+            msg_box.setText("📋 Tool String configuration copied to clipboard as image!")
+            msg_box.setStyleSheet("""
+                QMessageBox {
+                    color: black;
+                }
+                QMessageBox QLabel {
+                    color: black;
+                }
+                QPushButton {
+                    color: black;
+                    border: 1px solid black;
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #c9c9c9;
+                    cursor: pointer;
+                }
+            """)
+
+            reply = msg_box.exec()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to copy drop zone:\n{str(e)}")
+
     def return_to_main_menu(self):
         from ui.windows.ui_start_window import StartWindow  # ⬅️ move import here to avoid circular import
         self.start_window = StartWindow(app_icon=self.windowIcon())
@@ -152,8 +195,6 @@ class ToolStringEditor(QMainWindow):
 
     def setup_right_sidebar(self):
         """Creates the right sidebar for well details & summary."""
-
-        # right_sidebar_layout = QVBoxLayout()
 
         input_layout = QVBoxLayout()
         input_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -237,20 +278,6 @@ class ToolStringEditor(QMainWindow):
 
         return input_layout
 
-    def load_summary_icons(self):
-        """Loads and updates summary icons based on the current theme."""
-
-        # ✅ Determine correct color based on theme
-        if self.current_theme in ["Deleum", "Glassmorphism"]:
-            icon_color = QColor("white")  # 🔹 Dark themes → Make black parts WHITE
-        else:
-            icon_color = QColor("black")  # 🔹 Light themes → Keep black parts BLACK
-
-    def set_icon(self, label, image_path, new_color):
-        """Loads an icon, recolors black to the given color while keeping transparency, and sets it to QLabel."""
-        pixmap = QPixmap(image_path)
-        label.setPixmap(pixmap.scaled(self.icon_size, self.icon_size, Qt.AspectRatioMode.KeepAspectRatio))
-
     def toggle_theme(self):
         self.current_theme = toggle_theme(
             widget=self,
@@ -324,9 +351,7 @@ class ToolStringEditor(QMainWindow):
         # ✅ Show success message
         msg = QMessageBox(self)
         msg.setWindowTitle("Export Successful")
-        msg.setText(
-            f"Tool string exported successfully!\n\n📂 Folder location:\n{final_directory}\n\nWould you like to open the folder?")
-
+        msg.setText(f"Tool string exported successfully!\n\n📂 Folder location:\n{final_directory}\n\nWould you like to open the folder?")
         msg.setStyleSheet(MESSAGEBOX_STYLE)
         msg.setIcon(QMessageBox.Icon.Information)
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
@@ -392,6 +417,7 @@ class ToolStringEditor(QMainWindow):
 
             # ✅ Set the window title to show the current file name
             base_name = os.path.basename(file_name)  # Extract just the filename
+
             # self.title_bar = CustomTitleBar(self, lambda: self.sidebar.toggle_visibility(),f"Deleum Tool String Editor - {base_name}")
             self.setWindowTitle(f"Deleum Tool String Editor - {base_name}")
 
@@ -399,16 +425,6 @@ class ToolStringEditor(QMainWindow):
         self.database_window = DatabaseWindow()
         self.database_window.show()
 
-    def show_version_window(self):
-        self.version_window = VersionWindow()
-        self.version_window.show()
-
     def show_help_window(self):
         self.help_window = HelpWindow()
         self.help_window.show()
-
-    def closeEvent(self, event):
-        """Ensure proper cleanup on exit to prevent crashes."""
-        self.deleteLater()  # ✅ Explicitly delete the window
-        event.accept()
-

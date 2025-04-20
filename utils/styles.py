@@ -1,4 +1,5 @@
 # styles.py
+from utils.get_resource_path import get_icon_path
 
 DARK_STYLE = """
     QMainWindow {
@@ -173,3 +174,48 @@ MESSAGEBOX_STYLE = """
                     background-color: #d6d6d6;
                 }
             """
+
+down_arrow = get_icon_path('down_arrow')
+up_arrow = get_icon_path('up_arrow')
+
+combo_style = f"""
+QComboBox {{
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    padding: 5px 10px;
+    background-color: #f9f9f9;
+    color: #333;
+    font-size: 10pt;
+}}
+
+QComboBox:hover {{
+    border: 1px solid #555;
+}}
+
+QComboBox::drop-down {{
+    border: none;
+    background-color: transparent;
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+}}
+
+QComboBox::down-arrow {{
+    image: url("{down_arrow.replace("\\", "/")}");
+    width: 12px;
+    height: 12px;
+}}
+
+QComboBox::down-arrow:on {{
+    image: url("{up_arrow.replace("\\", "/")}");
+}}
+
+QComboBox QAbstractItemView {{
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    selection-background-color: #87CEFA;
+    selection-color: black;
+    background-color: #fff;
+    font-size: 10pt;
+}}
+"""

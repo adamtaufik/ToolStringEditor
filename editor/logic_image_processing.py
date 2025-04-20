@@ -4,7 +4,6 @@ from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QPixmap, QImage
 
 
-
 def expand_and_center_images(images, max_width=1000):
     """Expands the transparent background of images horizontally while keeping their original size and centering them."""
 

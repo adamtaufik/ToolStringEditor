@@ -7,21 +7,19 @@ from PyQt6.QtGui import QPixmap
 from editor.logic_image_processing import expand_and_center_images_dropzone
 from ui.components.tool_widget import ToolWidget
 
-total_dropzone_height = 650  
-diagram_width = 70
-
-
 class DropZone(QFrame):
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.total_dropzone_height = 650
+        self.diagram_width = 70
         self.dropzone_style_main = "background-color: white; border: 0px solid gray; border-radius: 10px;"
 
         self.main_window = parent
         self.setFrameStyle(QFrame.Shape.Panel | QFrame.Shadow.Sunken)
         self.setStyleSheet(self.dropzone_style_main)
-        # self.setFixedSize(800, total_dropzone_height)  # Adjust DropZone size if needed
+        # self.setFixedSize(800, self.total_dropzone_height)  # Adjust DropZone size if needed
         self.setAcceptDrops(True)
 
         self.tool_widgets = []  # List to store tool widgets
@@ -33,9 +31,9 @@ class DropZone(QFrame):
         # **Header Row**
         header_layout = QHBoxLayout()
         headers = [
-            ("Diagram", 74), ("Tool", 124), ("Nom. Size", 90),
-            ("OD (in.)", 70), ("Length (ft)", 70), ("Weight (lbs)", 80),
-            ("Top Connection", 95), ("Bottom Connection", 120), ("Move", 78), ("Del", 33)
+            ("Diagram", 74), ("Tool", 120), ("Nom. Size", 90),
+            ("OD (in.)", 70), ("Length (ft)", 65), ("Weight (lbs)", 80),
+            ("Top Connection", 92), ("Bottom Connection", 130), ("Move", 80), ("Del", 33)
         ]
 
         for header_text, width in headers:
@@ -86,13 +84,6 @@ class DropZone(QFrame):
         self.main_layout.setContentsMargins(0, 5, 0, 5)
         self.main_layout.setSpacing(0)
 
-    # def sizeHint(self):
-    #     """Returns the suggested height for DropZone based on available space."""
-    #     if self.main_window:
-    #         # return self.main_window.height() - (self.main_window.TOOLBAR_HEIGHT + self.main_window.FOOTER_HEIGHT)
-    #         return self.main_window.height() - 60
-    #     return 400  # Fallback default height
-
     def clear_tools(self):
         """Removes all tools from the DropZone."""
         for tool in self.tool_widgets:
@@ -125,7 +116,7 @@ class DropZone(QFrame):
             self.layout.addWidget(new_tool)
             self.update_placeholder()  # ✅ Ensure placeholder updates
             self.update_summary()  # ✅ Update summary when tools are added
-            expand_and_center_images_dropzone(self.tool_widgets, diagram_width, total_dropzone_height)  # ✅ Resize images
+            expand_and_center_images_dropzone(self.tool_widgets, self.diagram_width, self.total_dropzone_height)  # ✅ Resize images
         else:
             print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
 
@@ -139,24 +130,11 @@ class DropZone(QFrame):
             self.layout.addWidget(new_tool)
             self.update_placeholder()  # ✅ Ensure placeholder updates
             self.update_summary()  # ✅ Update summary when tools are added
-            expand_and_center_images_dropzone(self.tool_widgets, diagram_width, total_dropzone_height)  # ✅ Resize images
+            expand_and_center_images_dropzone(self.tool_widgets, self.diagram_width, self.total_dropzone_height)  # ✅ Resize images
         else:
             print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
-    
+
         event.acceptProposedAction()
-
-    def remove_tool(self, tool_widget):
-        """Remove a tool from the DropZone."""
-        if tool_widget in self.tool_widgets:
-            self.tool_widgets.remove(tool_widget)
-            tool_widget.setParent(None)
-            tool_widget.deleteLater()
-        
-        # ✅ Resize remaining images
-        expand_and_center_images_dropzone(self.tool_widgets, diagram_width, total_dropzone_height)
-        self.update_placeholder()
-        self.update_summary()
-
 
     def update_placeholder(self):
         """Show or hide the placeholder text and adjust spacing."""
@@ -195,33 +173,3 @@ class DropZone(QFrame):
 
         if hasattr(self.main_window, "summary_widget"):
             self.main_window.summary_widget.update_summary(max_od, total_length, total_weight)
-
-    def get_tools_data(self):
-        """Returns all tool data for saving."""
-        return [tool.get_data() for tool in self.tool_widgets]
-
-    def load_tools(self, tools_data):
-        """Loads tools from saved data and ensures images are properly displayed."""
-        
-        self.clear_tools()  # Clear existing tools before loading
-    
-        for tool_data in tools_data:
-            tool_widget = ToolWidget(tool_data["name"], self)
-    
-            # ✅ Restore tool properties
-            tool_widget.nominal_size_selector.setCurrentText(tool_data["nominal_size"])
-            tool_widget.od_label.setText(tool_data["od"])
-            tool_widget.length_label.setText(tool_data["length"])
-            tool_widget.weight_label.setText(tool_data["weight"])
-            tool_widget.connection_label.setCurrentText(tool_data["connection"])
-    
-            self.tool_widgets.append(tool_widget)
-            self.layout.addWidget(tool_widget)
-    
-        # ✅ Ensure images are expanded & centered immediately
-        expand_and_center_images_dropzone(self.tool_widgets, diagram_width, total_dropzone_height)
-    
-        # ✅ Force the UI to refresh
-        self.update()
-        self.repaint()
-        self.update_placeholder()
