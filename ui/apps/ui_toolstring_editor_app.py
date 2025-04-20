@@ -1,11 +1,12 @@
 import os
+import sys
 
 # PyQt6 core modules
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor, QPixmap, QColor, QGuiApplication
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog,
-    QLabel, QComboBox, QMessageBox, QFrame
+    QLabel, QComboBox, QMessageBox, QFrame, QApplication
 )
 
 # Database & Editor logic
@@ -34,9 +35,17 @@ from utils.styles import MESSAGEBOX_STYLE
 from utils.theme_manager import toggle_theme, apply_theme
 
 
+app = QApplication(sys.argv)
+
+screen = QGuiApplication.primaryScreen()
+if screen:
+    geometry = screen.availableGeometry()
+    screen_width = geometry.width()
+    screen_height = geometry.height()
+
 class ToolStringEditor(QMainWindow):
     """Main application window."""
-    MIN_WINDOW_HEIGHT = 800  # ✅ Minimum height of the window
+
     TOOLBAR_HEIGHT = 30  # ✅ Fixed toolbar height
     FOOTER_HEIGHT = 30  # ✅ Fixed footer height
     icon_size = 264
@@ -46,7 +55,7 @@ class ToolStringEditor(QMainWindow):
 
         self.current_file_name = None  # Track last saved or loaded filename
         # self.setWindowTitle("Deleum Tool String Editor")
-        self.setMinimumHeight(self.MIN_WINDOW_HEIGHT)  # ✅ Set minimum resizable height
+        self.setMinimumHeight(screen_height - 10)  # ✅ Set minimum resizable height
         self.setMinimumWidth(1366)
 
         # ✅ Set initial theme
