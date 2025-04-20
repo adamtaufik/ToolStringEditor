@@ -1,18 +1,16 @@
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QSpacerItem
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QSpacerItem, QApplication
 from PyQt6.QtCore import Qt, QSize
-from PIL import Image as PILImage
-from PIL.ImageQt import ImageQt
-from PyQt6.QtGui import QPixmap
-
 from editor.logic_image_processing import expand_and_center_images_dropzone
 from ui.components.tool_widget import ToolWidget
+from utils.screen_height import get_height
+
 
 class DropZone(QFrame):
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.total_dropzone_height = 650
+        self.total_dropzone_height = get_height() - 40
         self.diagram_width = 70
         self.dropzone_style_main = "background-color: white; border: 0px solid gray; border-radius: 10px;"
 
