@@ -1,30 +1,40 @@
 import os
 
-import pandas as pd
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
-from PyQt6.QtGui import QCursor, QPixmap, QColor, QPainter, QDoubleValidator
+# PyQt6 core modules
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QCursor, QPixmap, QColor, QPainter
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog, QLabel,
-    QComboBox, QMessageBox, QPushButton, QFrame, QTextEdit
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog,
+    QLabel, QComboBox, QMessageBox, QFrame
 )
 
+# Database & Editor logic
 from database.file_io import save_configuration, load_configuration
 from editor.loading_worker import LoadingWorker
-from editor.export_manager import export_to_excel
+
+# UI Components
+from ui.components.inputs import AngleInput, LimitedTextEdit
 from ui.components.ui_footer import FooterWidget
-from ui.windows.ui_database_window import DatabaseWindow
+from ui.components.workers import ExportWorker
 from ui.components.ui_dropzone import DropZone
-from ui.windows.ui_help_window import HelpWindow
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_summary import SummaryWidget
 from ui.components.ui_titlebar import CustomTitleBar
 from ui.components.ui_tool_library import ToolLibrary
-from ui.windows.ui_version_window import VersionWindow
-from utils.check_file import is_file_open
-from utils.get_resource_path import get_icon_path, get_resource_path
-from utils.styles import GLASSMORPHISM_STYLE, DELEUM_STYLE, MESSAGEBOX_STYLE
 
-class MainWindow(QMainWindow):
+# Windows
+from ui.windows.ui_database_window import DatabaseWindow
+from ui.windows.ui_help_window import HelpWindow
+from ui.windows.ui_version_window import VersionWindow
+
+# Utils
+from utils.check_file import is_file_open
+from utils.get_resource_path import get_icon_path
+from utils.styles import MESSAGEBOX_STYLE
+from utils.theme_manager import toggle_theme, apply_theme
+
+
+class ToolStringEditor(QMainWindow):
     """Main application window."""
     MIN_WINDOW_HEIGHT = 670  # ✅ Minimum height of the window
     TOOLBAR_HEIGHT = 30  # ✅ Fixed toolbar height
@@ -40,7 +50,7 @@ class MainWindow(QMainWindow):
 
         # ✅ Set initial theme
         self.current_theme = "Deleum"
-        self.apply_theme()
+        apply_theme(self, self.current_theme)
 
         # **Create Main Widget**
         central_widget = QWidget()
@@ -125,6 +135,7 @@ class MainWindow(QMainWindow):
 
         # ✅ **Footer**
         footer = FooterWidget(self, theme_callback=self.toggle_theme)
+        self.theme_button = footer.theme_button  # ✅ now this won't crash
         editor_layout.addWidget(footer)
 
         # ✅ **Populate Tools**
@@ -261,25 +272,12 @@ class MainWindow(QMainWindow):
         label.setPixmap(colored_pixmap.scaled(self.icon_size, self.icon_size, Qt.AspectRatioMode.KeepAspectRatio))
 
     def toggle_theme(self):
-        """Toggles between Glassmorphism and Deleum themes."""
-        if self.current_theme == "Deleum":
-            self.current_theme = "Dark"
-            self.setStyleSheet(GLASSMORPHISM_STYLE)
-            self.theme_button.setText("Theme: Dark")  # ✅ Update button text
-        else:
-            self.current_theme = "Deleum"
-            self.setStyleSheet(DELEUM_STYLE)
-            self.theme_button.setText("Theme: Deleum")  # ✅ Update button text
-
-        # ✅ Update Summary Icons with New Theme
-        self.summary_widget.update_icon_colors(self.current_theme)
-
-    def apply_theme(self):
-        """Applies the current theme."""
-        if self.current_theme == "Dark":
-            self.setStyleSheet(GLASSMORPHISM_STYLE)
-        else:
-            self.setStyleSheet(DELEUM_STYLE)
+        self.current_theme = toggle_theme(
+            widget=self,
+            current_theme=self.current_theme,
+            theme_button=self.theme_button,  # ✅ exists now
+            summary_widget=self.summary_widget
+        )
 
     def export_configuration(self):
         """Exports the current tool string to an Excel file in a separate thread."""
@@ -333,6 +331,7 @@ class MainWindow(QMainWindow):
         self.loading_worker.start()
 
         # ✅ **Start Export in a Background Thread**
+
         self.export_thread = ExportWorker(self, excel_path, pdf_path, final_directory)
         self.export_thread.finished.connect(self.on_export_finished)
         self.export_thread.start()
@@ -433,91 +432,3 @@ class MainWindow(QMainWindow):
         self.deleteLater()  # ✅ Explicitly delete the window
         event.accept()
 
-
-class ExportWorker(QThread):
-    """Handles the export process in a separate thread."""
-    finished = pyqtSignal(str)  # ✅ Emit the directory as a string
-
-    def __init__(self, parent, excel_path, pdf_path, final_directory):
-        super().__init__(parent)
-        self.parent = parent
-        self.excel_path = excel_path
-        self.pdf_path = pdf_path
-        self.final_directory = final_directory  # ✅ Save the directory
-
-    def run(self):
-        """Runs the export features in a background thread."""
-        print('running export_to_excel')
-        export_to_excel(self.excel_path, self.pdf_path,
-                        self.parent.client_name.text(),
-                        self.parent.location.text(),
-                        self.parent.well_no.text(),
-                        self.parent.max_angle.text(),
-                        self.parent.well_type.currentText(),
-                        self.parent.operation_details.text(),
-                        self.parent.comments.toPlainText(),
-                        self.parent.drop_zone)
-
-        self.finished.emit(self.final_directory)  # ✅ Emit directory when done
-
-class LimitedTextEdit(QTextEdit):
-    def __init__(self, max_lines=5):
-        super().__init__()
-        self.max_lines = max_lines
-        self.setPlaceholderText(f"Remarks (max {max_lines} lines)")
-        self.setFixedHeight(5 * 20)  # Approx height for 5 lines
-        self.textChanged.connect(self.limit_lines)
-
-        # **Apply Rounded Border Style**
-        self.setStyleSheet("""
-            QTextEdit {
-                border-radius: 8px;
-                padding: 5px;
-                background-color: white;
-            }
-        """)
-
-    def limit_lines(self):
-        """Restrict text to a maximum of `max_lines` lines."""
-        text = self.toPlainText()
-        lines = text.split("\n")
-
-        if len(lines) > self.max_lines:
-            # Keep only the first `max_lines` lines
-            self.setPlainText("\n".join(lines[:self.max_lines]))
-
-            # Move cursor to end of text
-            cursor = self.textCursor()
-            cursor.movePosition(cursor.MoveOperation.End)
-            self.setTextCursor(cursor)
-
-
-class AngleInput(QLineEdit):
-    """Custom QLineEdit that only accepts numbers and appends a degree symbol (°)."""
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        # ✅ Only allow numbers (supports decimals)
-        self.setValidator(QDoubleValidator(0.0, 360.0, 2, notation=QDoubleValidator.Notation.StandardNotation))
-
-        # ✅ Set placeholder text
-        self.setPlaceholderText("Max Angle (°)")
-
-        # ✅ Connect editingFinished signal to append the degree symbol
-        self.editingFinished.connect(self.add_degree_symbol)
-
-    def add_degree_symbol(self):
-        """Appends the degree symbol to the number, ensuring it's formatted properly."""
-        text = self.text().strip()
-
-        # ✅ Only modify if the input is a valid number
-        if text and text[-1] != "°":
-            self.setText(f"{text}°")
-
-    def keyPressEvent(self, event):
-        """Override keyPressEvent to allow backspacing when degree symbol is present."""
-        if event.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
-            if self.text().endswith("°"):
-                self.setText(self.text()[:-1])  # Remove degree symbol before deleting
-        super().keyPressEvent(event)

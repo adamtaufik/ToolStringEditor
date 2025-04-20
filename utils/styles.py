@@ -4,6 +4,13 @@ GLASSMORPHISM_STYLE = """
     QMainWindow {
         background: rgba(255, 255, 255, 0.1);
     }
+    SGSFGSApp {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    HydrostaticPressureApp {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
 
     QToolTip {
         background-color: black;

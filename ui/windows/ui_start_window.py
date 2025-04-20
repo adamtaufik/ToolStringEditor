@@ -1,12 +1,11 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
 from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import Qt, QTimer
-from ui.apps.ui_toolstring_editor_app import MainWindow
+from ui.apps.ui_toolstring_editor_app import ToolStringEditor
 from ui.apps.ui_hydrostatic_app import HydrostaticPressureApp
 from ui.apps.ui_sgs_fgs_app import SGSFGSApp
 from utils.get_resource_path import get_resource_path, get_icon_path
 import os
-import math
 
 class StartWindow(QWidget):
     def __init__(self, app_icon=None):
@@ -44,13 +43,12 @@ class StartWindow(QWidget):
 
         # 3D Menu Container
         self.buttons = [
-            ("Wireline Tool String Editor", self.launch_editor),
+            ("Wireline Tool String Editor", self.open_toolstring_editor_app),
             ("Hydrostatic Pressure Calculator", self.open_hydrostatic_app),
             ("SGS/FGS Data Interpreter", self.open_sgsfgs_app),
             ("PCE Stack Up Editor (Coming Soon)", None)
         ]
 
-        self.angle = 0
         self.menu_layout = QVBoxLayout()
         self.menu_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -76,10 +74,6 @@ class StartWindow(QWidget):
             self.button_widgets.append(btn)
             self.menu_layout.addWidget(btn)
 
-        self.revolve_timer = QTimer()
-        self.revolve_timer.timeout.connect(self.animate_revolve)
-        self.revolve_timer.start(50)
-
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(logo_label)
@@ -102,20 +96,8 @@ class StartWindow(QWidget):
         main_layout.addStretch()
         main_layout.addLayout(footer_layout)
 
-    def animate_revolve(self):
-        self.angle += 1
-        radius = 30
-        for i, btn in enumerate(self.button_widgets):
-            offset = math.sin(math.radians(self.angle + i * 120)) * radius
-            scale = 1 + math.cos(math.radians(self.angle + i * 120)) * 0.2
-            btn.setStyleSheet(btn.styleSheet() + f"""
-                QPushButton {{
-                    transform: translateY({offset}px) scale({scale});
-                }}
-            """)
-
-    def launch_editor(self):
-        self.editor_window = MainWindow()
+    def open_toolstring_editor_app(self):
+        self.editor_window = ToolStringEditor()
         self.editor_window.show()
         self.close()
 

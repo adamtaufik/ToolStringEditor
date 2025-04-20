@@ -14,7 +14,7 @@ from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
 from utils.get_resource_path import get_icon_path
-from utils.styles import GLASSMORPHISM_STYLE, DELEUM_STYLE, MESSAGEBOX_STYLE
+from utils.theme_manager import apply_theme, toggle_theme
 
 
 class SGSFGSApp(QWidget):
@@ -27,7 +27,7 @@ class SGSFGSApp(QWidget):
 
         # ✅ Set initial theme
         self.current_theme = "Deleum"
-        self.apply_theme()
+        apply_theme(self, self.current_theme)
 
     def init_ui(self):
 
@@ -131,16 +131,17 @@ class SGSFGSApp(QWidget):
         table_plot_layout.addLayout(plot_layout)
         content_layout.addLayout(table_plot_layout)
 
+        # ✅ **Footer**
+        footer = FooterWidget(self, theme_callback=self.toggle_theme)
+        self.theme_button = footer.theme_button
+        content_layout.addWidget(footer)
+
+        content_layout.setContentsMargins(5,0,5,0)
+
         main_layout.addWidget(self.content_widget)
         self.setLayout(main_layout)
         main_container.addLayout(main_layout)
 
-        # print('a')
-        # # ✅ **Footer**
-        # footer = FooterWidget(self, theme_callback=self.toggle_theme)
-        # print('b')
-        # main_container.addWidget(footer)
-        # print('c')
 
     def update_table_rows(self):
         rows = self.row_selector.value()
@@ -305,9 +306,10 @@ class SGSFGSApp(QWidget):
             print(f"Error in style_gradient_columns: {e}")
 
 
-    def apply_theme(self):
-        """Applies the current theme."""
-        if self.current_theme == "Dark":
-            self.setStyleSheet(GLASSMORPHISM_STYLE)
-        else:
-            self.setStyleSheet(DELEUM_STYLE)
+    def toggle_theme(self):
+        self.current_theme = toggle_theme(
+            widget=self,
+            current_theme=self.current_theme,
+            theme_button=self.theme_button,  # ✅ exists now
+            summary_widget=None
+        )

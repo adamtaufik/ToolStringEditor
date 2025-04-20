@@ -1,14 +1,14 @@
 from PyQt6.QtWidgets import (
     QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout,
-    QHBoxLayout, QMessageBox, QGridLayout, QToolBar, QToolButton, QSizePolicy, QListWidget
+    QHBoxLayout, QMessageBox, QGridLayout, QListWidget
 )
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QAction, QCursor
+from PyQt6.QtCore import Qt
 
+from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
 from utils.get_resource_path import get_icon_path
-from utils.styles import GLASSMORPHISM_STYLE, DELEUM_STYLE
+from utils.theme_manager import apply_theme, toggle_theme
 
 
 class HydrostaticPressureApp(QWidget):
@@ -42,90 +42,90 @@ class HydrostaticPressureApp(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        # Top-level vertical layout (entire window)
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
 
-        main_container = QVBoxLayout(self)
-        main_container.setContentsMargins(0, 0, 0, 0)
-        main_container.setSpacing(0)
+        # Container for sidebar + main content
+        main_content_layout = QHBoxLayout()
 
-        outer_layout = QVBoxLayout()
-        content_layout = QHBoxLayout()
-        main_layout = QVBoxLayout()
+        # Layout for title + input section + result + calculate button
+        calculator_layout = QVBoxLayout()
 
-        items = [
-            (get_icon_path('save'), "Save", lambda: QMessageBox.information(self, "Save", "Save not implemented yet."), "Save the current file (Ctrl+S)"),
-            (get_icon_path('load'), "Load", lambda: QMessageBox.information(self, "Load", "Load not implemented yet."), "Open a file (Ctrl+O)"),
-            # (get_icon_path('plot'), "Plot", self.plot_graph, "Plot a graph from the current data"),
-            # (get_icon_path('export'), "Export", lambda: export_to_pdf(self.canvas, self.table, self), "Generate a PDF report"),
-        ]
+        # ✅ Set initial theme
+        self.current_theme = "Deleum"
+        apply_theme(self, self.current_theme)
 
-        self.sidebar = SidebarWidget(self, items)
+        # ✅ Custom Frameless Title Bar
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.title_bar = CustomTitleBar(
             self,
             lambda: self.sidebar.toggle_visibility(),
             "Hydrostatic Pressure Calculator"
         )
+        root_layout.addWidget(self.title_bar)
 
-        main_container.addWidget(self.title_bar)
+        # ✅ Toolbar-style sidebar (left) for Save/Load
+        items = [
+            (get_icon_path('save'), "Save", lambda: QMessageBox.information(self, "Save", "Save not implemented yet."),
+             "Save the current file (Ctrl+S)"),
+            (get_icon_path('load'), "Load", lambda: QMessageBox.information(self, "Load", "Load not implemented yet."),
+             "Open a file (Ctrl+O)"),
+        ]
+        self.sidebar = SidebarWidget(self, items)
 
-        content_layout.addWidget(self.sidebar)
+        # ✅ Title Label
+        title_label = QLabel("Hydrostatic Pressure Calculator")
+        title_label.setStyleSheet("font-size: 16pt; font-weight: bold;")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        calculator_layout.addWidget(title_label)
+
+        # ✅ Input Fields Grid (API & Metric)
+        input_grid = QGridLayout()
+        input_grid.setHorizontalSpacing(20)
+
+        input_grid.addWidget(QLabel("Pressure Gradient/Density"), 0, 0)
+        input_grid.addWidget(QLabel("True Vertical Depth (TVD)"), 1, 0)
+
         input_width = 120
-
-        # ✅ Set initial theme
-        self.current_theme = "Deleum"
-        self.apply_theme()
-
-        # Title
-        title = QLabel("Hydrostatic Pressure Calculator")
-        title.setStyleSheet("font-size: 16pt; font-weight: bold;")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(title)
-
-        # Grid layout for dual unit input
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(20)
-
-        grid.addWidget(QLabel("Pressure Gradient/Density"), 0, 0)
-        grid.addWidget(QLabel("True Vertical Depth (TVD)"), 1, 0)
-
-        # Left (API)
+        # Left side: API units
         self.gradient_psi_ft = QLineEdit()
         self.gradient_psi_ft.setFixedWidth(input_width)
         self.gradient_psi_ft.setPlaceholderText("e.g. 0.433")
         self.depth_ft = QLineEdit()
         self.depth_ft.setFixedWidth(input_width)
         self.depth_ft.setPlaceholderText("e.g. 1000")
-        grid.addWidget(self.gradient_psi_ft, 0, 1)
-        grid.addWidget(self.depth_ft, 1, 1)
-        grid.addWidget(QLabel("psi/ft"), 0, 2)
-        grid.addWidget(QLabel("ft"), 1, 2)
+        input_grid.addWidget(self.gradient_psi_ft, 0, 1)
+        input_grid.addWidget(self.depth_ft, 1, 1)
+        input_grid.addWidget(QLabel("psi/ft"), 0, 2)
+        input_grid.addWidget(QLabel("ft"), 1, 2)
 
-        # Right (Metric)
+        # Right side: Metric units
         self.gradient_kpa_m = QLineEdit()
         self.gradient_kpa_m.setFixedWidth(input_width)
         self.depth_m = QLineEdit()
         self.depth_m.setFixedWidth(input_width)
-        grid.addWidget(self.gradient_kpa_m, 0, 3)
-        grid.addWidget(self.depth_m, 1, 3)
-        grid.addWidget(QLabel("kPa/m"), 0, 4)
-        grid.addWidget(QLabel("m"), 1, 4)
+        input_grid.addWidget(self.gradient_kpa_m, 0, 3)
+        input_grid.addWidget(self.depth_m, 1, 3)
+        input_grid.addWidget(QLabel("kPa/m"), 0, 4)
+        input_grid.addWidget(QLabel("m"), 1, 4)
 
-        main_layout.addLayout(grid)
+        calculator_layout.addLayout(input_grid)
 
-
-        # Connect inputs for auto conversion
+        # ✅ Auto unit conversion
         self.gradient_psi_ft.textChanged.connect(self.update_gradient_metric)
         self.gradient_kpa_m.textChanged.connect(self.update_gradient_api)
         self.depth_ft.textChanged.connect(self.update_depth_metric)
         self.depth_m.textChanged.connect(self.update_depth_api)
 
-        # ✅ Output label
+        # ✅ Output Label
         self.result_label = QLabel("Hydrostatic Pressure: — psi")
         self.result_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.result_label.setStyleSheet("font-size: 14pt; margin-top: 20px")
-        main_layout.addWidget(self.result_label)
+        calculator_layout.addWidget(self.result_label)
 
-        # ✅ Calculate button
+        # ✅ Calculate Button
         calculate_btn = QPushButton("Calculate")
         calculate_btn.setFixedSize(180, 45)
         calculate_btn.setStyleSheet("""
@@ -141,15 +141,12 @@ class HydrostaticPressureApp(QWidget):
         """)
         calculate_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         calculate_btn.clicked.connect(self.calculate_pressure)
-        main_layout.addWidget(calculate_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        calculator_layout.addWidget(calculate_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        content_layout.addSpacing(10)
-        content_layout.addLayout(main_layout, stretch=3)
-
-        # ✅ Sidebar for fluid selection on the right
-        sidebar_layout = QVBoxLayout()
-        sidebar_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        # ✅ Right sidebar for selecting fluids
+        fluid_sidebar_layout = QVBoxLayout()
+        fluid_sidebar_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        fluid_sidebar_layout.setContentsMargins(10, 10, 10, 10)
 
         sidebar_label = QLabel("Common Fluids")
         sidebar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -176,17 +173,29 @@ class HydrostaticPressureApp(QWidget):
         """)
         self.fluid_list.setCursor(Qt.CursorShape.PointingHandCursor)
 
+        fluid_sidebar_layout.addWidget(sidebar_label)
+        fluid_sidebar_layout.addWidget(self.fluid_list)
 
-        sidebar_layout.addWidget(sidebar_label)
-        sidebar_layout.addWidget(self.fluid_list)
-        content_layout.addLayout(sidebar_layout, stretch=1)
+        # Add calculator and fluid sidebar to the main content layout
+        main_content_layout.addSpacing(10)
+        main_content_layout.addLayout(calculator_layout, stretch=3)
+        main_content_layout.addLayout(fluid_sidebar_layout, stretch=1)
 
-        outer_layout.addLayout(content_layout)
-        # ✅ Set final layout
-        self.setLayout(outer_layout)
+        # Wrap main content with outer layout (excluding left toolbar sidebar)
+        content_wrapper_layout = QVBoxLayout()
+        content_wrapper_layout.addLayout(main_content_layout)
 
+        # ✅ Footer
+        footer = FooterWidget(self, theme_callback=self.toggle_theme)
+        self.theme_button = footer.theme_button
+        content_wrapper_layout.addWidget(footer)
 
-        main_container.addLayout(outer_layout)
+        # ✅ Left sidebar + main content wrapper
+        full_horizontal_layout = QHBoxLayout()
+        full_horizontal_layout.addWidget(self.sidebar)
+        full_horizontal_layout.addLayout(content_wrapper_layout)
+
+        root_layout.addLayout(full_horizontal_layout)
 
     def update_gradient_metric(self):
         try:
@@ -245,9 +254,10 @@ class HydrostaticPressureApp(QWidget):
         self.start_window.show()
         self.close()
 
-    def apply_theme(self):
-        """Applies the current theme."""
-        if self.current_theme == "Dark":
-            self.setStyleSheet(GLASSMORPHISM_STYLE)
-        else:
-            self.setStyleSheet(DELEUM_STYLE)
+    def toggle_theme(self):
+        self.current_theme = toggle_theme(
+            widget=self,
+            current_theme=self.current_theme,
+            theme_button=self.theme_button,  # ✅ exists now
+            summary_widget=None
+        )

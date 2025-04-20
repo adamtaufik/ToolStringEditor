@@ -8,14 +8,12 @@ from utils.get_resource_path import get_resource_path
 
 class FooterWidget(QWidget):
     def __init__(self, parent=None, theme_callback=None, footer_height=30):
-        print('1')
         super().__init__(parent)
         self.theme_callback = theme_callback
         self.footer_height = footer_height
         self.setLayout(self._create_footer())
 
     def _create_footer(self):
-        print('2')
         layout = QHBoxLayout()
         layout.setContentsMargins(3, 0, 3, 3)
 
@@ -33,14 +31,12 @@ class FooterWidget(QWidget):
         """)
         self.theme_button.setFixedHeight(self.footer_height)
 
-        print('3')
         if self.theme_callback:
             self.theme_button.clicked.connect(self.theme_callback)
 
         layout.addWidget(self.theme_button, alignment=Qt.AlignmentFlag.AlignLeft)
         layout.addStretch()
 
-        print('4')
         # Footer Text (Right) with version info
         version_text = self._get_version_info()
         footer_label = QLabel(version_text)
