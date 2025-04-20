@@ -118,12 +118,12 @@ class ToolStringEditor(QMainWindow):
         self.sidebar_layout.addWidget(self.tool_library)
 
         sidebar_container.setLayout(self.sidebar_layout)
-        sidebar_container.setFixedWidth(230)
+        # sidebar_container.setFixedWidth(230)
         content_layout.addWidget(sidebar_container)
 
         # **Drop Zone**
         content_layout.addWidget(self.drop_zone)
-        self.drop_zone.setFixedWidth(900)
+        self.drop_zone.setFixedWidth(870)
 
         content_layout.addSpacing(5)
 

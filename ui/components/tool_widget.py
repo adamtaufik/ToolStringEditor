@@ -7,7 +7,7 @@ from utils.get_resource_path import get_resource_path  # ✅ Import helper funct
 
 class ToolWidget(QWidget):
     """Widget representing a tool inside the DropZone."""
-    BACKGROUND_WIDTH = 90  # Expanded background width for uniformity
+    BACKGROUND_WIDTH = 80  # Expanded background width for uniformity
     
     def __init__(self, tool_name, drop_zone):
         super().__init__(drop_zone)
@@ -61,7 +61,7 @@ class ToolWidget(QWidget):
 
         # **Tool Name**
         self.label = QLabel(tool_name)
-        self.label.setFixedSize(120, 35)
+        self.label.setFixedSize(115, 35)
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensures text is centered
         self.label.setStyleSheet("border: 0px solid black; border-bottom: 1px solid #A9A9A9; background-color: lightgray; color: black;")
@@ -85,28 +85,28 @@ class ToolWidget(QWidget):
 
         # **OD Label**
         self.od_label = QLabel("N/A")
-        self.od_label.setFixedWidth(70)
+        self.od_label.setFixedWidth(65)
         self.od_label.setStyleSheet("border: none; color: black;")
         self.od_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.od_label)
 
         # **Length Label**
         self.length_label = QLabel("N/A")
-        self.length_label.setFixedWidth(70)
+        self.length_label.setFixedWidth(65)
         self.length_label.setStyleSheet("border: none; color: black;")
         self.length_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.length_label)
 
         # **Weight Label**
         self.weight_label = QLabel("N/A")
-        self.weight_label.setFixedWidth(70)
+        self.weight_label.setFixedWidth(68)
         self.weight_label.setStyleSheet("border: none; color: black;")
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.weight_label)
 
         # **Top Connection Selector**
         self.top_connection_label = QLabel("N/A")
-        self.top_connection_label.setFixedWidth(90)
+        self.top_connection_label.setFixedWidth(88)
         self.top_connection_label.setStyleSheet("border: none; color: black;")
         self.top_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.top_connection_label)
@@ -114,14 +114,14 @@ class ToolWidget(QWidget):
         # **Lower Connection Selector**
         self.lower_connection_label = QComboBox()
         self.lower_connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.lower_connection_label.setFixedWidth(120)
+        self.lower_connection_label.setFixedWidth(115)
         self.lower_connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.layout.addWidget(self.lower_connection_label)
 
         # **Move Up Button**
         self.up_button = QPushButton("↑")
         self.up_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.up_button.setFixedSize(30, 30)
+        self.up_button.setFixedSize(28, 30)
         self.up_button.setStyleSheet("""
             QPushButton {
                 background-color: lightblue;
@@ -139,7 +139,7 @@ class ToolWidget(QWidget):
         # **Move Down Button**
         self.down_button = QPushButton("↓")
         self.down_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.down_button.setFixedSize(30, 30)
+        self.down_button.setFixedSize(28, 30)
         self.down_button.setStyleSheet("""
             QPushButton {
                 background-color: lightblue;

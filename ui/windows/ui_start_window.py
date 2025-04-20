@@ -35,7 +35,7 @@ class StartWindow(QWidget):
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Title
-        title = QLabel("Deleum Software Suite")
+        title = QLabel("Deleum WireHub")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 24px; font-weight: bold; color: #800020;")
 
