@@ -32,6 +32,7 @@ Deleum Tool String Editor is a Python-based application designed to create and m
 ## 📸 Screenshots
 <!-- Add screenshots of the UI here -->
 
+
 ## 📝 Changelog
 See [`CHANGELOG.md`](CHANGELOG.md) for version history.
 
