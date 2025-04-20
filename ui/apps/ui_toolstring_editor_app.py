@@ -47,6 +47,7 @@ class ToolStringEditor(QMainWindow):
         self.current_file_name = None  # Track last saved or loaded filename
         # self.setWindowTitle("Deleum Tool String Editor")
         self.setMinimumHeight(self.MIN_WINDOW_HEIGHT)  # ✅ Set minimum resizable height
+        self.setMinimumWidth(1366)
 
         # ✅ Set initial theme
         self.current_theme = "Deleum"
