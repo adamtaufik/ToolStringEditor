@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QVBoxLayout, QPushButton, QSizePolicy, QFrame
+    QVBoxLayout, QPushButton, QSizePolicy, QFrame, QMessageBox
 )
 from PyQt6.QtGui import QIcon, QKeySequence
 from PyQt6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve
@@ -154,7 +154,44 @@ class SidebarWidget(QFrame):
         start_window.show()
         parent_window.close()
 
+    import os
+    from PyQt6.QtWidgets import QMessageBox
+    from PyQt6.QtGui import QIcon
+
     def exit(self):
-        parent_window = self.window()
-        parent_window.close()
+
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Confirm Exit")
+        msg_box.setText("Are you sure you want to exit the application?")
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        msg_box.setIcon(QMessageBox.Icon.Warning)  # Use the default warning icon if path is invalid
+
+        # Style: black text, bordered buttons, hover feedback
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                color: black;
+            }
+            QMessageBox QLabel {
+                color: black;
+            }
+            QPushButton {
+                color: black;
+                border: 1px solid black;
+                padding: 5px 10px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #c9c9c9;
+                cursor: pointer;
+            }
+        """)
+
+        reply = msg_box.exec()
+
+        if reply == QMessageBox.StandardButton.Yes:
+            parent_window = self.window()
+            parent_window.close()
+
+
 

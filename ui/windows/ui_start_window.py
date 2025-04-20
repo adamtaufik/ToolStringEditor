@@ -5,12 +5,12 @@ from ui.apps.ui_toolstring_editor_app import ToolStringEditor
 from ui.apps.ui_hydrostatic_app import HydrostaticPressureApp
 from ui.apps.ui_sgs_fgs_app import SGSFGSApp
 from utils.get_resource_path import get_resource_path, get_icon_path
+from ui.components.ui_footer import FooterWidget
 import os
-
 class StartWindow(QWidget):
     def __init__(self, app_icon=None):
         super().__init__()
-        self.setWindowTitle("Deleum Software Suite")
+        self.setWindowTitle("Deleum WireHub")
         self.setFixedSize(500, 400)
         if app_icon:
             self.setWindowIcon(app_icon)
@@ -29,7 +29,6 @@ class StartWindow(QWidget):
 
         # Logo
         logo_path = get_icon_path('logo_full')
-        # logo_path = get_resource_path(os.path.join("assets", "images", "logo_full.png"))
         logo_label = QLabel()
         logo_pixmap = QPixmap(logo_path).scaledToHeight(60, Qt.TransformationMode.SmoothTransformation)
         logo_label.setPixmap(logo_pixmap)
@@ -39,7 +38,6 @@ class StartWindow(QWidget):
         title = QLabel("Deleum Software Suite")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 24px; font-weight: bold; color: #800020;")
-
 
         # 3D Menu Container
         self.buttons = [
@@ -84,17 +82,19 @@ class StartWindow(QWidget):
         main_layout.addLayout(self.menu_layout)
 
         # Footer
-        footer = QLabel("Created by Adam Mohd Taufik - Operations Engineer  |  Version 1.0 (17/04/2025)")
+        footer_widget = FooterWidget()
+        footer_version_info = footer_widget.get_version_info()  # Access version info here
+        footer = QLabel(footer_version_info)
         footer.setAlignment(Qt.AlignmentFlag.AlignRight)
         footer.setStyleSheet("font-size: 10px; color: black; padding: 5px;")
 
-        # Wrap footer in layout to ensure it's right-aligned at the bottom
         footer_layout = QVBoxLayout()
         footer_layout.addStretch()
         footer_layout.addWidget(footer)
 
         main_layout.addStretch()
         main_layout.addLayout(footer_layout)
+
 
     def open_toolstring_editor_app(self):
         self.editor_window = ToolStringEditor()
@@ -110,3 +110,4 @@ class StartWindow(QWidget):
         self.sgsfgs_app = SGSFGSApp()
         self.sgsfgs_app.show()
         self.close()
+

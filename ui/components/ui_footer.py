@@ -53,15 +53,14 @@ class FooterWidget(QWidget):
         layout.addStretch()
 
         # Footer Text (Right) with version info
-        version_text = self._get_version_info()
-        footer_label = QLabel(version_text)
+        footer_label = QLabel(self.get_version_info())
         footer_label.setStyleSheet("font-size: 10pt; color: white; padding: 5px;")
         footer_label.setFixedHeight(self.footer_height)
         layout.addWidget(footer_label, alignment=Qt.AlignmentFlag.AlignRight)
 
         return layout
 
-    def _get_version_info(self):
+    def get_version_info(self):
         try:
             version_history_path = get_resource_path(os.path.join("assets", "resources", "version_history.xlsx"))
             version_history = pd.read_excel(version_history_path)
