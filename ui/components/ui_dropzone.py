@@ -3,6 +3,8 @@ from PyQt6.QtCore import Qt, QSize
 from PIL import Image as PILImage
 from PIL.ImageQt import ImageQt
 from PyQt6.QtGui import QPixmap
+
+from editor.logic_image_processing import expand_and_center_images_dropzone
 from ui.components.tool_widget import ToolWidget
 
 total_dropzone_height = 650  
@@ -114,9 +116,8 @@ class DropZone(QFrame):
         """Allow drag move if valid."""
         event.acceptProposedAction()
 
-    def dropEvent(self, event):
-        """Handles dropping tools into DropZone."""
-        tool_name = event.mimeData().text()    
+    def drop_event_with_tool(self, tool_name):
+        """Handle adding the tool when right-clicked from DraggableButton."""
         new_tool = ToolWidget(tool_name, self)
         if new_tool.tool_data:  # ✅ Check if tool data exists
             self.tool_widgets.append(new_tool)
@@ -124,22 +125,25 @@ class DropZone(QFrame):
             self.layout.addWidget(new_tool)
             self.update_placeholder()  # ✅ Ensure placeholder updates
             self.update_summary()  # ✅ Update summary when tools are added
-            expand_and_center_images_dropzone(self.tool_widgets)  # ✅ Resize images
+            expand_and_center_images_dropzone(self.tool_widgets, diagram_width, total_dropzone_height)  # ✅ Resize images
+        else:
+            print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
+
+    def dropEvent(self, event):
+        """Handles dropping tools into DropZone."""
+        tool_name = event.mimeData().text()
+        new_tool = ToolWidget(tool_name, self)
+        if new_tool.tool_data:  # ✅ Check if tool data exists
+            self.tool_widgets.append(new_tool)
+            self.setStyleSheet(self.dropzone_style_main)
+            self.layout.addWidget(new_tool)
+            self.update_placeholder()  # ✅ Ensure placeholder updates
+            self.update_summary()  # ✅ Update summary when tools are added
+            expand_and_center_images_dropzone(self.tool_widgets, diagram_width, total_dropzone_height)  # ✅ Resize images
         else:
             print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
     
         event.acceptProposedAction()
-
-    def add_tool(self, tool_name):
-        """Add a tool to the DropZone."""
-        tool_widget = ToolWidget(tool_name, self)
-        self.tool_widgets.append(tool_widget)
-        self.layout.addWidget(tool_widget)
-        
-        # ✅ Resize all images when a new tool is added
-        expand_and_center_images_dropzone(self.tool_widgets)
-        self.update_placeholder()
-        self.update_summary()
 
     def remove_tool(self, tool_widget):
         """Remove a tool from the DropZone."""
@@ -149,7 +153,7 @@ class DropZone(QFrame):
             tool_widget.deleteLater()
         
         # ✅ Resize remaining images
-        expand_and_center_images_dropzone(self.tool_widgets)
+        expand_and_center_images_dropzone(self.tool_widgets, diagram_width, total_dropzone_height)
         self.update_placeholder()
         self.update_summary()
 
@@ -215,85 +219,9 @@ class DropZone(QFrame):
             self.layout.addWidget(tool_widget)
     
         # ✅ Ensure images are expanded & centered immediately
-        expand_and_center_images_dropzone(self.tool_widgets)
+        expand_and_center_images_dropzone(self.tool_widgets, diagram_width, total_dropzone_height)
     
         # ✅ Force the UI to refresh
         self.update()
         self.repaint()
         self.update_placeholder()
-
-def expand_and_center_images_dropzone(tool_widgets):
-    """Expands background width first, then resizes all tool images only if needed."""
-    
-    if not tool_widgets:
-        return
-
-    dropzone_height = total_dropzone_height - 40  # Adjusted for padding
-    max_width = diagram_width  # ✅ Set a fixed width for all images
-
-    min_image_height = max(tool.label.height() for tool in tool_widgets)  # Prevents images from being too small
-
-    # ✅ Step 1: Expand background width while keeping images at original size
-    for tool in tool_widgets:
-        if tool.image_label.pixmap():
-            original_pixmap = tool.image_label.pixmap()
-            # **Expand background to max_width without changing image size**
-            new_width = max_width  # Fixed background width
-            new_height = original_pixmap.height()  # Keep original height initially
-
-            # **Convert to PIL and expand background**
-            qimage = original_pixmap.toImage()
-            pil_img = PILImage.fromqimage(qimage).convert("RGBA")
-
-            expanded_img = PILImage.new("RGBA", (new_width, new_height), (255, 255, 255, 0))
-            x_offset = (new_width - pil_img.width) // 2
-            expanded_img.paste(pil_img, (x_offset, 0), pil_img)
-
-            # **Convert back to QPixmap**
-            qimage_expanded = ImageQt(expanded_img)
-            pixmap_expanded = QPixmap.fromImage(qimage_expanded)
-
-            # **Apply expanded background**
-            tool.image_label.setPixmap(pixmap_expanded)
-            tool.image_label.setFixedSize(QSize(new_width, new_height))
-
-    # ✅ Step 2: Check if resizing is needed (Only resize if the total height exceeds DropZone height)
-    original_total_height = sum(tool.image_label.height() for tool in tool_widgets)
-
-    if original_total_height > dropzone_height:
-        scale_factor = dropzone_height / original_total_height  # Compute scaling factor
-    else:
-        scale_factor = 1.0  # No scaling needed
-
-    # ✅ Step 3: Resize all tool images if necessary
-    if scale_factor < 1.0:
-        for tool in tool_widgets:
-            if tool.image_label.pixmap():
-                original_pixmap = tool.image_label.pixmap()
-
-                # Apply uniform scaling
-                new_height = max(int(original_pixmap.height() * scale_factor), min_image_height)  # Ensure min height          
-                new_width = max_width  # Keep width fixed
-
-                resized_pixmap = original_pixmap.scaled(
-                    new_width, new_height,  
-                    Qt.AspectRatioMode.IgnoreAspectRatio,  # ✅ No aspect ratio preservation
-                    Qt.TransformationMode.SmoothTransformation
-                )
-
-                # **Convert to PIL for background adjustment**
-                qimage = resized_pixmap.toImage()
-                pil_img = PILImage.fromqimage(qimage).convert("RGBA")
-
-                # **Create new expanded background**
-                resized_img = PILImage.new("RGBA", (max_width, new_height), (255, 255, 255, 0))
-                x_offset = (max_width - pil_img.width) // 2
-                resized_img.paste(pil_img, (x_offset, 0), pil_img)
-
-                # **Convert back to QPixmap**
-                qimage_resized = ImageQt(resized_img)
-                pixmap_resized = QPixmap.fromImage(qimage_resized)
-
-                # **Apply resized image**
-                tool.image_label.setPixmap(pixmap_resized)
-                tool.image_label.setFixedSize(QSize(max_width, new_height))  # Ensure QLabel matches new size

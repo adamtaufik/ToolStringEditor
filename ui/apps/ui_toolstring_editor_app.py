@@ -2,7 +2,7 @@ import os
 
 # PyQt6 core modules
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCursor, QPixmap, QColor, QPainter
+from PyQt6.QtGui import QCursor, QPixmap, QColor
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog,
     QLabel, QComboBox, QMessageBox, QFrame
@@ -249,27 +249,7 @@ class ToolStringEditor(QMainWindow):
     def set_icon(self, label, image_path, new_color):
         """Loads an icon, recolors black to the given color while keeping transparency, and sets it to QLabel."""
         pixmap = QPixmap(image_path)
-
-        if pixmap.isNull():
-            print(f"⚠️ WARNING: Icon not found at {image_path}")
-            return
-
-        # ✅ Create a new pixmap with the same size as original
-        colored_pixmap = QPixmap(pixmap.size())
-        colored_pixmap.fill(Qt.GlobalColor.transparent)  # ✅ Keep transparency
-
-        # ✅ Recolor only black parts while preserving transparency
-        painter = QPainter(colored_pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
-        painter.drawPixmap(0, 0, pixmap)  # Draw original icon
-
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-        painter.fillRect(colored_pixmap.rect(), new_color)  # Apply color ONLY to non-transparent areas
-
-        painter.end()  # ✅ Finish painting
-
-        # ✅ Set the final recolored icon to the QLabel
-        label.setPixmap(colored_pixmap.scaled(self.icon_size, self.icon_size, Qt.AspectRatioMode.KeepAspectRatio))
+        label.setPixmap(pixmap.scaled(self.icon_size, self.icon_size, Qt.AspectRatioMode.KeepAspectRatio))
 
     def toggle_theme(self):
         self.current_theme = toggle_theme(

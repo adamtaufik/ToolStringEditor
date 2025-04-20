@@ -3,14 +3,14 @@ from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QScrollArea, QComboBox, QLabel
 from ui.components.ui_draggable_button import DraggableButton
 from database.logic_database import get_tool_data
-from utils.styles import GLASSMORPHISM_STYLE
+from utils.styles import DARK_STYLE
 
 class ToolLibrary(QWidget):
     """Sidebar for listing available tools."""
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setStyleSheet(GLASSMORPHISM_STYLE)
+        self.setStyleSheet(DARK_STYLE)
 
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)

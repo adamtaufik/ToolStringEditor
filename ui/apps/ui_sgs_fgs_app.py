@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 
 from features.sgs_fgs.calculations import validate_table_data, calculate_gradients
 from features.sgs_fgs.plot import plot_survey
-from features.sgs_fgs.export import export_to_csv, export_to_pdf
+from features.sgs_fgs.export import export_to_pdf
 from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
@@ -67,8 +67,10 @@ class SGSFGSApp(QWidget):
         # Controls (survey type + row selector)
         control_layout = QHBoxLayout()
         self.survey_type = QComboBox()
+        self.survey_type.setCursor(Qt.CursorShape.PointingHandCursor)
         self.survey_type.addItems(["Static Gradient Survey (SGS)", "Flowing Gradient Survey (FGS)"])
         self.row_selector = QSpinBox()
+        self.row_selector.setCursor(Qt.CursorShape.PointingHandCursor)
         self.row_selector.setRange(1, 100)
         self.row_selector.setValue(5)
         self.row_selector.valueChanged.connect(self.update_table_rows)
@@ -104,6 +106,7 @@ class SGSFGSApp(QWidget):
             ("Clear Table", self.clear_table),
         ]:
             btn = QPushButton(text)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.clicked.connect(slot)
             button_layout_table.addWidget(btn)
 
@@ -115,6 +118,7 @@ class SGSFGSApp(QWidget):
             ("Export to PDF", lambda: export_to_pdf(self.canvas, self.table, self)),
         ]:
             btn = QPushButton(text)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.clicked.connect(slot)
             button_layout_plot.addWidget(btn)
 
@@ -173,35 +177,29 @@ class SGSFGSApp(QWidget):
         self.close()
 
     def paste_from_clipboard(self):
-        print("Pasting started")
         try:
             clipboard = QApplication.clipboard()
             data = clipboard.text()
             rows = data.strip().split('\n')
 
             needed_rows = len(rows)
-            print(f"Pasting {needed_rows} rows")
             self.row_selector.setValue(needed_rows)
             self.table.setRowCount(needed_rows)
 
             self.table.blockSignals(True)
 
             for i, row in enumerate(rows):
-                print(f"Row {i}: {row}")
                 cells = row.split('\t')
                 for j, cell in enumerate(cells):
                     if j < self.table.columnCount():
-                        print(f"Setting cell ({i},{j}): {cell.strip()}")
                         self.table.setItem(i, j, QTableWidgetItem(cell.strip()))
 
             # Clear first gradient row
             self.table.setItem(0, 3, QTableWidgetItem(""))
             self.table.setItem(0, 4, QTableWidgetItem(""))
 
-            print("Calling style_gradient_columns")
             self.style_gradient_columns()
 
-            print("Calling recalculate_gradients")
             self.recalculate_gradients()
 
             self.table.blockSignals(False)

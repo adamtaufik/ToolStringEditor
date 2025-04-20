@@ -1,6 +1,6 @@
 # utils/theme_manager.py
 
-from utils.styles import GLASSMORPHISM_STYLE, DELEUM_STYLE
+from utils.styles import DARK_STYLE, DELEUM_STYLE
 
 def toggle_theme(widget, current_theme, theme_button=None, summary_widget=None):
     """
@@ -14,7 +14,7 @@ def toggle_theme(widget, current_theme, theme_button=None, summary_widget=None):
     """
     if current_theme == "Deleum":
         new_theme = "Dark"
-        widget.setStyleSheet(GLASSMORPHISM_STYLE)
+        widget.setStyleSheet(DARK_STYLE)
         if theme_button:
             theme_button.setText("Theme: Dark")
     else:
@@ -37,6 +37,6 @@ def apply_theme(widget, theme_name):
     :param theme_name: Either 'Deleum' or 'Dark'
     """
     if theme_name == "Dark":
-        widget.setStyleSheet(GLASSMORPHISM_STYLE)
+        widget.setStyleSheet(DARK_STYLE)
     else:
         widget.setStyleSheet(DELEUM_STYLE)

@@ -1,9 +1,8 @@
-from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout, QGraphicsBlurEffect
 from PyQt6.QtCore import Qt, QPoint, QRect, QPropertyAnimation
 from PyQt6.QtGui import QCursor, QPixmap
 
 from utils.get_resource_path import get_resource_path, get_icon_path
-
 
 class CustomTitleBar(QWidget):
     def __init__(self, parent, menu_callback=None, title=""):
@@ -11,6 +10,51 @@ class CustomTitleBar(QWidget):
         self.parent = parent
         self.menu_callback = menu_callback
         self.setFixedHeight(40)
+
+        # Background blur widget
+        self.background = QWidget(self)
+        self.background.setStyleSheet("background-color: rgba(255, 255, 255, 0.1);")
+        blur = QGraphicsBlurEffect()
+        blur.setBlurRadius(15)
+        self.background.setGraphicsEffect(blur)
+
+        # Foreground content
+        self.content = QWidget(self)
+        self.content.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        self.layout = QHBoxLayout(self.content)
+        self.layout.setContentsMargins(0, 0, 10, 0)  # <-- Adjust spacing here
+        self.layout.setSpacing(5)
+
+        # Logo
+        self.logo = QLabel()
+        pixmap = QPixmap(get_icon_path('logo'))
+        self.logo.setPixmap(pixmap.scaledToHeight(24, Qt.TransformationMode.SmoothTransformation))
+        self.logo.setFixedWidth(50)
+        self.logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(self.logo)
+
+        # Title
+        self.title = QLabel(title)
+        self.layout.addWidget(self.title)
+        self.layout.addStretch()  # <-- Push everything else to the right
+
+        # Control buttons
+        self.minimize_btn = QPushButton("–")
+        self.minimize_btn.setToolTip("Minimize")
+        self.minimize_btn.clicked.connect(self.animate_minimize)
+
+        self.maximize_btn = QPushButton("❐")
+        self.maximize_btn.setToolTip("Maximize / Restore")
+        self.maximize_btn.clicked.connect(self.toggle_max_restore)
+
+        self.close_btn = QPushButton("×")
+        self.close_btn.setToolTip("Close")
+        self.close_btn.setObjectName("close")
+        self.close_btn.clicked.connect(self.parent.close)
+
+        for btn in [self.minimize_btn, self.maximize_btn, self.close_btn]:
+            self.layout.addWidget(btn)
 
         self.setStyleSheet("""
             QWidget {
@@ -36,46 +80,9 @@ class CustomTitleBar(QWidget):
             }
         """)
 
-        self.layout = QHBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 10, 0)
-        self.layout.setSpacing(0)
-
-        # Optional Menu Button placeholder (add externally via add_menu_button)
-        self.menu_button = None
-
-        # Logo
-        self.logo = QLabel()
-        pixmap = QPixmap(get_icon_path('logo'))
-        self.logo.setPixmap(pixmap.scaledToHeight(24, Qt.TransformationMode.SmoothTransformation))
-        # self.logo.setStyleSheet("background: white;")  # Optional styling
-        self.logo.setFixedWidth(50)
-        self.logo.setAlignment(Qt.AlignmentFlag.AlignCenter)  # ✅ Correctly centers the image within the label
-        self.layout.addWidget(self.logo)
-
-        # Title
-        self.title = QLabel(title)
-        self.layout.addWidget(self.title)
-        self.layout.addStretch()
-
-        # Control Buttons
-        self.minimize_btn = QPushButton("–")
-        self.minimize_btn.setToolTip("Minimize")
-        self.minimize_btn.clicked.connect(self.animate_minimize)
-
-        self.maximize_btn = QPushButton("❐")
-        self.maximize_btn.setToolTip("Maximize / Restore")
-        self.maximize_btn.clicked.connect(self.toggle_max_restore)
-
-        self.close_btn = QPushButton("×")
-        self.close_btn.setToolTip("Close")
-        self.close_btn.setObjectName("close")
-        self.close_btn.clicked.connect(self.parent.close)
-
-        for btn in [self.minimize_btn, self.maximize_btn, self.close_btn]:
-            self.layout.addWidget(btn)
-
         self.start_pos = None
         self.maximized = False
+
 
     def add_menu_button(self, button: QPushButton):
         """Externally add a menu button (e.g., hamburger) to the title bar."""
@@ -121,3 +128,8 @@ class CustomTitleBar(QWidget):
 
         # Store animation to prevent garbage collection
         self._minimize_animation = animation
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.background.setGeometry(self.rect())
+        self.content.setGeometry(self.rect())

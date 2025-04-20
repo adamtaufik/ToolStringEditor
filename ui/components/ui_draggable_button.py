@@ -1,62 +1,59 @@
-from PyQt6.QtWidgets import QPushButton, QLabel, QHBoxLayout, QMenu
+from PyQt6.QtWidgets import QPushButton, QLabel, QHBoxLayout, QMenu, QApplication
 from PyQt6.QtCore import Qt, QMimeData
 from PyQt6.QtGui import QPixmap, QCursor, QDrag, QColor, QPalette, QAction
 
-feedback_style = "background-color: rgba(163, 163, 163, 1);"
+from ui.components.ui_dropzone import DropZone
+
+feedback_style = """background-color: rgba(163, 163, 163, 1);
+                border-radius: 5px !important;
+                border: 0px solid #555 !important;"""
 
 class DraggableButton(QPushButton):
-    """A button that can be dragged to DropZone."""
     def __init__(self, tool_name, parent=None):
         super().__init__(parent)
-        self.setFixedHeight(40)  # Adjust size as needed
+        self.setFixedHeight(40)
         self.tool_name = tool_name
 
-        # ✅ **Override Parent Styles & Set Light Gray Background**
+        # Set initial palette and cursor
         self.setAutoFillBackground(True)
         palette = self.palette()
         palette.setColor(QPalette.ColorRole.Button, QColor("lightgray"))
         self.setPalette(palette)
-
-        # ✅ Ensure it always shows the Open hand
         self.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
 
-        # ✅ Create layout to hold the image and text
+        # Layout for label
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(10)
 
-        # ✅ Tool Name Label
         self.text_label = QLabel(self.tool_name, self)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignCenter)
-        self.text_label.setStyleSheet("background-color: lightgray;")
         self.text_label.setWordWrap(True)
         layout.addWidget(self.text_label)
 
-        self.setLayout(layout)
-
-        # ✅ **Force Light Gray Background**
-        self.setStyleSheet("""
+        # Full style
+        self.default_stylesheet = """
             QPushButton {
                 background-color: lightgray !important;
-                border-radius: 5px;
+                border-radius: 5px !important;
+                border: 0px solid #555 !important;
                 padding: 5px;
                 color: black !important;
                 text-align: left;
             }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.9) !important;  /* Slightly darker on hover */
-            }
-        """)
+        """
+        self.setStyleSheet(self.default_stylesheet)
+        self.text_label.setStyleSheet("background-color: lightgray;")
 
     def enterEvent(self, event):
-        """Ensure cursor is always a hand when hovering over the tool."""
         self.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
         self.setStyleSheet(feedback_style)
         self.text_label.setStyleSheet(feedback_style)
 
     def leaveEvent(self, event):
-        self.setStyleSheet("background-color: lightgray;")
+        self.setStyleSheet(self.default_stylesheet)
         self.text_label.setStyleSheet("background-color: lightgray;")
+
 
     def mousePressEvent(self, event):
         """Change cursor to grabbing hand when starting drag."""
@@ -89,8 +86,18 @@ class DraggableButton(QPushButton):
         # """Show right-click menu with 'Add to DropZone'."""
         # menu = QMenu(self)
         # add_action = QAction("Add to DropZone", self)
-        # add_action.triggered.connect(lambda: self.right_clicked.emit(self.tool_name))
+        # add_action.triggered.connect(self.add_to_dropzone)
         # menu.addAction(add_action)
         # menu.exec(event.globalPos())
 
         pass
+
+    def add_to_dropzone(self):
+        print('adding to dropzone NOW')
+        widget = QApplication.focusWidget()
+        while widget is not None:
+            if isinstance(widget, DropZone):
+                widget.drop_event_with_tool(self.tool_name)
+                return
+            widget = widget.parent()
+        print("❌ DropZone not found in widget tree.")

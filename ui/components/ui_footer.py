@@ -20,15 +20,30 @@ class FooterWidget(QWidget):
         # Theme Toggle Button (Left)
         self.theme_button = QPushButton("Theme: Deleum")
         self.theme_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        # self.theme_button.setStyleSheet("""
+        #     QPushButton {
+        #         background-color: transparent;
+        #         font-size: 10pt;
+        #     }
+        #     QPushButton:hover {
+        #         background-color: rgba(255, 255, 255, 0.5);
+        #     }
+        # """)
         self.theme_button.setStyleSheet("""
             QPushButton {
-                background-color: transparent;
+                background-color: rgba(255, 255, 255, 0.1);
+                border: 0px solid rgba(255, 255, 255, 0.3);
+                border-radius: 10px;
                 font-size: 10pt;
+                color: white;
+                padding: 5px 10px;
+                backdrop-filter: blur(6px);
             }
             QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.5);
+                background-color: rgba(255, 255, 255, 0.2);
             }
         """)
+
         self.theme_button.setFixedHeight(self.footer_height)
 
         if self.theme_callback:

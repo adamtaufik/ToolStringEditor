@@ -34,7 +34,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
         top=Side(style="thin"), bottom=Side(style="thin")
     )
 
-    print('designing the excel layout')
     # **Set title**
     ws["A1"] = "TOOL STRING SCHEMATIC"
     ws["A1"].font = Font(bold=True, size=14)
@@ -79,8 +78,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     total_length = 0.0
     total_weight = 0.0
     od_list = []
-
-    print("length of data:",len(data))
 
     for row_data in data:
         if len(data) < 19:
@@ -162,7 +159,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     # **Insert Tool String Image**
     cell = "B8"
     if tool_images:
-        print('formating images')
         centered_images = expand_and_center_images(tool_images,80)
         tool_image = combine_tool_images(centered_images)
         tool_image = remove_white_background(tool_image)
@@ -215,7 +211,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     ws.page_setup.fitToHeight = 0
     ws.print_area = f"A1:{last_column}{ws.max_row}"
     # **Save Excel File**
-    print('saving to excel')
 
     wb.save(excel_path)
     print(f"✅ Excel export successful: {excel_path}")

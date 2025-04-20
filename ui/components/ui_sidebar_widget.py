@@ -14,7 +14,7 @@ class SidebarWidget(QFrame):
         self.setObjectName("sidebar")
 
         self.collapsed_width = 40
-        self.expanded_width = 180
+        self.expanded_width = 160
         icon_size = QSize(20, 20)
 
         self.setMinimumWidth(self.collapsed_width)

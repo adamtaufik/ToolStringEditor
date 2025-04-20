@@ -12,8 +12,6 @@ class LoadingDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Exporting...")
 
-        print("running LoadingDialog()")
-
         # ✅ **Set background color to light gray**
         self.setStyleSheet("background-color: rgba(240, 240, 240, 255); border-radius: 0px;")
 
@@ -41,9 +39,7 @@ class LoadingDialog(QDialog):
 
         # self.movie.setScaledSize(self.movie.currentPixmap().size().scaled(80, 80, Qt.AspectRatioMode.KeepAspectRatio))
         self.label.setMovie(self.movie)
-        print('starting movie...')
         self.movie.start()
-        print('movie has started')
 
         # ✅ **Set window size to match the GIF**
         # self.setFixedSize(100, 100)
@@ -63,24 +59,17 @@ class LoadingWorker(QThread):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        print('creating the dialog in the main thread')
         self.loading_dialog = LoadingDialog(parent)  # ✅ Create the dialog in the main thread
-        print('dialog created in main thread')
         # ✅ Connect signals
-        print('collecting signals')
         self.start_signal.connect(self.loading_dialog.show)
         self.stop_signal.connect(self.loading_dialog.stop)
-        print('stopped collecting')
 
     def run(self):
         """Shows the loading dialog while exporting."""
-        print("Running LoadingWorker()")
-        self.start_signal.emit()  # ✅ Show the dialog
-        print('dialog shown')
+        self.start_signal.emit()
         self.exec()  # ✅ Keep the thread running
 
     def stop_dialog(self):
         """Stops and closes the loading dialog safely."""
-        print("Stopping LoadingWorker()")
         self.stop_signal.emit()  # ✅ Close dialog safely
         self.quit()  # ✅ Stop the thread

@@ -1,54 +1,51 @@
 # styles.py
 
-GLASSMORPHISM_STYLE = """
+DARK_STYLE = """
     QMainWindow {
-        background: rgba(255, 255, 255, 0.1);
+        background: #1e1e1e;
     }
-    SGSFGSApp {
-        background: rgba(255, 255, 255, 0.1);
+    SGSFGSApp, HydrostaticPressureApp {
+        background: #1e1e1e;
     }
-    HydrostaticPressureApp {
-        background: rgba(255, 255, 255, 0.1);
+
+    CustomTitleBar {
+        background-color: #2c2c2c;
+        border-bottom: 1px solid #3c3c3c;
     }
-    
 
     QToolTip {
-        background-color: black;
-        color: white;
-        border: 1px solid gray;
+        background-color: #2b2b2b;
+        color: #f0f0f0;
+        border: 1px solid #444;
         padding: 5px;
         font-size: 12px;
-        border-radius: 2px;
-    }
-    
-    QToolBar {
-        background: rgba(255, 255, 255, 0.2);
-        spacing: 5px;
+        border-radius: 4px;
     }
 
     QToolButton {
-        color: white;
+        color: #f0f0f0;
         padding: 5px;
         font-weight: bold;
+        background-color: transparent;
     }
     QToolButton:hover {
-        background: rgba(255, 255, 255, 0.25);
-        color: white;
+        background: #3a3a3a;
+        color: #ffffff;
     }
 
     QWidget#ToolLibrary {
-        background: rgba(255, 255, 255, 0.15);
+        background: #252526;
         border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+        border: 1px solid #3e3e42;
+        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
     }
 
     QFrame#DropZone {
-        background: rgba(255, 255, 255, 0.2);
+        background: #2d2d30;
         border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        border: 1px solid #444;
     }
-
+    
     QLineEdit, QComboBox {
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.4);
@@ -58,26 +55,26 @@ GLASSMORPHISM_STYLE = """
     }
 
     QLineEdit::placeholder {
-        color: rgba(255, 255, 255, 0.5);
+        color: #888;
     }
 
     QPushButton {
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: #3a3a3a;
+        border: 1px solid #555;
         border-radius: 10px;
         padding: 5px;
-        color: white;
+        color: #f0f0f0;
     }
 
     QPushButton:hover {
-        background: rgba(255, 255, 255, 0.25);
-    }
-    
-    QLabel {
-        color: white; 
+        background: #4a4a4a;
     }
 
+    QLabel {
+        color: #f0f0f0;
+    }
 """
+
 
 DELEUM_STYLE = """
     QMainWindow {
@@ -90,6 +87,11 @@ DELEUM_STYLE = """
         background: #3d000f;
     }
     
+    CustomTitleBar {
+    background-color: rgba(93, 0, 20, 0.3); /* Deep wine tint */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
     QToolTip {
         background-color: #3d000f;
         color: white;
@@ -99,10 +101,6 @@ DELEUM_STYLE = """
         border-radius: 2px;
     }
 
-    QToolBar {
-        background-color: #5a001a;
-        spacing: 5px;
-    }
     QToolButton {
         color: white;
         padding: 5px;
