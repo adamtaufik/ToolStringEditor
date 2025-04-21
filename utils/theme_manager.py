@@ -23,9 +23,6 @@ def toggle_theme(widget, current_theme, theme_button=None, summary_widget=None):
         if theme_button:
             theme_button.setText("Theme: Deleum")
 
-    if summary_widget:
-        summary_widget.update_icon_colors(new_theme)
-
     return new_theme
 
 

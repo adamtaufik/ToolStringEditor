@@ -2,17 +2,89 @@ import os
 import time
 import win32com.client
 from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QMessageBox, QFileDialog
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image as ExcelImage
 from openpyxl.styles import Font, Border, Side, Alignment
 from datetime import datetime
 from PIL import Image as PILImage
-from editor.logic_image_processing import combine_tool_images, expand_and_center_images
+
+from editor.loading_worker import LoadingWorker
+from editor.logic_image_processing import combine_tool_images, expand_and_center_images, remove_white_background
 from editor.logic_utils import get_number
 from ui.components.tool_widget import ToolWidget
+from ui.windows.ui_messagebox_window import MessageBoxWindow
+from utils.check_file import is_file_open
 from utils.path_finder import get_icon_path, get_image_path
 from io import BytesIO
 
+
+def export_configuration(main_window):
+    """Exports the current tool string to an Excel file in a separate thread."""
+    from ui.components.workers import ExportWorker
+
+    # Suggest filename based on client + location or last saved file
+    default_name = main_window.current_file_name or f"{main_window.location.text()}_{main_window.well_no.text()}_{main_window.operation_details.text()}".replace(
+        " ", "_")
+    default_path = os.path.join(os.getcwd(), default_name.replace(".json", ""))  # Set default path
+
+    # ✅ Check if DropZone is empty
+    if not main_window.drop_zone.tool_widgets:
+        MessageBoxWindow.message_simple(main_window,
+                                        "Export Error",
+                                        "The tool string is empty. Please add tools before exporting.",
+                                        QMessageBox.Icon.Warning)
+
+        return  # ✅ Stop export process if empty
+
+    file_dialog = QFileDialog()
+    excel_path, _ = file_dialog.getSaveFileName(main_window, "Export Tool String", default_path, "Excel Files (*.xlsx)")
+
+    if not excel_path:
+        return  # ✅ Exit if user cancels
+
+    # Before saving
+    if is_file_open(excel_path):
+        # print(f"⚠️ The file {excel_path} is open in Excel. Please close it and try again.")
+
+        print(f"Excel is currently open. Please close any Excel windows and try again.")
+        MessageBoxWindow.message_simple(main_window,
+                                        "Export Error",
+                                        f"Excel is currently open. Please close any Excel windows and try again.",
+                                        QMessageBox.Icon.Warning)
+
+        return  # Stop execution
+
+    pdf_path = excel_path.replace(".xlsx", ".pdf")
+    final_directory = os.path.dirname(excel_path)  # ✅ Extract directory
+
+    # ✅ **Start Loading Animation in a Separate Thread**
+    main_window.loading_worker = LoadingWorker(main_window)
+    main_window.loading_worker.start()
+
+    # ✅ **Start Export in a Background Thread**
+
+    main_window.export_thread = ExportWorker(main_window, excel_path, pdf_path, final_directory)
+    main_window.export_thread.finished.connect(lambda: on_export_finished(main_window, final_directory))
+    main_window.export_thread.start()
+
+
+def on_export_finished(main_window, final_directory):
+    """Called when the export thread is finished."""
+
+    main_window.loading_worker.stop_dialog()
+
+    response = MessageBoxWindow.message_yes_no(main_window,
+                                               "Export Successful",
+                                               f"Tool string exported successfully!\n\n📂 Folder location:\n{final_directory}\n\nWould you like to open the folder?",
+                                               QMessageBox.Icon.Information)
+
+    # ✅ Open actual save directory if user clicks "Yes"
+    if response == QMessageBox.StandardButton.Yes:
+        try:
+            os.startfile(final_directory)  # ✅ Opens the correct folder
+        except Exception as e:
+            print(f"⚠️ ERROR: Unable to open folder: {e}")
 
 def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_angle, well_type, date, operation_details, comments, drop_zone):
     """Exports tool string configuration to Excel and PDF."""
@@ -42,8 +114,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     ws["A4"] = "Operation Details"
     ws["A4"].font = Font(bold=True)
     ws["A5"] = operation_details
-    
-    today = datetime.today().strftime('%d-%m-%Y')
 
     # **Client Information Section**
     client_info = [
@@ -112,7 +182,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
         except:
             pass
 
-    for column in ['C', 'D', 'E', 'F', 'G','H']:
+    for column in ['C', 'D', 'E', 'F', 'G', 'H']:
         cell1 = column + str(last_row - 7)
         cell2 = column + str(last_row - 6)
         ws[cell1].font = Font(bold=True)
@@ -219,22 +289,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
 
     # ✅ **Convert Excel to PDF**
     export_to_pdf(excel_path, pdf_path)
-
-def remove_white_background(image):
-    """Removes white background and makes it transparent."""
-    image = image.convert("RGBA")  # Ensure image supports transparency
-    data = image.getdata()  # Get pixel data
-
-    new_data = []
-    for item in data:
-        # If pixel is white (or near white), make it transparent
-        if item[:3] == (255, 255, 255):  # Exact white
-            new_data.append((255, 255, 255, 0))  # Transparent
-        else:
-            new_data.append(item)  # Keep original color
-
-    image.putdata(new_data)  # Apply transparency
-    return image
 
 def export_to_pdf(excel_path, pdf_path):
     """Converts an Excel file to PDF and ensures Excel closes properly."""

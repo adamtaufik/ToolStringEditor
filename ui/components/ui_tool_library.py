@@ -7,10 +7,11 @@ from utils.styles import DARK_STYLE
 
 class ToolLibrary(QWidget):
     """Sidebar for listing available tools."""
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, drop_zone=None):
         super().__init__(parent)
 
         self.setStyleSheet(DARK_STYLE)
+        self.drop_zone = drop_zone
 
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -69,7 +70,7 @@ class ToolLibrary(QWidget):
 
         tool_count = 0
         for tool_name in tool_data["Tool Name"].unique():
-            tool_button = DraggableButton(tool_name)
+            tool_button = DraggableButton(tool_name, dropzone=self.drop_zone)
             self.tool_list_layout.addWidget(tool_button)
             tool_count += 1
 
@@ -93,7 +94,7 @@ class ToolLibrary(QWidget):
 
         tool_count = 0
         for tool_name in tools["Tool Name"].unique():
-            tool_button = DraggableButton(tool_name)
+            tool_button = DraggableButton(tool_name, dropzone=self.drop_zone)
             self.tool_list_layout.addWidget(tool_button)
             tool_count += 1
 

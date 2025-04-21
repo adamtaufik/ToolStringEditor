@@ -102,3 +102,19 @@ def combine_tool_images(images):
         y_offset += img.height
 
     return combined
+
+def remove_white_background(image):
+    """Removes white background and makes it transparent."""
+    image = image.convert("RGBA")  # Ensure image supports transparency
+    data = image.getdata()  # Get pixel data
+
+    new_data = []
+    for item in data:
+        # If pixel is white (or near white), make it transparent
+        if item[:3] == (255, 255, 255):  # Exact white
+            new_data.append((255, 255, 255, 0))  # Transparent
+        else:
+            new_data.append(item)  # Keep original color
+
+    image.putdata(new_data)  # Apply transparency
+    return image

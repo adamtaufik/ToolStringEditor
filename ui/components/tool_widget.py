@@ -3,6 +3,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QCursor, QColor
 from database.logic_database import get_tool_data
 from editor.logic_image_processing import expand_and_center_images
+from ui.components.ui_summary import SummaryWidget
 from utils.path_finder import get_image_path  # ✅ Import helper function
 from utils.styles import COMBO_STYLE
 
@@ -11,10 +12,11 @@ class ToolWidget(QWidget):
     """Widget representing a tool inside the DropZone."""
     BACKGROUND_WIDTH = 80  # Expanded background width for uniformity
     
-    def __init__(self, tool_name, drop_zone):
+    def __init__(self, tool_name, drop_zone, summary_widget=None):
         super().__init__(drop_zone)
         self.tool_name = tool_name
         self.drop_zone = drop_zone
+        self.summary_widget = summary_widget
 
         shadow = []
         for i in range(4):
@@ -77,7 +79,7 @@ class ToolWidget(QWidget):
         self.nominal_size_selector.setStyleSheet(COMBO_STYLE)
         # self.nominal_size_selector.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
-        self.nominal_size_selector.currentTextChanged.connect(self.drop_zone.update_summary)
+        self.nominal_size_selector.currentTextChanged.connect(self.summary_widget.update_summary)
         self.layout.addWidget(self.nominal_size_selector)
 
         # **OD Label**
@@ -255,14 +257,14 @@ class ToolWidget(QWidget):
         index = self.drop_zone.layout.indexOf(self)
         if index > 0:
             self.drop_zone.layout.insertWidget(index - 1, self)
-        self.drop_zone.update_summary()  # ✅ Update summary after movement
+        self.summary_widget.update_summary()  # ✅ Update summary after movement
 
     def move_down(self):
         """Moves the tool down in the DropZone."""
         index = self.drop_zone.layout.indexOf(self)
         if index < self.drop_zone.layout.count() - 1:
             self.drop_zone.layout.insertWidget(index + 1, self)
-        self.drop_zone.update_summary()  # ✅ Update summary after movement
+        self.summary_widget.update_summary()  # ✅ Update summary after movement
 
     def remove_tool(self):
         """Removes the tool from the DropZone."""
@@ -273,4 +275,4 @@ class ToolWidget(QWidget):
         expand_and_center_images(self.drop_zone.tool_widgets,
                                  self.drop_zone.diagram_width)
         self.drop_zone.update_placeholder()  # ✅ Ensure placeholder updates
-        self.drop_zone.update_summary()  # ✅ Ensure summary updates
+        self.summary_widget.update_summary()  # ✅ Ensure summary updates

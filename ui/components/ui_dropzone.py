@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt
 from editor.logic_image_processing import expand_and_center_images
 from ui.components.tool_widget import ToolWidget
 from utils.screen_info import get_height
-from utils.styles import DROPZONE_STYLE
+from utils.styles import DROPZONE_STYLE, DROPZONE_HEADERS
 
 
 class DropZone(QFrame):
@@ -36,15 +36,7 @@ class DropZone(QFrame):
 
         for header_text, width in headers:
             label = QLabel(header_text)
-            label.setStyleSheet("""
-            font-weight: bold; 
-            font-size: 8pt;
-            background-color: #f0f0f0; 
-            border: 0px white;
-            border-bottom: 2px solid #A9A9A9; 
-            color: black;
-            border-radius: 5px;
-            """)
+            label.setStyleSheet(DROPZONE_HEADERS)
             label.setFixedSize(width, 30)
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             label.setWordWrap(True)
@@ -86,7 +78,7 @@ class DropZone(QFrame):
             tool.deleteLater()
         self.tool_widgets.clear()
 
-        self.update_summary()
+        self.main_window.summary_widget.update_summary()
         self.update_placeholder()
 
     def dragEnterEvent(self, event):
@@ -94,23 +86,23 @@ class DropZone(QFrame):
         if event.mimeData().hasText():
             self.setStyleSheet("background-color: #363737; border: 2px dashed white; border-radius: 5px;")
             event.acceptProposedAction()
-        
+
     def dragLeaveEvent(self, event):
         self.setStyleSheet(DROPZONE_STYLE)
-    
+
     def dragMoveEvent(self, event):
         """Allow drag move if valid."""
         event.acceptProposedAction()
 
-    def drop_event_with_tool(self, tool_name):
+    def add_tool(self, tool_name):
         """Handle adding the tool when right-clicked from DraggableButton."""
-        new_tool = ToolWidget(tool_name, self)
+        new_tool = ToolWidget(tool_name, self, self.main_window.summary_widget)
         if new_tool.tool_data:  # ✅ Check if tool data exists
             self.tool_widgets.append(new_tool)
             self.setStyleSheet(DROPZONE_STYLE)
             self.layout.addWidget(new_tool)
             self.update_placeholder()  # ✅ Ensure placeholder updates
-            self.update_summary()  # ✅ Update summary when tools are added
+            self.main_window.summary_widget.update_summary()
             expand_and_center_images(self.tool_widgets, self.diagram_width)  # ✅ Resize images
         else:
             print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
@@ -118,16 +110,7 @@ class DropZone(QFrame):
     def dropEvent(self, event):
         """Handles dropping tools into DropZone."""
         tool_name = event.mimeData().text()
-        new_tool = ToolWidget(tool_name, self)
-        if new_tool.tool_data:  # ✅ Check if tool data exists
-            self.tool_widgets.append(new_tool)
-            self.setStyleSheet(DROPZONE_STYLE)
-            self.layout.addWidget(new_tool)
-            self.update_placeholder()  # ✅ Ensure placeholder updates
-            self.update_summary()  # ✅ Update summary when tools are added
-            expand_and_center_images(self.tool_widgets, self.diagram_width)  # ✅ Resize images
-        else:
-            print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
+        self.add_tool(tool_name)
 
         event.acceptProposedAction()
 
@@ -137,7 +120,6 @@ class DropZone(QFrame):
             # **Remove placeholders and spacers**
             self.placeholder_label.hide()
             self.main_layout.removeItem(self.top_spacer)
-            # self.main_layout.removeItem(self.placeholder_label)
             self.main_layout.removeItem(self.bottom_spacer)
         elif self.placeholder_label.isHidden():
             # **Show placeholders and re-add spacers**
@@ -146,25 +128,3 @@ class DropZone(QFrame):
             self.main_layout.insertWidget(2, self.placeholder_label)  # Keep it centered
             self.main_layout.insertItem(3, self.bottom_spacer)  # Push it up
 
-    def update_summary(self):
-        """Updates max OD, total length, and total weight."""
-        max_od = 0.0
-        total_length = 0.0
-        total_weight = 0.0
-
-        for tool in self.tool_widgets:
-            try:
-                od = float(tool.od_label.text().split()[0]) if tool.od_label.text() != "N/A" else 0.0
-                length = float(tool.length_label.text().split()[0]) if tool.length_label.text() != "N/A" else 0.0
-                weight = float(tool.weight_label.text().split()[0]) if tool.weight_label.text() != "N/A" else 0.0
-            except ValueError:
-                continue  # Ignore errors
-
-            max_od = max(max_od, od)
-            total_length += length
-            total_weight += weight
-
-        print(f"Updating summary: Max OD={max_od}, Length={total_length}, Weight={total_weight}")
-
-        if hasattr(self.main_window, "summary_widget"):
-            self.main_window.summary_widget.update_summary(max_od, total_length, total_weight)

@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
+from features.hydrostatic.calculations import calculate_pressure
 from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
@@ -140,7 +141,7 @@ class HydrostaticPressureApp(QWidget):
             }
         """)
         calculate_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        calculate_btn.clicked.connect(self.calculate_pressure)
+        calculate_btn.clicked.connect(lambda: calculate_pressure(self))
         calculator_layout.addWidget(calculate_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # ✅ Right sidebar for selecting fluids
@@ -238,21 +239,6 @@ class HydrostaticPressureApp(QWidget):
         if "-" in text:
             psi_ft_value = text.split("-")[-1].strip().split()[0]
             self.gradient_psi_ft.setText(psi_ft_value)
-
-    def calculate_pressure(self):
-        try:
-            psi_ft = float(self.gradient_psi_ft.text())
-            ft = float(self.depth_ft.text())
-            psi = psi_ft * ft
-            self.result_label.setText(f"Hydrostatic Pressure: {psi:,.2f} psi")
-        except ValueError:
-            QMessageBox.warning(self, "Input Error", "Please enter valid numeric values for gradient and depth.")
-
-    def return_to_main_menu(self):
-        from ui.windows.ui_start_window import StartWindow  # ⬅️ move import here to avoid circular import
-        self.start_window = StartWindow(app_icon=self.windowIcon())
-        self.start_window.show()
-        self.close()
 
     def toggle_theme(self):
         self.current_theme = toggle_theme(

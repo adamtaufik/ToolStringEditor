@@ -54,7 +54,6 @@ def plot_survey(ax, tvd_list, pressure_list, survey_type, temperature_list=None)
                 best_split = i
                 best_params = (m1, c1, m2, c2)
 
-        split_index = best_split
         m1, c1, m2, c2 = best_params
 
         if m1 != m2:
