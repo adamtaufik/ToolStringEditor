@@ -35,7 +35,6 @@ from utils.screen_info import get_height
 from utils.theme_manager import toggle_theme, apply_theme
 
 
-
 class ToolStringEditor(QMainWindow):
     """Main application window."""
 
@@ -201,6 +200,7 @@ class ToolStringEditor(QMainWindow):
         self.job_date.setDate(QDate.currentDate())
         self.job_date.setDisplayFormat("dd MMM yyyy")  # e.g., 18 Apr 2025
         self.job_date.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.job_date.dateChanged.connect(self.update_date_display)
 
         self.well_type = QComboBox()
         self.well_type.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -246,6 +246,7 @@ class ToolStringEditor(QMainWindow):
         date_layout.addWidget(icon_label)
         date_layout.addWidget(self.job_date)
         input_layout.addLayout(date_layout)
+        self.update_date_display()
 
         input_layout.addWidget(self.operation_details)
 
@@ -407,3 +408,10 @@ class ToolStringEditor(QMainWindow):
     def show_help_window(self):
         self.help_window = HelpWindow()
         self.help_window.show()
+
+    def update_date_display(self):
+        """Update the display format of the job date to include day name."""
+        date = self.job_date.date()
+        formatted_date = date.toString("d/M/yyyy (dddd)")  # Example: 21/4/2025 (Monday)
+        self.job_date.setDisplayFormat("d/M/yyyy (dddd)")
+        self.job_date.setToolTip(formatted_date)  # Optional: tooltip shows full date

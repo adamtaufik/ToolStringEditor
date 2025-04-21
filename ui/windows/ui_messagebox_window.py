@@ -1,15 +1,26 @@
+from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QPixmap
+from PyQt6.QtMultimedia import QSoundEffect
 from PyQt6.QtWidgets import QMessageBox
 
 from utils.path_finder import get_icon_path
 from utils.styles import MESSAGEBOX_STYLE
+import sys
+if sys.platform == "win32":
+    import winsound
 
 
 class MessageBoxWindow(QMessageBox):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+    def play_sound(self):
+        if sys.platform == "win32":
+            winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)  # Use other constants if you want
+
     def message_simple(self, title, text, icon=None):
+
+        # self.play_sound()
 
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(title)
@@ -25,6 +36,8 @@ class MessageBoxWindow(QMessageBox):
         msg_box.exec()
 
     def message_yes_no(self, title, text, icon=None):
+
+        # self.play_sound()
 
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(title)

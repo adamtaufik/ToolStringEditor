@@ -40,7 +40,7 @@ class SGSFGSApp(QWidget):
         main_layout = QHBoxLayout(self)  # Horizontal to place sidebar + main content
 
         items = [
-            (get_icon_path('save'), "Save", lambda: QMessageBox.information(self, "Save", "Save not implemented yet."), "Save the current file (Ctrl+S)"),
+            (get_icon_path('save'), "Save", lambda: MessageBoxWindow.message_simple(self, "Save", "Save not implemented yet."), "Save the current file (Ctrl+S)"),
             (get_icon_path('load'), "Load", lambda: QMessageBox.information(self, "Load", "Load not implemented yet."), "Open a file (Ctrl+O)"),
             (get_icon_path('plot'), "Plot", self.plot_graph, "Plot a graph from the current data"),
             (get_icon_path('copy'), "Copy as Image", self.copy_graph_to_clipboard, "Copy current graph as PNG"),

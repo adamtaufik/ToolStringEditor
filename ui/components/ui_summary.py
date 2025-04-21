@@ -102,36 +102,13 @@ class SummaryWidget(QWidget):
     def update_icon_colors(self, theme):
         """Updates icon colors dynamically based on the selected theme."""
 
-        load_icon(self.max_od_icon, "icon_od", theme)
-        load_icon(self.total_length_icon, "icon_length", theme)
-        load_icon(self.total_weight_icon, "icon_weight", theme)
+        load_icon(self.max_od_icon, "icon_od")
+        load_icon(self.total_length_icon, "icon_length")
+        load_icon(self.total_weight_icon, "icon_weight")
 
 
-def load_icon(label, file_name, theme):
+def load_icon(label, file_name):
     """Loads an icon and applies color inversion while keeping transparency."""
     icon_path = get_icon_path(file_name)
-
-    if not os.path.exists(icon_path):
-        print(f"❌ ERROR: Icon '{file_name}' not found at {icon_path}")
-        return
-
     pixmap = QPixmap(icon_path)
-    image = pixmap.toImage()
-
-    # Convert the image to format that supports transparency
-    image = image.convertToFormat(QImage.Format.Format_ARGB32)
-
-    for y in range(image.height()):
-        for x in range(image.width()):
-            pixel = image.pixelColor(x, y)
-
-            if pixel.alpha() > 0:  # ✅ Keep transparency intact
-                if pixel.red() < 50 and pixel.green() < 50 and pixel.blue() < 50:  # **Detect black**
-                    if theme in ["Deleum", "Dark"]:
-                        image.setPixelColor(x, y, QColor(255, 255, 255, pixel.alpha()))  # Change to white
-                    else:  # **Light Theme (Change white to black)**
-                        image.setPixelColor(x, y, QColor(0, 0, 0, pixel.alpha()))
-
-    updated_pixmap = QPixmap.fromImage(image)
-    label.setPixmap(
-        updated_pixmap.scaled(icon_size, icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+    label.setPixmap(pixmap.scaled(icon_size, icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
