@@ -14,7 +14,7 @@ from utils.path_finder import get_icon_path, get_image_path
 from io import BytesIO
 
 
-def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_angle, well_type, operation_details, comments, drop_zone):
+def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_angle, well_type, date, operation_details, comments, drop_zone):
     """Exports tool string configuration to Excel and PDF."""
 
     wb = Workbook()
@@ -48,7 +48,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     # **Client Information Section**
     client_info = [
         ["Client Name", "", "Location", "", "Well No.", "Well Type", "Max Angle", "Date"],
-        [client_name, "", location, "", well_no, well_type, max_angle, today]
+        [client_name, "", location, "", well_no, well_type, max_angle, date]
     ]
 
     for row_idx, row_data in enumerate(client_info, start=2):

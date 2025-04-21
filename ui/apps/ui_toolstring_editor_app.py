@@ -2,11 +2,11 @@ import os
 import sys
 
 # PyQt6 core modules
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtGui import QCursor, QPixmap, QColor, QGuiApplication
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog,
-    QLabel, QComboBox, QMessageBox, QFrame, QApplication
+    QLabel, QComboBox, QMessageBox, QFrame, QApplication, QDateEdit
 )
 
 # Database & Editor logic
@@ -194,6 +194,14 @@ class ToolStringEditor(QMainWindow):
         self.max_angle = AngleInput()
         self.operation_details = QLineEdit(placeholderText="Operation Details")
 
+        # Date Picker for Job Date
+        self.job_date = QDateEdit()
+        self.job_date.setFixedHeight(30)
+        self.job_date.setCalendarPopup(True)
+        self.job_date.setDate(QDate.currentDate())
+        self.job_date.setDisplayFormat("dd MMM yyyy")  # e.g., 18 Apr 2025
+        self.job_date.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+
         self.well_type = QComboBox()
         self.well_type.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.well_type.addItems([
@@ -229,6 +237,16 @@ class ToolStringEditor(QMainWindow):
         input_layout.addLayout(little_layout)
 
         input_layout.addWidget(self.well_type)
+
+        date_layout = QHBoxLayout()
+        calendar_icon = get_icon_path('calendar')
+        icon_label = QLabel()
+        icon_label.setPixmap(QPixmap(calendar_icon).scaled(24,24, Qt.AspectRatioMode.KeepAspectRatio))
+        icon_label.setFixedWidth(24)
+        date_layout.addWidget(icon_label)
+        date_layout.addWidget(self.job_date)
+        input_layout.addLayout(date_layout)
+
         input_layout.addWidget(self.operation_details)
 
         # **Separator Line**

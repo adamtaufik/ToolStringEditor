@@ -23,6 +23,7 @@ class ExportWorker(QThread):
                         self.parent.well_no.text(),
                         self.parent.max_angle.text(),
                         self.parent.well_type.currentText(),
+                        self.parent.job_date.date().toString("dd MMM yyyy"),
                         self.parent.operation_details.text(),
                         self.parent.comments.toPlainText(),
                         self.parent.drop_zone)
