@@ -4,7 +4,9 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QLabel, QWidget
 
-from utils.get_resource_path import get_resource_path
+from utils.path_finder import get_path
+from utils.styles import TOGGLE_BUTTON
+
 
 class FooterWidget(QWidget):
     def __init__(self, parent=None, theme_callback=None, footer_height=30):
@@ -20,29 +22,7 @@ class FooterWidget(QWidget):
         # Theme Toggle Button (Left)
         self.theme_button = QPushButton("Theme: Deleum")
         self.theme_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        # self.theme_button.setStyleSheet("""
-        #     QPushButton {
-        #         background-color: transparent;
-        #         font-size: 10pt;
-        #     }
-        #     QPushButton:hover {
-        #         background-color: rgba(255, 255, 255, 0.5);
-        #     }
-        # """)
-        self.theme_button.setStyleSheet("""
-            QPushButton {
-                background-color: rgba(255, 255, 255, 0.1);
-                border: 0px solid rgba(255, 255, 255, 0.3);
-                border-radius: 10px;
-                font-size: 10pt;
-                color: white;
-                padding: 5px 10px;
-                backdrop-filter: blur(6px);
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.2);
-            }
-        """)
+        self.theme_button.setStyleSheet(TOGGLE_BUTTON)
 
         self.theme_button.setFixedHeight(self.footer_height)
 
@@ -62,7 +42,7 @@ class FooterWidget(QWidget):
 
     def get_version_info(self):
         try:
-            version_history_path = get_resource_path(os.path.join("assets", "resources", "version_history.xlsx"))
+            version_history_path = get_path(os.path.join("assets", "resources", "version_history.xlsx"))
             version_history = pd.read_excel(version_history_path)
             version = version_history.iloc[0]["Version"]
             date = pd.to_datetime(version_history.iloc[0]["Date"]).strftime("%d/%m/%Y")

@@ -4,7 +4,7 @@ from PyInstaller.lib.modulegraph.modulegraph import footer
 from PyQt6.QtWidgets import QWidget, QLabel, QGridLayout, QVBoxLayout
 from PyQt6.QtGui import QPixmap, QColor, QImage
 from PyQt6.QtCore import Qt
-from utils.get_resource_path import get_icon_path
+from utils.path_finder import get_icon_path
 
 icon_size = 45
 

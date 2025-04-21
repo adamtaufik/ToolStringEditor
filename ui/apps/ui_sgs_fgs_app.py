@@ -13,8 +13,9 @@ from features.sgs_fgs.export import export_to_pdf
 from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
-from utils.get_resource_path import get_icon_path
-from utils.styles import combo_style
+from ui.windows.ui_messagebox_window import MessageBoxWindow
+from utils.path_finder import get_icon_path
+from utils.styles import COMBO_STYLE
 from utils.theme_manager import apply_theme, toggle_theme
 
 
@@ -69,7 +70,7 @@ class SGSFGSApp(QWidget):
         # Controls (survey type + row selector)
         control_layout = QHBoxLayout()
         self.survey_type = QComboBox()
-        self.survey_type.setStyleSheet(combo_style)
+        self.survey_type.setStyleSheet(COMBO_STYLE)
         self.survey_type.setCursor(Qt.CursorShape.PointingHandCursor)
         self.survey_type.addItems(["Static Gradient Survey (SGS)", "Flowing Gradient Survey (FGS)"])
         self.row_selector = QSpinBox()
@@ -242,29 +243,11 @@ class SGSFGSApp(QWidget):
             # Set image to clipboard
             QGuiApplication.clipboard().setImage(image)
 
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("Copied")
-            msg_box.setText("📋 Graph copied to clipboard successfully!")
-            msg_box.setStyleSheet("""
-                QMessageBox {
-                    color: black;
-                }
-                QMessageBox QLabel {
-                    color: black;
-                }
-                QPushButton {
-                    color: black;
-                    border: 1px solid black;
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                }
-                QPushButton:hover {
-                    background-color: #c9c9c9;
-                    cursor: pointer;
-                }
-            """)
+            MessageBoxWindow.message_simple(self,
+                                            "Copied",
+                                            "📋 Graph copied to clipboard successfully!",
+                                            "copy_black")
 
-            reply = msg_box.exec()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to copy graph:\n{str(e)}")
 
@@ -315,18 +298,14 @@ class SGSFGSApp(QWidget):
             self.table.blockSignals(False)
 
     def style_gradient_columns(self):
-        # pass
-        try:
-            for row in range(self.table.rowCount()):
-                for col in [3, 4]:  # Gradient columns
-                    if not self.table.item(row, col):
-                        self.table.setItem(row, col, QTableWidgetItem(""))
+        for row in range(self.table.rowCount()):
+            for col in [3, 4]:  # Gradient columns
+                if not self.table.item(row, col):
+                    self.table.setItem(row, col, QTableWidgetItem(""))
 
-                    item = self.table.item(row, col)
-                    if item:
-                        item.setBackground(QColor("lightgray"))  # <- most reliable
-        except Exception as e:
-            print(f"Error in style_gradient_columns: {e}")
+                item = self.table.item(row, col)
+                if item:
+                    item.setBackground(QColor("lightgray"))  # <- mo
 
 
     def toggle_theme(self):

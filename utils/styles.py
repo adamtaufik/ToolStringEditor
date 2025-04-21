@@ -1,5 +1,5 @@
 # styles.py
-from utils.get_resource_path import get_icon_path
+from utils.path_finder import get_icon_path
 
 DARK_STYLE = """
     QMainWindow {
@@ -75,7 +75,6 @@ DARK_STYLE = """
         color: #f0f0f0;
     }
 """
-
 
 DELEUM_STYLE = """
     QMainWindow {
@@ -175,47 +174,136 @@ MESSAGEBOX_STYLE = """
                 }
             """
 
-down_arrow = get_icon_path('down_arrow')
-up_arrow = get_icon_path('up_arrow')
+COMBO_STYLE = f"""
+            QComboBox {{
+                border: 1px solid #aaa;
+                border-radius: 6px;
+                padding: 5px 10px;
+                background-color: #f9f9f9;
+                color: #333;
+                font-size: 10pt;
+            }}
+            
+            QComboBox:hover {{
+                border: 1px solid #555;
+            }}
+            
+            QComboBox::drop-down {{
+                border: none;
+                background-color: transparent;
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 20px;
+            }}
+            
+            QComboBox::down-arrow {{
+                image: url("{get_icon_path('down_arrow').replace("\\", "/")}");
+                width: 12px;
+                height: 12px;
+            }}
+            
+            QComboBox::down-arrow:on {{
+                image: url("{get_icon_path('up_arrow').replace("\\", "/")}");
+            }}
+            
+            QComboBox QAbstractItemView {{
+                border: 1px solid #aaa;
+                border-radius: 6px;
+                selection-background-color: #87CEFA;
+                selection-color: black;
+                background-color: #fff;
+                font-size: 10pt;
+            }}
+            """
 
-combo_style = f"""
-QComboBox {{
-    border: 1px solid #aaa;
-    border-radius: 6px;
-    padding: 5px 10px;
-    background-color: #f9f9f9;
-    color: #333;
-    font-size: 10pt;
-}}
 
-QComboBox:hover {{
-    border: 1px solid #555;
-}}
+SIDEBAR_STYLE = """
+            #sidebar {
+                background-color: #1e1e2f;
+                border-right: 1px solid #2e2e3e;
+            }
+            QPushButton#toggleButton {
+                color: white;
+                background-color: #2b2b3d;
+                border: none;
+                padding: 8px;
+                border-radius: 6px;
+                text-align: left;
+                font-size: 14px;
+            }
+            QPushButton#toggleButton:hover {
+                background-color: #3b3b50;
+            }
+            QPushButton#menuItem {
+                color: white;
+                background-color: transparent;
+                border: none;
+                padding: 8px;
+                border-radius: 6px;
+                font-size: 13px;
+                text-align: left;
+            }
+            QPushButton#menuItem:hover {
+                background-color: #3c3c4f;
+            }
+        """
 
-QComboBox::drop-down {{
-    border: none;
-    background-color: transparent;
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 20px;
-}}
+TOGGLE_BUTTON = """
+            QPushButton {
+                background-color: rgba(255, 255, 255, 0.1);
+                border: 0px solid rgba(255, 255, 255, 0.3);
+                border-radius: 10px;
+                font-size: 10pt;
+                color: white;
+                padding: 5px 10px;
+                backdrop-filter: blur(6px);
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+        """
 
-QComboBox::down-arrow {{
-    image: url("{down_arrow.replace("\\", "/")}");
-    width: 12px;
-    height: 12px;
-}}
+MAIN_MENU_BUTTON = """
+                QPushButton {
+                    background-color: #f1f1f1;
+                    color: #800020;
+                    border-radius: 8px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #f0e0e6;
+                }
+            """
 
-QComboBox::down-arrow:on {{
-    image: url("{up_arrow.replace("\\", "/")}");
-}}
+HELP_WINDOW = """
+            QWidget {
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+            }
+            QLabel#pageLabel {
+                font-size: 14px;
+                color: #555555;
+                padding: 4px 8px;
+                background-color: #f0f0f0;
+                border-radius: 4px;
+            }
+        """
 
-QComboBox QAbstractItemView {{
-    border: 1px solid #aaa;
-    border-radius: 6px;
-    selection-background-color: #87CEFA;
-    selection-color: black;
-    background-color: #fff;
-    font-size: 10pt;
-}}
-"""
+DROPZONE_STYLE = """
+            background-color: white; 
+            border: 0px solid gray; 
+            border-radius: 10px;
+        """

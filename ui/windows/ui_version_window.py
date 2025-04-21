@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from utils.get_resource_path import get_resource_path
+from utils.path_finder import get_path
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem,
     QAbstractScrollArea, QHeaderView
@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 
 # Load version history
-version_history_path = get_resource_path("assets/resources/version_history.xlsx")
+version_history_path = get_path("assets/resources/version_history.xlsx")
 if not os.path.exists(version_history_path):
     raise FileNotFoundError(f"Version history file not found: {version_history_path}")
 

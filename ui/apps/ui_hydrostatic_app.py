@@ -7,7 +7,7 @@ from PyQt6.QtCore import Qt
 from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
-from utils.get_resource_path import get_icon_path
+from utils.path_finder import get_icon_path
 from utils.theme_manager import apply_theme, toggle_theme
 
 

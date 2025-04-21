@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QMovie
 import os
-from utils.get_resource_path import get_resource_path
+from utils.path_finder import get_path
 
 
 class LoadingDialog(QDialog):
@@ -26,7 +26,7 @@ class LoadingDialog(QDialog):
         layout.setContentsMargins(10, 10, 10, 10)
 
         # ✅ **Load & Scale GIF**
-        gif_path = get_resource_path(os.path.join("assets", "resources", "new_loading.gif"))
+        gif_path = get_path(os.path.join("assets", "resources", "new_loading.gif"))
         print(f"Finding GIF at: {gif_path}")
 
         self.movie = QMovie(gif_path)

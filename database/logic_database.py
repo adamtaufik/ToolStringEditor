@@ -1,9 +1,9 @@
 import pandas as pd
 import os
-from utils.get_resource_path import get_resource_path  # ✅ Import helper function
+from utils.path_finder import get_path, get_resource_path  # ✅ Import helper function
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QTableWidget, QTableWidgetItem
 
-csv_path = get_resource_path(os.path.join("assets","resources", "tool_database.csv"))
+csv_path = get_resource_path("tool_database.csv")
 
 # Ensure the file exists before reading
 if not os.path.exists(csv_path):
@@ -13,7 +13,7 @@ tool_data_df = pd.read_csv(csv_path)  # ✅ Read the tool database
 
 class DatabaseWindow(QDialog):
     """A window to display the tool database."""
-    def __init__(self, database_path="resources/tool_database.csv"):
+    def __init__(self, database_path=csv_path):
         super().__init__()
         self.setWindowTitle("Tool Database")
         self.resize(800, 600)
@@ -22,7 +22,7 @@ class DatabaseWindow(QDialog):
         self.table = QTableWidget()
         layout.addWidget(self.table)
 
-        self.load_database(get_resource_path(database_path))  # ✅ Ensure correct file path
+        self.load_database(get_path(database_path))  # ✅ Ensure correct file path
 
     def load_database(self, file_path):
         """Loads the CSV tool database into the table."""

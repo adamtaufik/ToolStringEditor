@@ -1,13 +1,10 @@
-import os
-from os import remove
-
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton, QComboBox, QGraphicsDropShadowEffect
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QCursor, QColor
 from database.logic_database import get_tool_data
-from editor.logic_image_processing import expand_and_center_images_dropzone
-from utils.get_resource_path import get_resource_path, get_icon_path  # ✅ Import helper function
-from utils.styles import combo_style
+from editor.logic_image_processing import expand_and_center_images
+from utils.path_finder import get_image_path  # ✅ Import helper function
+from utils.styles import COMBO_STYLE
 
 
 class ToolWidget(QWidget):
@@ -44,15 +41,8 @@ class ToolWidget(QWidget):
         # **Tool Image (Original Size, Expanded Background)**
         self.image_label = QLabel()
 
-        if "X-Over" in tool_name:
-            tool_name = "X-Over"
-        image_file = f"{tool_name}.png".replace('"','').replace("'","")
-        image_path = get_resource_path(os.path.join("assets", "images", image_file))
-        if os.path.exists(image_path):
-            pixmap = QPixmap(image_path)
-        else:
-            dummy_path = get_resource_path(os.path.join("assets", "images", "Dummy Image.png"))
-            pixmap = QPixmap(dummy_path)  # Fallback
+        image_path = get_image_path(tool_name)
+        pixmap = QPixmap(image_path)
 
         # Store original image size
         self.original_width = pixmap.width()
@@ -84,7 +74,7 @@ class ToolWidget(QWidget):
         for size in self.tool_data.get("Nominal Sizes", []):
             nominal_sizes.append(str(size))
         self.nominal_size_selector.addItems(nominal_sizes)
-        self.nominal_size_selector.setStyleSheet(combo_style)
+        self.nominal_size_selector.setStyleSheet(COMBO_STYLE)
         # self.nominal_size_selector.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
         self.nominal_size_selector.currentTextChanged.connect(self.drop_zone.update_summary)
@@ -122,7 +112,7 @@ class ToolWidget(QWidget):
         self.lower_connection_label = QComboBox()
         self.lower_connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.lower_connection_label.setFixedWidth(130)
-        self.lower_connection_label.setStyleSheet(combo_style)
+        self.lower_connection_label.setStyleSheet(COMBO_STYLE)
         # self.lower_connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.layout.addWidget(self.lower_connection_label)
 
@@ -280,8 +270,7 @@ class ToolWidget(QWidget):
             self.drop_zone.tool_widgets.remove(self)
         self.setParent(None)
         self.deleteLater()
-        expand_and_center_images_dropzone(self.drop_zone.tool_widgets,
-                                          self.drop_zone.diagram_width,
-                                          self.drop_zone.total_dropzone_height)
+        expand_and_center_images(self.drop_zone.tool_widgets,
+                                 self.drop_zone.diagram_width)
         self.drop_zone.update_placeholder()  # ✅ Ensure placeholder updates
         self.drop_zone.update_summary()  # ✅ Ensure summary updates

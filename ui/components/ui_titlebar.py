@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout, QGraphics
 from PyQt6.QtCore import Qt, QPoint, QRect, QPropertyAnimation
 from PyQt6.QtGui import QCursor, QPixmap
 
-from utils.get_resource_path import get_resource_path, get_icon_path
+from utils.path_finder import get_path, get_icon_path
 
 class CustomTitleBar(QWidget):
     def __init__(self, parent, menu_callback=None, title=""):

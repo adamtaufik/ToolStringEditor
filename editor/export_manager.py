@@ -7,10 +7,10 @@ from openpyxl.drawing.image import Image as ExcelImage
 from openpyxl.styles import Font, Border, Side, Alignment
 from datetime import datetime
 from PIL import Image as PILImage
-from editor.logic_image_processing import expand_and_center_images, combine_tool_images
+from editor.logic_image_processing import combine_tool_images, expand_and_center_images
 from editor.logic_utils import get_number
 from ui.components.tool_widget import ToolWidget
-from utils.get_resource_path import get_resource_path, get_icon_path
+from utils.path_finder import get_icon_path, get_image_path
 from io import BytesIO
 
 
@@ -159,7 +159,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     # **Insert Tool String Image**
     cell = "B8"
     if tool_images:
-        centered_images = expand_and_center_images(tool_images,80)
+        centered_images = expand_and_center_images(tool_images, 80, True)
         tool_image = combine_tool_images(centered_images)
         tool_image = remove_white_background(tool_image)
         tool_image.save(png_path)
@@ -182,7 +182,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     row_1_height = ws.row_dimensions[1].height
     # Open the logo image
     logo_path = get_icon_path('logo_report')
-    # logo_path = get_resource_path(os.path.join("assets", "images", "logo_report.png"))
     logo_img = PILImage.open(logo_path)
     # Calculate scaling factor to fit within row 1 height
     max_logo_height = row_1_height * 1.25  # Adjust scaling factor as needed
@@ -302,15 +301,8 @@ def extract_tool_data(drop_zone):
 
         # **Retrieve Tool Image**
 
-        if "X-Over" in tool_name:
-            tool_name = "X-Over"
-        image_file = f"{tool_name}.png".replace('"','').replace("'","")
-        image_path = get_resource_path(os.path.join("assets", "images", image_file))
-
-        if os.path.exists(image_path):
-            pixmap = QPixmap(image_path)
-        else:
-            pixmap = QPixmap(get_resource_path("assets/images/Dummy Image.png"))  # Fallback image
+        image_path = get_image_path(tool_name)
+        pixmap = QPixmap(image_path)
 
         # **Store tool image only if it's valid**
         if widget.image_label.pixmap() and not widget.image_label.pixmap().isNull():
@@ -318,9 +310,3 @@ def extract_tool_data(drop_zone):
 
     return data, tool_images
 
-
-def get_tool_image_path(tool_name):
-    """Returns the correct image path for a tool, handling special cases like X-Over."""
-    if "X-Over" in tool_name:
-        tool_name = "X-Over"  # Normalize X-Over naming
-    return get_resource_path(f"assets/images/{tool_name}.png")

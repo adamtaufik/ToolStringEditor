@@ -4,8 +4,10 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QIcon, QKeySequence
 from PyQt6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve
 
+from ui.windows.ui_messagebox_window import MessageBoxWindow
 from ui.windows.ui_version_window import VersionWindow
-from utils.get_resource_path import get_icon_path
+from utils.path_finder import get_icon_path
+from utils.styles import SIDEBAR_STYLE
 
 
 class SidebarWidget(QFrame):
@@ -25,36 +27,7 @@ class SidebarWidget(QFrame):
         self.back_path = get_icon_path('back')
         self.menu_path = get_icon_path('menu')
 
-        self.setStyleSheet("""
-            #sidebar {
-                background-color: #1e1e2f;
-                border-right: 1px solid #2e2e3e;
-            }
-            QPushButton#toggleButton {
-                color: white;
-                background-color: #2b2b3d;
-                border: none;
-                padding: 8px;
-                border-radius: 6px;
-                text-align: left;
-                font-size: 14px;
-            }
-            QPushButton#toggleButton:hover {
-                background-color: #3b3b50;
-            }
-            QPushButton#menuItem {
-                color: white;
-                background-color: transparent;
-                border: none;
-                padding: 8px;
-                border-radius: 6px;
-                font-size: 13px;
-                text-align: left;
-            }
-            QPushButton#menuItem:hover {
-                background-color: #3c3c4f;
-            }
-        """)
+        self.setStyleSheet(SIDEBAR_STYLE)
 
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(3, 10, 3, 10)
@@ -154,40 +127,12 @@ class SidebarWidget(QFrame):
         start_window.show()
         parent_window.close()
 
-    import os
-    from PyQt6.QtWidgets import QMessageBox
-    from PyQt6.QtGui import QIcon
-
     def exit(self):
 
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("Confirm Exit")
-        msg_box.setText("Are you sure you want to exit the application?")
-        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-
-        msg_box.setIcon(QMessageBox.Icon.Warning)  # Use the default warning icon if path is invalid
-
-        # Style: black text, bordered buttons, hover feedback
-        msg_box.setStyleSheet("""
-            QMessageBox {
-                color: black;
-            }
-            QMessageBox QLabel {
-                color: black;
-            }
-            QPushButton {
-                color: black;
-                border: 1px solid black;
-                padding: 5px 10px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #c9c9c9;
-                cursor: pointer;
-            }
-        """)
-
-        reply = msg_box.exec()
+        reply = MessageBoxWindow.message_yes_no(self,
+                                                "Confirm Exit",
+                                                "Are you sure you want to exit the application?",
+                                                QMessageBox.Icon.Warning)
 
         if reply == QMessageBox.StandardButton.Yes:
             parent_window = self.window()

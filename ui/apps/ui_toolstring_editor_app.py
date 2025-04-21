@@ -26,22 +26,15 @@ from ui.components.ui_tool_library import ToolLibrary
 # Windows
 from ui.windows.ui_database_window import DatabaseWindow
 from ui.windows.ui_help_window import HelpWindow
-from ui.windows.ui_version_window import VersionWindow
+from ui.windows.ui_messagebox_window import MessageBoxWindow
 
 # Utils
 from utils.check_file import is_file_open
-from utils.get_resource_path import get_icon_path
-from utils.styles import MESSAGEBOX_STYLE
+from utils.path_finder import get_icon_path
+from utils.screen_info import get_height
 from utils.theme_manager import toggle_theme, apply_theme
 
 
-app = QApplication(sys.argv)
-
-screen = QGuiApplication.primaryScreen()
-if screen:
-    geometry = screen.availableGeometry()
-    screen_width = geometry.width()
-    screen_height = geometry.height()
 
 class ToolStringEditor(QMainWindow):
     """Main application window."""
@@ -55,7 +48,7 @@ class ToolStringEditor(QMainWindow):
 
         self.current_file_name = None  # Track last saved or loaded filename
         # self.setWindowTitle("Deleum Tool String Editor")
-        self.setMinimumHeight(screen_height - 10)  # ✅ Set minimum resizable height
+        self.setMinimumHeight(get_height() - 10)  # ✅ Set minimum resizable height
         self.setMinimumWidth(1366)
 
         # ✅ Set initial theme
@@ -168,30 +161,10 @@ class ToolStringEditor(QMainWindow):
             QGuiApplication.clipboard().setImage(image)
 
             # Optional confirmation (you can use your styled QMessageBox)
-
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("Copied")
-            msg_box.setText("📋 Tool String configuration copied to clipboard as image!")
-            msg_box.setStyleSheet("""
-                QMessageBox {
-                    color: black;
-                }
-                QMessageBox QLabel {
-                    color: black;
-                }
-                QPushButton {
-                    color: black;
-                    border: 1px solid black;
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                }
-                QPushButton:hover {
-                    background-color: #c9c9c9;
-                    cursor: pointer;
-                }
-            """)
-
-            reply = msg_box.exec()
+            MessageBoxWindow.message_simple(self,
+                                            "Copied",
+                                            "📋 Tool String configuration copied to clipboard as image!",
+                                            'copy_black')
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to copy drop zone:\n{str(e)}")
@@ -304,13 +277,11 @@ class ToolStringEditor(QMainWindow):
 
         # ✅ Check if DropZone is empty
         if not self.drop_zone.tool_widgets:
-            msg_box = QMessageBox(self)
-            msg_box.setIcon(QMessageBox.Icon.Warning)
-            msg_box.setWindowTitle("Export Error")
-            msg_box.setText("The tool string is empty. Please add tools before exporting.")
+            MessageBoxWindow.message_simple(self,
+                                            "Export Error",
+                                            "The tool string is empty. Please add tools before exporting.",
+                                            QMessageBox.Icon.Warning)
 
-            msg_box.setStyleSheet(MESSAGEBOX_STYLE)
-            msg_box.exec()
             return  # ✅ Stop export process if empty
 
         file_dialog = QFileDialog()
@@ -324,18 +295,10 @@ class ToolStringEditor(QMainWindow):
             # print(f"⚠️ The file {excel_path} is open in Excel. Please close it and try again.")
 
             print(f"Excel is currently open. Please close any Excel windows and try again.")
-
-            # ✅ Show success message
-            msg_error = QMessageBox(self)
-            msg_error.setWindowTitle("Export failed")
-            # msg_error.setText(f"⚠️ The file {excel_path} is open in Excel. Please close it and try again.")
-
-            msg_error.setText(f"Excel is currently open. Please close any Excel windows and try again.")
-
-            msg_error.setStyleSheet(MESSAGEBOX_STYLE)
-            msg_error.setIcon(QMessageBox.Icon.Warning)
-
-            msg_error.exec()
+            MessageBoxWindow.message_simple(self,
+                                            "Export Error",
+                                            f"Excel is currently open. Please close any Excel windows and try again.",
+                                            QMessageBox.Icon.Warning)
 
             return  # Stop execution
 
@@ -357,16 +320,10 @@ class ToolStringEditor(QMainWindow):
 
         self.loading_worker.stop_dialog()
 
-        # ✅ Show success message
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Export Successful")
-        msg.setText(f"Tool string exported successfully!\n\n📂 Folder location:\n{final_directory}\n\nWould you like to open the folder?")
-        msg.setStyleSheet(MESSAGEBOX_STYLE)
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-
-        # ✅ Show dialog and check user response
-        response = msg.exec()
+        response = MessageBoxWindow.message_yes_no(self,
+                                                   "Export Successful",
+                                                   f"Tool string exported successfully!\n\n📂 Folder location:\n{final_directory}\n\nWould you like to open the folder?",
+                                                   QMessageBox.Icon.Information)
 
         # ✅ Open actual save directory if user clicks "Yes"
         if response == QMessageBox.StandardButton.Yes:
@@ -397,15 +354,10 @@ class ToolStringEditor(QMainWindow):
             base_name = os.path.basename(file_name)
             self.setWindowTitle(f"Deleum Tool String Editor - {base_name}")
 
-            # ✅ Show success message
-            msg_save = QMessageBox(self)
-            msg_save.setWindowTitle("Save Successful")
-            msg_save.setText("Tool string saved successfully!")
-
-            msg_save.setStyleSheet(MESSAGEBOX_STYLE)
-            msg_save.setIcon(QMessageBox.Icon.Information)
-
-            msg_save.exec()
+            MessageBoxWindow.message_simple(self,
+                                            "Save Successful",
+                                            "Tool string saved successfully!",
+                                            "save_black")
 
     def load_configuration(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Load Configuration", "", "JSON Files (*.json)")

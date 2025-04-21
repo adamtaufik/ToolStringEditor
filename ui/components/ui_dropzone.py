@@ -1,25 +1,23 @@
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QSpacerItem
-from PyQt6.QtCore import Qt, QSize
-from PIL import Image as PILImage
-from PIL.ImageQt import ImageQt
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import Qt
 
-from editor.logic_image_processing import expand_and_center_images_dropzone
+from editor.logic_image_processing import expand_and_center_images
 from ui.components.tool_widget import ToolWidget
+from utils.screen_info import get_height
+from utils.styles import DROPZONE_STYLE
+
 
 class DropZone(QFrame):
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.total_dropzone_height = 650
+        self.total_dropzone_height = get_height() - 55
         self.diagram_width = 70
-        self.dropzone_style_main = "background-color: white; border: 0px solid gray; border-radius: 10px;"
 
         self.main_window = parent
         self.setFrameStyle(QFrame.Shape.Panel | QFrame.Shadow.Sunken)
-        self.setStyleSheet(self.dropzone_style_main)
-        # self.setFixedSize(800, self.total_dropzone_height)  # Adjust DropZone size if needed
+        self.setStyleSheet(DROPZONE_STYLE)
         self.setAcceptDrops(True)
 
         self.tool_widgets = []  # List to store tool widgets
@@ -57,8 +55,6 @@ class DropZone(QFrame):
         container_layout.addLayout(header_layout)
         container_layout.setContentsMargins(0, 0, 0, 10)
         self.main_layout.addLayout(container_layout)
-        # self.main_layout.addLayout(header_layout)
-
 
         # **Stretch placeholder (initially empty, later added/removed)**
         self.top_spacer = QSpacerItem(20, 15, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
@@ -73,7 +69,6 @@ class DropZone(QFrame):
         # **Bottom spacer (re-added when empty)**
         self.bottom_spacer = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         self.main_layout.addItem(self.bottom_spacer)  # Initially added
-
 
         # **Tools Layout**
         self.layout = QVBoxLayout()
@@ -101,7 +96,7 @@ class DropZone(QFrame):
             event.acceptProposedAction()
         
     def dragLeaveEvent(self, event):
-        self.setStyleSheet(self.dropzone_style_main)
+        self.setStyleSheet(DROPZONE_STYLE)
     
     def dragMoveEvent(self, event):
         """Allow drag move if valid."""
@@ -112,11 +107,11 @@ class DropZone(QFrame):
         new_tool = ToolWidget(tool_name, self)
         if new_tool.tool_data:  # ✅ Check if tool data exists
             self.tool_widgets.append(new_tool)
-            self.setStyleSheet(self.dropzone_style_main)
+            self.setStyleSheet(DROPZONE_STYLE)
             self.layout.addWidget(new_tool)
             self.update_placeholder()  # ✅ Ensure placeholder updates
             self.update_summary()  # ✅ Update summary when tools are added
-            expand_and_center_images_dropzone(self.tool_widgets, self.diagram_width, self.total_dropzone_height)  # ✅ Resize images
+            expand_and_center_images(self.tool_widgets, self.diagram_width)  # ✅ Resize images
         else:
             print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
 
@@ -126,11 +121,11 @@ class DropZone(QFrame):
         new_tool = ToolWidget(tool_name, self)
         if new_tool.tool_data:  # ✅ Check if tool data exists
             self.tool_widgets.append(new_tool)
-            self.setStyleSheet(self.dropzone_style_main)
+            self.setStyleSheet(DROPZONE_STYLE)
             self.layout.addWidget(new_tool)
             self.update_placeholder()  # ✅ Ensure placeholder updates
             self.update_summary()  # ✅ Update summary when tools are added
-            expand_and_center_images_dropzone(self.tool_widgets, self.diagram_width, self.total_dropzone_height)  # ✅ Resize images
+            expand_and_center_images(self.tool_widgets, self.diagram_width)  # ✅ Resize images
         else:
             print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
 

@@ -4,9 +4,13 @@ from PyQt6.QtCore import Qt, QTimer
 from ui.apps.ui_toolstring_editor_app import ToolStringEditor
 from ui.apps.ui_hydrostatic_app import HydrostaticPressureApp
 from ui.apps.ui_sgs_fgs_app import SGSFGSApp
-from utils.get_resource_path import get_resource_path, get_icon_path
+from utils.path_finder import get_path, get_icon_path
 from ui.components.ui_footer import FooterWidget
 import os
+
+from utils.styles import MAIN_MENU_BUTTON
+
+
 class StartWindow(QWidget):
     def __init__(self, app_icon=None):
         super().__init__()
@@ -19,7 +23,7 @@ class StartWindow(QWidget):
         self.setStyleSheet("font-family: 'Segoe UI';")
 
         # Background image (optional)
-        background_path = get_resource_path(os.path.join("assets", "images", "wave.png"))
+        background_path = get_path(os.path.join("assets", "backgrounds", "wave.png"))
         bg_label = QLabel(self)
         pixmap = QPixmap(background_path).scaled(self.size(), Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation)
         bg_label.setPixmap(pixmap)
@@ -55,17 +59,7 @@ class StartWindow(QWidget):
             btn = QPushButton(text)
             btn.setFixedSize(250, 40)
             btn.setFont(QFont("Segoe UI", 10))
-            btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #f1f1f1;
-                    color: #800020;
-                    border-radius: 8px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #f0e0e6;
-                }
-            """)
+            btn.setStyleSheet(MAIN_MENU_BUTTON)
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             if callback:
                 btn.clicked.connect(callback)

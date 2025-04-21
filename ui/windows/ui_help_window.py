@@ -5,7 +5,8 @@ from PyQt6.QtPdfWidgets import QPdfView
 from PyQt6.QtPdf import QPdfDocument
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt, QSize, QPointF
-from utils.get_resource_path import get_resource_path
+from utils.path_finder import get_path
+from utils.styles import HELP_WINDOW
 
 
 class HelpWindow(QWidget):
@@ -15,32 +16,7 @@ class HelpWindow(QWidget):
         super().__init__()
         self.setWindowTitle("Help")
         self.setGeometry(250, 250, 900, 600)
-        self.setStyleSheet("""
-            QWidget {
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-            QLabel#pageLabel {
-                font-size: 14px;
-                color: #555555;
-                padding: 4px 8px;
-                background-color: #f0f0f0;
-                border-radius: 4px;
-            }
-        """)
+        self.setStyleSheet(HELP_WINDOW)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
@@ -52,7 +28,7 @@ class HelpWindow(QWidget):
 
         # Create and load the PDF document
         self.pdf_document = QPdfDocument(self)
-        pdf_path = get_resource_path(os.path.join("assets", "resources", "FAQ.pdf"))
+        pdf_path = get_path(os.path.join("assets", "resources", "FAQ.pdf"))
 
         # Control bar at the bottom
         control_bar = QHBoxLayout()
@@ -168,7 +144,7 @@ class HelpWindow(QWidget):
             self, "Save PDF", "FAQ.pdf", "PDF Files (*.pdf)"
         )
         if file_path:
-            pdf_path = get_resource_path(os.path.join("assets", "resources", "FAQ.pdf"))
+            pdf_path = get_path(os.path.join("assets", "resources", "FAQ.pdf"))
             try:
                 with open(pdf_path, "rb") as f:
                     pdf_content = f.read()

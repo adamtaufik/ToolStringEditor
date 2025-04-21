@@ -7,18 +7,18 @@ from PyQt6.QtWidgets import QApplication, QSplashScreen
 from PyQt6.QtGui import QFont, QPixmap, QIcon
 
 from ui.windows.ui_start_window import StartWindow
-from utils.get_resource_path import get_resource_path
+from utils.path_finder import get_path
 
 if __name__ == "__main__":
     app = QApplication([])
 
     # ✅ Set Application Icon (For Taskbar & Title Bar)
-    icon_path = get_resource_path(os.path.join("assets", "icons", "logo_full_qTd_icon.ico"))
+    icon_path = get_path(os.path.join("assets", "icons", "logo_full_qTd_icon.ico"))
     app_icon = QIcon(icon_path)
     app.setWindowIcon(app_icon)
 
     # ✅ Create a Splash Screen
-    splash_path = get_resource_path(os.path.join("assets", "images", "splash.png"))
+    splash_path = get_path(os.path.join("assets", "backgrounds", "splash.png"))
     splash_image = QPixmap(splash_path)
     splash = QSplashScreen(splash_image)
     splash.show()
