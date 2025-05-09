@@ -90,15 +90,9 @@ class StartWindow(QWidget):
         main_layout.addStretch()
         main_layout.addLayout(footer_layout)
 
-
     def open_toolstring_editor_app(self):
         self.editor_window = ToolStringEditor()
         self.editor_window.show()
-        self.close()
-
-    def open_hydrostatic_app(self):
-        self.hydro_window = HydrostaticPressureApp()
-        self.hydro_window.show()
         self.close()
 
     def open_sgsfgs_app(self):
