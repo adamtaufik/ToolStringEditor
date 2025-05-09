@@ -2,17 +2,16 @@ from PyQt6.QtWidgets import QPushButton, QLabel, QHBoxLayout, QMenu, QApplicatio
 from PyQt6.QtCore import Qt, QMimeData
 from PyQt6.QtGui import QPixmap, QCursor, QDrag, QColor, QPalette, QAction
 
-from ui.components.ui_dropzone import DropZone
-
-feedback_style = """background-color: rgba(163, 163, 163, 1);
+FEEDBACK_STYLE = """background-color: rgba(163, 163, 163, 1);
                 border-radius: 5px !important;
                 border: 0px solid #555 !important;"""
 
 class DraggableButton(QPushButton):
-    def __init__(self, tool_name, parent=None):
+    def __init__(self, tool_name, dropzone=None, parent=None):
         super().__init__(parent)
         self.setFixedHeight(40)
         self.tool_name = tool_name
+        self.dropzone = dropzone
 
         # Set initial palette and cursor
         self.setAutoFillBackground(True)
@@ -47,8 +46,8 @@ class DraggableButton(QPushButton):
 
     def enterEvent(self, event):
         self.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
-        self.setStyleSheet(feedback_style)
-        self.text_label.setStyleSheet(feedback_style)
+        self.setStyleSheet(FEEDBACK_STYLE)
+        self.text_label.setStyleSheet(FEEDBACK_STYLE)
 
     def leaveEvent(self, event):
         self.setStyleSheet(self.default_stylesheet)
@@ -83,21 +82,9 @@ class DraggableButton(QPushButton):
         self.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))  # 🔄 Ensure cursor stays a hand
 
     def contextMenuEvent(self, event):
-        # """Show right-click menu with 'Add to DropZone'."""
-        # menu = QMenu(self)
-        # add_action = QAction("Add to DropZone", self)
-        # add_action.triggered.connect(self.add_to_dropzone)
-        # menu.addAction(add_action)
-        # menu.exec(event.globalPos())
-
-        pass
-
-    def add_to_dropzone(self):
-        print('adding to dropzone NOW')
-        widget = QApplication.focusWidget()
-        while widget is not None:
-            if isinstance(widget, DropZone):
-                widget.drop_event_with_tool(self.tool_name)
-                return
-            widget = widget.parent()
-        print("❌ DropZone not found in widget tree.")
+        """Show right-click menu with 'Add to DropZone'."""
+        menu = QMenu(self)
+        add_action = QAction("Add to DropZone", self)
+        add_action.triggered.connect(lambda: self.dropzone.add_tool(self.tool_name))
+        menu.addAction(add_action)
+        menu.exec(event.globalPos())

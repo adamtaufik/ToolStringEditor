@@ -343,3 +343,13 @@ DROPZONE_STYLE = """
             border: 0px solid gray; 
             border-radius: 10px;
         """
+
+DROPZONE_HEADERS = """
+            font-weight: bold; 
+            font-size: 8pt;
+            background-color: #f0f0f0; 
+            border: 0px white;
+            border-bottom: 2px solid #A9A9A9; 
+            color: black;
+            border-radius: 5px;
+            """
