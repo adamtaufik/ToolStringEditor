@@ -4,7 +4,6 @@ from PyQt6.QtCore import Qt, QTimer
 
 from ui.apps.ui_calculations_app import WirelineCalculatorApp
 from ui.apps.ui_toolstring_editor_app import ToolStringEditor
-from ui.apps.ui_hydrostatic_app import HydrostaticPressureApp
 from ui.apps.ui_sgs_fgs_app import SGSFGSApp
 from utils.path_finder import get_path, get_icon_path
 from ui.components.ui_footer import FooterWidget
