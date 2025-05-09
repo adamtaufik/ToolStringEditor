@@ -2,16 +2,36 @@
 from utils.path_finder import get_icon_path
 
 DARK_STYLE = """
-    QMainWindow {
-        background: #1e1e1e;
-    }
-    SGSFGSApp, HydrostaticPressureApp {
+    QMainWindow, SGSFGSApp, HydrostaticPressureApp, WirelineCalculatorApp {
         background: #1e1e1e;
     }
 
     CustomTitleBar {
         background-color: #2c2c2c;
         border-bottom: 1px solid #3c3c3c;
+    }
+
+
+    QTabWidget::pane {
+        border: 1px solid #76797C;
+        background: rgba(45, 45, 45, 230);
+        border-radius: 4px;
+    }
+    QTabBar::tab {
+        background: rgba(65, 65, 65, 230);
+        color: white;
+        padding: 8px;
+        border: 1px solid #76797C;
+        border-bottom: none;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+    QTabBar::tab:selected {
+        background: rgba(85, 85, 85, 230);
+        border-color: #76797C;
+    }
+    QTabBar::tab:!selected {
+        margin-top: 2px;
     }
 
     QToolTip {
@@ -77,19 +97,35 @@ DARK_STYLE = """
 """
 
 DELEUM_STYLE = """
-    QMainWindow {
-        background: #3d000f;
-    }
-    SGSFGSApp {
-        background: #3d000f;
-    }
-    HydrostaticPressureApp {
+    QMainWindow, SGSFGSApp, HydrostaticPressureApp, WirelineCalculatorApp {
         background: #3d000f;
     }
     
     CustomTitleBar {
     background-color: rgba(93, 0, 20, 0.3); /* Deep wine tint */
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    QTabWidget::pane {
+        border: 1px solid #76797C;
+        background: rgba(45, 45, 45, 230);
+        border-radius: 4px;
+    }
+    QTabBar::tab {
+        background: rgba(65, 65, 65, 230);
+        color: white;
+        padding: 8px;
+        border: 1px solid #76797C;
+        border-bottom: none;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+    QTabBar::tab:selected {
+        background: rgba(85, 85, 85, 230);
+        border-color: #76797C;
+    }
+    QTabBar::tab:!selected {
+        margin-top: 2px;
     }
 
     QToolTip {

@@ -248,16 +248,10 @@ class HydrostaticPressureApp(QWidget):
         except ValueError:
             QMessageBox.warning(self, "Input Error", "Please enter valid numeric values for gradient and depth.")
 
-    def return_to_main_menu(self):
-        from ui.windows.ui_start_window import StartWindow  # ⬅️ move import here to avoid circular import
-        self.start_window = StartWindow(app_icon=self.windowIcon())
-        self.start_window.show()
-        self.close()
-
     def toggle_theme(self):
         self.current_theme = toggle_theme(
             widget=self,
             current_theme=self.current_theme,
-            theme_button=self.theme_button,  # ✅ exists now
+            theme_button=self.theme_button,
             summary_widget=None
         )

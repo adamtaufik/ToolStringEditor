@@ -180,75 +180,52 @@ class ToolWidget(QWidget):
         self.update_tool_info()
 
     def update_tool_info(self):
-        """Updates OD, Length, Weight, and Lower Connection dynamically."""
+        """Updates OD, Length, Weight, and Lower/Top Connections dynamically."""
         selected_size = self.nominal_size_selector.currentText()
-        size_data = self.tool_data["Sizes"].get(selected_size, {})
+        size_data = self.tool_data.get("Sizes", {}).get(selected_size, {})
 
-        # Update labels
-        self.od_label.setText(f"{size_data.get('OD', 'N/A'):.3f} in")
-        self.length_label.setText(f"{size_data.get('Length', 'N/A'):.1f} ft")
-        self.weight_label.setText(f"{size_data.get('Weight', 'N/A'):.1f} lbs")
+        # Update dimension labels
+        self.od_label.setText(f"{size_data.get('OD', 0):.3f} in")
+        self.length_label.setText(f"{size_data.get('Length', 0):.1f} ft")
+        self.weight_label.setText(f"{size_data.get('Weight', 0):.1f} lbs")
 
-        # Update connection dropdown
+        # Extract connections
+        lower_conns = size_data.get("Lower Connections", [])
+        top_conns = size_data.get("Top Connections", [])
+
+        # Handle NaNs or blanks
+        lower_conns = [] if lower_conns == ['nan'] else lower_conns
+        top_conns = [] if top_conns == ['nan'] else top_conns
+
+        # Update lower connection dropdown
         self.lower_connection_label.clear()
 
-        lower_connections = size_data.get("Lower Connections", [])
-        top_connections = size_data.get("Top Connections", [])
+        if lower_conns:
+            mod_lower_conns = [self._modify_connection(conn, side="lower") for conn in lower_conns]
+            self.lower_connection_label.addItems(mod_lower_conns)
 
-        if lower_connections == ['nan']:
-            lower_connections[0] = "N/A"
-
-        # if lower_connections and lower_connections != ['nan']:
-        if lower_connections:
-            modified_lower_connections = []
-
-            for conn in lower_connections:
-                if conn.endswith("SR"):
-                    modified_lower_connections.append(conn + " Box")  # SR type → Lower gets Box
-                elif conn in ["Sondex", "GO 'A'"]:
-                    modified_lower_connections.append(conn + " Pin")  # Sondex & GO 'A' → Lower gets Pin
-                else:
-                    modified_lower_connections.append(conn)  # Keep as is
-
-            self.lower_connection_label.addItems(modified_lower_connections)
-
-            # If lower and top connections are the same, link updates
-            if lower_connections == top_connections:
+            if lower_conns == top_conns:
                 self.lower_connection_label.currentTextChanged.connect(self.sync_top_connection)
-
-                selected_lower = self.lower_connection_label.currentText()
-
-                if selected_lower.endswith(" Box"):
-                    self.top_connection_label.setText(selected_lower.replace(" Box", " Pin"))
-                elif selected_lower.endswith(" Pin"):
-                    self.top_connection_label.setText(selected_lower.replace(" Pin", " Box"))
-                else:
-                    self.top_connection_label.setText(selected_lower)
+                self.sync_top_connection()  # Initial sync
             else:
-
-                modified_top_connections = []
-
-                for conn in top_connections:
-                    if conn.endswith("SR"):
-                        modified_top_connections.append(conn + " Pin")  # SR type → Lower gets Box
-                    elif conn in ["Sondex", "GO 'A'"]:
-                        modified_top_connections.append(conn + " Box")  # Sondex & GO 'A' → Lower gets Pin
-                    else:
-                        modified_top_connections.append(conn)  # Keep as is
-
-                top_connections = modified_top_connections
-
-                if top_connections == ['nan']:
-                    self.top_connection_label.setText("N/A")
-                else:
-                    self.top_connection_label.setText(top_connections[0])
+                mod_top_conns = [self._modify_connection(conn, side="top") for conn in top_conns]
+                self.top_connection_label.setText(mod_top_conns[0] if mod_top_conns else "N/A")
         else:
-            self.lower_connection_label.addItems(['-'])
+            self.lower_connection_label.addItem("-")
             self.top_connection_label.setText("-")
 
     def sync_top_connection(self):
-        """Synchronizes top connection label with selected lower connection when they are equal."""
-        self.top_connection_label.setText(self.lower_connection_label.currentText())
+        """Synchronizes top connection label with the selected lower connection."""
+        raw_conn = self.lower_connection_label.currentText().replace(" Pin", "").replace(" Box", "")
+        self.top_connection_label.setText(self._modify_connection(raw_conn, side="top"))
+
+    def _modify_connection(self, conn, side="lower"):
+        """Modifies the connection name based on position and standard rules."""
+        if conn.endswith("SR"):
+            return f"{conn} {'Box' if side == 'lower' else 'Pin'}"
+        elif conn in ["Sondex", "GO 'A'"]:
+            return f"{conn} {'Pin' if side == 'lower' else 'Box'}"
+        return conn
 
     def move_up(self):
         """Moves the tool up in the DropZone."""

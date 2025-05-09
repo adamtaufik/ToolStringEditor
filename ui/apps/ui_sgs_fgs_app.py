@@ -174,6 +174,7 @@ class SGSFGSApp(QWidget):
         except ValueError as e:
             QMessageBox.warning(self, "Invalid Input", str(e))
 
+
     def return_to_main_menu(self):
         from ui.windows.ui_start_window import StartWindow
         self.start_window = StartWindow(app_icon=self.windowIcon())

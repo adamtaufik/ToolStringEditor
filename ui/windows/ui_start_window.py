@@ -1,6 +1,8 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
 from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import Qt, QTimer
+
+from ui.apps.ui_calculations_app import WirelineCalculatorApp
 from ui.apps.ui_toolstring_editor_app import ToolStringEditor
 from ui.apps.ui_hydrostatic_app import HydrostaticPressureApp
 from ui.apps.ui_sgs_fgs_app import SGSFGSApp
@@ -46,8 +48,8 @@ class StartWindow(QWidget):
         # 3D Menu Container
         self.buttons = [
             ("Wireline Tool String Editor", self.open_toolstring_editor_app),
-            ("Hydrostatic Pressure Calculator", self.open_hydrostatic_app),
             ("SGS/FGS Data Interpreter", self.open_sgsfgs_app),
+            ("Wireline Calculator", self.open_calculations_app),
             ("PCE Stack Up Editor (Coming Soon)", None)
         ]
 
@@ -103,5 +105,10 @@ class StartWindow(QWidget):
     def open_sgsfgs_app(self):
         self.sgsfgs_app = SGSFGSApp()
         self.sgsfgs_app.show()
+        self.close()
+
+    def open_calculations_app(self):
+        self.calculations_app = WirelineCalculatorApp()
+        self.calculations_app.show()
         self.close()
 
