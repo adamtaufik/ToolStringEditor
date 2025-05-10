@@ -491,20 +491,20 @@ class WireIllustration(QGraphicsView):
             # Labels
             # Rope socket depth
             socket_y = self.depth * scale_factor
-            socket_label = self.scene.addText(f"Rope Socket: {self.depth} ft")
+            socket_label = self.scene.addText(f"Rope Socket: \n{self.depth} ft")
             socket_label.setPos(well_width + 70, socket_y - 15)
             self.scene.addLine(0, socket_y, well_width, socket_y, QPen(Qt.GlobalColor.blue, 2))
 
             # Top of wire
             if self.top_wire > 0:
                 top_y = self.top_wire * scale_factor
-                top_label = self.scene.addText(f"Top of Wire: {self.top_wire:.1f} ft")
+                top_label = self.scene.addText(f"Top of Wire: \n{self.top_wire:.1f} ft")
                 top_label.setPos(well_width + 70, top_y - 15)
                 self.scene.addLine(0, top_y, well_width, top_y, QPen(Qt.GlobalColor.darkGreen, 2))
 
             # Fallback label
             if self.total_fall > 0:
-                fall_label = self.scene.addText(f"Fallback: {self.total_fall:.1f} ft")
+                fall_label = self.scene.addText(f"Fallback: \n{self.total_fall:.1f} ft")
                 fall_label.setDefaultTextColor(Qt.GlobalColor.darkRed)
                 fall_label.setPos(well_width + 70, (self.depth - self.wire_left / 2) * scale_factor)
 

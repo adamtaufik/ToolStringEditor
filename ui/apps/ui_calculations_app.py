@@ -30,7 +30,7 @@ class WirelineCalculatorApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Wireline Calculator")
-        self.setMinimumWidth(800)
+        self.setMinimumWidth(1300)
         self.setMinimumHeight(500)
 
         # Top-level vertical layout (entire window)
