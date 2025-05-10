@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QSplitter,
                              QLabel, QPushButton, QTextEdit, QTableWidget,
                              QTableWidgetItem, QHeaderView, QApplication)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -142,6 +142,21 @@ class MDtoTVDTab(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
         right_layout.addWidget(self.canvas)
 
+        # Add a button to copy the plot to clipboard
+        self.copy_plot_btn = QPushButton("Copy Plot to Clipboard")
+        self.copy_plot_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #800020;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #a00028;
+            }
+        """)
+
+        # Add this button to your right_layout (visualization side)
+        right_layout.addWidget(self.copy_plot_btn)
+
         # Add widgets to splitter
         splitter.addWidget(left_widget)
         splitter.addWidget(right_widget)
@@ -198,6 +213,7 @@ class MDtoTVDTab(QWidget):
         self.clear_btn.clicked.connect(self.clear_all)
         self.copy_btn.clicked.connect(self.copy_results)
         self.paste_md_btn.clicked.connect(self.paste_md_from_clipboard)
+        self.copy_plot_btn.clicked.connect(self.copy_plot_to_clipboard)
 
     def get_survey_data(self):
         survey_data = []
@@ -575,3 +591,59 @@ class MDtoTVDTab(QWidget):
             text += "\n"
 
         clipboard.setText(text)
+
+    def copy_plot_to_clipboard(self):
+        """Copy the current plot to the system clipboard"""
+        try:
+            # Create a temporary buffer to save the plot
+            from io import BytesIO
+            buffer = BytesIO()
+
+            # Save the figure to the buffer
+            self.figure.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
+            buffer.seek(0)
+
+            # Create QPixmap from the buffer
+            from PyQt6.QtGui import QPixmap
+            pixmap = QPixmap()
+            pixmap.loadFromData(buffer.getvalue(), 'PNG')
+
+            # Copy to clipboard
+            clipboard = QApplication.clipboard()
+            clipboard.setPixmap(pixmap)
+
+            # Optional: Show a brief tooltip confirmation
+            self.copy_plot_btn.setToolTip("Plot copied to clipboard!")
+            self.show_copy_confirmation()
+            QTimer.singleShot(2000, lambda: self.copy_plot_btn.setToolTip(""))
+
+        except Exception as e:
+            print(f"Error copying plot: {e}")
+            self.copy_plot_btn.setToolTip(f"Failed to copy: {str(e)}")
+            QTimer.singleShot(2000, lambda: self.copy_plot_btn.setToolTip(""))
+
+
+    def show_copy_confirmation(self):
+        # Show a temporary message
+        self.copy_plot_btn.setText("Copied!")
+        self.copy_plot_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+            }
+        """)
+
+        # Reset after 2 seconds
+        QTimer.singleShot(2000, self.reset_copy_button)
+
+    def reset_copy_button(self):
+        self.copy_plot_btn.setText("Copy Plot to Clipboard")
+        self.copy_plot_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #800020;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #a00028;
+            }
+        """)

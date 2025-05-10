@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QGridLayout, QVBoxLayout,
-                             QLabel, QLineEdit, QPushButton, QComboBox, QTextEdit, QSplitter)
+                             QLabel, QLineEdit, QPushButton, QComboBox, QTextEdit, QSplitter, QApplication)
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 
@@ -41,7 +41,7 @@ class WeightTab(QWidget):
 
         # Wire size selection
         self.wire_combo = QComboBox()
-        self.wire_combo.addItems(["0.092\"", "0.108\"", "0.125\""])
+        self.wire_combo.addItems(["0.092\"", "0.108\"", "0.125\"", "0.140\"", "0.160\""])
 
         # Pressure input
         self.pressure_input = QLineEdit()
@@ -102,6 +102,7 @@ class WeightTab(QWidget):
                 background-color: #f0f0f0;
             }
         """)
+        copy_btn.clicked.connect(self.copy_formula)
 
         formula_layout.addWidget(QLabel("\nCalculation Breakdown:"))
         formula_layout.addWidget(self.formula_display)
@@ -181,3 +182,7 @@ class WeightTab(QWidget):
             <div class="formula"><span class="overline">   </span> = {area:.6f} × {pressure:.2f}</div>
             <div class="formula"><span class="overline">   </span> = {weight:.2f} lbs</div>
         """
+
+    def copy_formula(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.formula_display.toPlainText())
