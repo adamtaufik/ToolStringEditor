@@ -32,21 +32,9 @@ class MDtoTVDTab(QWidget):
         md_input_layout = QVBoxLayout(md_input_group)
         md_input_layout.addWidget(QLabel("MD Values to Convert:"))
 
-        self.md_input = QTextEdit()
-        self.md_input.setPlaceholderText("Paste MD values here (one per line or Excel column)...")
-        md_input_layout.addWidget(self.md_input)
-
-        # Deviation Survey Input
-        survey_group = QWidget()
-        survey_layout = QVBoxLayout(survey_group)
-        survey_layout.addWidget(QLabel("Deviation Survey (MD to TVD):"))
-
         # Add paste from Excel button
-        button_group = QWidget()
-        button_layout = QHBoxLayout(button_group)
-
-        paste_excel_btn = QPushButton("Paste from Excel")
-        paste_excel_btn.setStyleSheet("""
+        self.paste_md_btn = QPushButton("Paste from Excel")
+        self.paste_md_btn.setStyleSheet("""
                     QPushButton {
                         background-color: #5cb85c;
                         color: white;
@@ -57,16 +45,38 @@ class MDtoTVDTab(QWidget):
                         background-color: #4cae4c;
                     }
                 """)
-        paste_excel_btn.clicked.connect(self.paste_from_excel)
 
-        button_layout.addWidget(paste_excel_btn)
-        survey_layout.addWidget(button_group)
+        self.md_input = QTextEdit()
+        self.md_input.setPlaceholderText("Paste MD values here (one per line or Excel column)...")
+        md_input_layout.addWidget(self.md_input)
+        md_input_layout.addWidget(self.paste_md_btn)
+
+        # Deviation Survey Input
+        survey_group = QWidget()
+        survey_layout = QVBoxLayout(survey_group)
+        survey_layout.addWidget(QLabel("Deviation Survey (MD to TVD):"))
+
+        # Add paste from Excel button
+        paste_survey_btn = QPushButton("Paste from Excel")
+        paste_survey_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #5cb85c;
+                        color: white;
+                        padding: 5px;
+                        border-radius: 4px;
+                    }
+                    QPushButton:hover {
+                        background-color: #4cae4c;
+                    }
+                """)
+        paste_survey_btn.clicked.connect(self.paste_from_excel)
 
         self.survey_table = QTableWidget()
         self.survey_table.setColumnCount(2)
         self.survey_table.setHorizontalHeaderLabels(["MD", "TVD"])
         self.survey_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         survey_layout.addWidget(self.survey_table)
+        survey_layout.addWidget(paste_survey_btn)
 
         # Conversion Controls
         controls_group = QWidget()
@@ -105,10 +115,12 @@ class MDtoTVDTab(QWidget):
         results_layout.addWidget(self.copy_btn)
 
         # Add all to left layout
-        left_layout.addWidget(md_input_group)
-        left_layout.addWidget(survey_group)
+        tables_layout = QHBoxLayout()
+        tables_layout.addWidget(md_input_group)
+        tables_layout.addWidget(survey_group)
+        tables_layout.addWidget(results_group)
+        left_layout.addLayout(tables_layout)
         left_layout.addWidget(controls_group)
-        left_layout.addWidget(results_group)
         # Right side (Visualization)
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
@@ -136,6 +148,11 @@ class MDtoTVDTab(QWidget):
         splitter.setSizes([400, 400])
 
         main_layout.addWidget(splitter)
+
+    def paste_md_from_clipboard(self):
+        clipboard = QApplication.clipboard()
+        text = clipboard.text()
+        self.md_input.setPlainText(text)
 
     def paste_from_excel(self):
         """Handle pasting Excel data into the survey table"""
@@ -180,6 +197,7 @@ class MDtoTVDTab(QWidget):
         self.convert_btn.clicked.connect(self.convert_md_to_tvd)
         self.clear_btn.clicked.connect(self.clear_all)
         self.copy_btn.clicked.connect(self.copy_results)
+        self.paste_md_btn.clicked.connect(self.paste_md_from_clipboard)
 
     def get_survey_data(self):
         survey_data = []
