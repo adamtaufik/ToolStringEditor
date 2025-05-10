@@ -1,9 +1,8 @@
 import pandas as pd
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QMessageBox, QHBoxLayout, QLabel, QGridLayout, QLineEdit, \
-    QPushButton, QListWidget, QApplication, QTextEdit, QComboBox, QCheckBox
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QMessageBox, QHBoxLayout
 
+from features.calculator.MDtoTVD_tab import MDtoTVDTab
 from features.calculator.hydrostatic_tab import HydrostaticTab
 from features.calculator.shear_pin_tab import ShearPinTab
 from features.calculator.weight_tab import WeightTab
@@ -58,6 +57,7 @@ class WirelineCalculatorApp(QWidget):
         self.tabs.addTab(HydrostaticTab(), "Hydrostatic Pressure")
         self.tabs.addTab(WeightTab(), "Tool String Weight")
         self.tabs.addTab(ShearPinTab(), "Shear Pins")
+        self.tabs.addTab(MDtoTVDTab(), "MD to TVD")
         # self.set_tab_stylesheet(self.tabs)  # Apply styling to tabs
 
         # ✅ Toolbar-style sidebar (left) for Save/Load

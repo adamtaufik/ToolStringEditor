@@ -1,22 +1,18 @@
-import os
-
 # PyQt6 core modules
 from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtGui import QCursor, QPixmap, QGuiApplication
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog,
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
     QLabel, QComboBox, QMessageBox, QFrame, QDateEdit
 )
 
 # Database & Editor logic
 from database.file_io import save_configuration, load_configuration
 from editor.export_manager import export_configuration
-from editor.loading_worker import LoadingWorker
 
 # UI Components
 from ui.components.inputs import AngleInput, LimitedTextEdit
 from ui.components.ui_footer import FooterWidget
-from ui.components.workers import ExportWorker
 from ui.components.ui_dropzone import DropZone
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_summary import SummaryWidget
@@ -29,7 +25,6 @@ from ui.windows.ui_help_window import HelpWindow
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 
 # Utils
-from utils.check_file import is_file_open
 from utils.path_finder import get_icon_path
 from utils.screen_info import get_height
 from utils.theme_manager import toggle_theme, apply_theme

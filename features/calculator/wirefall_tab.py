@@ -1,7 +1,7 @@
-from PyQt6.QtWidgets import QWidget, QGridLayout, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QTextEdit, \
-    QHBoxLayout, QApplication
-from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QWidget, QGridLayout, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QTextEdit, \
+    QHBoxLayout, QApplication, QSplitter
+from PyQt6.QtGui import QFont
 import pandas as pd
 
 class WirefallTab(QWidget):
@@ -9,19 +9,35 @@ class WirefallTab(QWidget):
         super().__init__()
         self.data = data
         self.df = pd.DataFrame(data, columns=["Tubing O.D.", "Wire Size", "Wire Fall/1000'"])
-        print(self.df)
         self.init_ui()
 
     def init_ui(self):
-        layout = QHBoxLayout(self)
+        # Create a main layout
+        main_layout = QVBoxLayout(self)
 
-        # Inputs section
-        input_layout = self.create_input_section()
-        layout.addLayout(input_layout)
+        # Create a horizontal splitter
+        splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Formula display
-        formula_layout = self.create_formula_section()
-        layout.addLayout(formula_layout)
+        # Create container widgets for each section
+        input_widget = QWidget()
+        formula_widget = QWidget()
+
+        # Set layouts for each container
+        input_widget.setLayout(self.create_input_section())
+        formula_widget.setLayout(self.create_formula_section())
+
+        # Add widgets to splitter
+        splitter.addWidget(input_widget)
+        splitter.addWidget(formula_widget)
+
+        # Set initial sizes (optional)
+        splitter.setSizes([400, 600])  # Initial widths in pixels
+
+        # Add splitter to main layout
+        main_layout.addWidget(splitter)
+
+        # Optional: Add stretch to push splitter to top
+        main_layout.addStretch()
 
     def create_input_section(self):
         input_layout = QGridLayout()
@@ -55,6 +71,18 @@ class WirefallTab(QWidget):
 
         self.calculate_btn = QPushButton("Calculate")
         self.calculate_btn.clicked.connect(self.calculate_wirefall)
+        self.calculate_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #800020;
+                color: white;
+                padding: 5px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #a00028;
+            }
+        """)
+        self.calculate_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         input_layout.addWidget(self.calculate_btn, 4, 0, 1, 3)
 
         # Output labels
@@ -66,7 +94,6 @@ class WirefallTab(QWidget):
         input_layout.addWidget(self.output_total_fall, 6, 0, 1, 3)
         input_layout.addWidget(self.output_top_wire, 7, 0, 1, 3)
 
-        print('input layout good')
         return input_layout
 
     def create_formula_section(self):
@@ -92,7 +119,6 @@ class WirefallTab(QWidget):
         formula_layout.addWidget(self.formula_display)
         formula_layout.addWidget(copy_button)
 
-        print('formula layout good')
         return formula_layout
 
 
@@ -127,60 +153,50 @@ class WirefallTab(QWidget):
             self.output_top_wire.setText(f"Top of Wire (Approximate): {top_wire:.2f} ft")
 
             self.formula_display.setHtml(f"""
-                    <style>
-                        .formula {{ 
-                            font-family: 'Cambria Math', 'Times New Roman', serif;
-                            font-size: 12pt;
-                            margin: 5px 0;
-                        }}
-                        .result {{
-                            font-weight: bold;
-                            color: #800020;
-                            margin: 10px 0 15px 0;
-                            font-size: 14pt;
-                        }}
-                        .frac {{
-                            display: inline-block;
-                            position: relative;
-                            vertical-align: middle;
-                            letter-spacing: 0.001em;
-                            text-align: center;
-                            margin: 0 3px;
-                        }}
-                        .frac > span {{
-                            display: block;
-                            padding: 0.1em;
-                        }}
-                        .frac span.bottom {{
-                            border-top: 1px solid;
-                        }}
-                        .frac span.symbol {{
-                            display: none;
-                        }}
-                        .overline {{
-                            text-decoration: overline;
-                        }}
-                        .unit {{
-                            font-style: italic;
-                        }}
-                    </style>
+                <style>                    
+                    .formula {{ 
+                        font-family: 'Cambria Math', 'Times New Roman', serif;
+                        font-size: 12pt;
+                        margin: 5px 0;
+                    }}
+                    .result {{
+                        font-weight: bold;
+                        color: #800020;
+                        margin: 10px 0 15px 0;
+                        font-size: 14pt;
+                    }}
+                    .frac {{
+                        display: inline-block;
+                        vertical-align: middle; 
+                        text-align: center;
+                    }}
+                    .numerator {{
+                        padding: 0 5px;    
+                    }}
+                    .denominator {{
+                        border-top: 1px solid;
+                        padding: 0 5px;
+                    }}
+                    .unit {{
+                        font-style: italic;
+                    }}
+                </style>
 
-                    <div class="result">Wire Fall Back Total</div>
-                    <div class="formula">
-                        <i>F</i><sub>total</sub> = 
-                        <span class="frac">
-                            <span>{fall_per_1000}</span>
-                            <span class="bottom">1000</span>
-                            <span class="symbol">/</span>
-                        </span>
-                        × {wire_left:.2f}
-                    </div>
-                    <div class="formula"><span class="overline">        </span> = {total_fall:.2f} <span class="unit">ft</span></div>
+                <div class="result">Wire Fall Back Total</div>
+                <div class="formula">
+                    <i>F</i><sub>total</sub> = 
+                    <span class="frac">
+                        <span class="numerator">{fall_per_1000}</span>
+                        <span class="denominator">/1000</span>
+                    </span>
+                    × {wire_left:.2f}
+                </div>
+                <div class="formula">= {total_fall:.2f} <span class="unit">ft</span></div>
 
-                    <div class="result">Top of Wire (Approximate)</div>
-                    <div class="formula"><i>T</i> = ( {depth:.2f} − {wire_left:.2f} ) + {total_fall:.2f}</div>
-                    <div class="formula"><span class="overline">                 </span> = {top_wire:.2f} <span class="unit">ft</span></div>
-                """)
+                <div class="result">Top of Wire (Approximate)</div>
+                <div class="formula"><i>T</i> = ( {depth:.2f} − {wire_left:.2f} ) + {total_fall:.2f}</div>
+                <div class="formula">= {top_wire:.2f} <span class="unit">ft</span></div>
+            """)
 
         except ValueError:
             self.formula_display.setHtml("<div style='color: red;'>Please enter valid numeric inputs.</div>")

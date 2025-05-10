@@ -154,6 +154,7 @@ class SGSFGSApp(QWidget):
     def update_table_rows(self):
         rows = self.row_selector.value()
         self.table.setRowCount(rows)
+        self.style_gradient_columns()
 
     def clear_table(self):
         for row in range(self.table.rowCount()):

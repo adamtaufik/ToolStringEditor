@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QGridLayout,
-                             QLabel, QComboBox, QCheckBox, QPushButton, QTextEdit, QApplication)
+                             QLabel, QComboBox, QCheckBox, QPushButton, QTextEdit, QApplication, QSplitter)
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 
@@ -24,16 +24,30 @@ class ShearPinTab(QWidget):
         self.setup_connections()
 
     def init_ui(self):
-        main_layout = QHBoxLayout(self)
+        # Create main layout (changed from QHBoxLayout to QVBoxLayout)
+        main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
 
-        # Input Section
-        input_layout = self.create_input_section()
-        main_layout.addLayout(input_layout)
+        # Create a horizontal splitter
+        splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Formula Display
-        formula_layout = self.create_formula_section()
-        main_layout.addLayout(formula_layout)
+        # Create container widgets for each section
+        input_widget = QWidget()
+        formula_widget = QWidget()
+
+        # Set layouts for each container
+        input_widget.setLayout(self.create_input_section())
+        formula_widget.setLayout(self.create_formula_section())
+
+        # Add widgets to splitter
+        splitter.addWidget(input_widget)
+        splitter.addWidget(formula_widget)
+
+        # Set initial sizes (adjust these values as needed)
+        splitter.setSizes([400, 600])  # Input section: 400px, Formula section: 600px
+
+        # Add splitter to main layout
+        main_layout.addWidget(splitter)
 
     def create_input_section(self):
         input_layout = QGridLayout()
@@ -64,6 +78,7 @@ class ShearPinTab(QWidget):
                 background-color: #a00028;
             }
         """)
+        self.calculate_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Result Label
         self.result_label = QLabel("Shear Force Required: -")
@@ -208,8 +223,8 @@ class ShearPinTab(QWidget):
             <div class="formula">
                 A = πr² = π × 
                 <span class="frac">
-                    <span>{diameter:.4f}</span>
-                    <span class="bottom">2</span>
+                    <span>({diameter:.4f}</span>
+                    <span class="bottom">/2)</span>
                 </span>² = {area:.6f} in²
             </div>
             <div class="formula">τ = 0.6 × σ<sub>t</sub> = 0.6 × {tensile_strength:,} = {shear_strength:,.0f} psi</div>

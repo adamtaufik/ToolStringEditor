@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QGridLayout, QVBoxLayout,
-                             QLabel, QLineEdit, QPushButton, QComboBox, QTextEdit)
+                             QLabel, QLineEdit, QPushButton, QComboBox, QTextEdit, QSplitter)
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 
@@ -11,16 +11,30 @@ class WeightTab(QWidget):
         self.setup_connections()
 
     def init_ui(self):
-        main_layout = QHBoxLayout(self)
+        # Create main layout (changed from QHBoxLayout to QVBoxLayout)
+        main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
 
-        # Inputs section
-        input_layout = self.create_input_section()
-        main_layout.addLayout(input_layout)
+        # Create a horizontal splitter
+        splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Formula display
-        formula_layout = self.create_formula_section()
-        main_layout.addLayout(formula_layout)
+        # Create container widgets for each section
+        input_widget = QWidget()
+        formula_widget = QWidget()
+
+        # Set layouts for each container
+        input_widget.setLayout(self.create_input_section())
+        formula_widget.setLayout(self.create_formula_section())
+
+        # Add widgets to splitter
+        splitter.addWidget(input_widget)
+        splitter.addWidget(formula_widget)
+
+        # Set initial sizes (adjust these values as needed)
+        splitter.setSizes([400, 600])  # Input section: 400px, Formula section: 600px
+
+        # Add splitter to main layout
+        main_layout.addWidget(splitter)
 
     def create_input_section(self):
         input_layout = QGridLayout()
@@ -50,6 +64,7 @@ class WeightTab(QWidget):
                 background-color: #a00028;
             }
         """)
+        self.calculate_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # Output labels
         self.cross_section_label = QLabel("Cross Sectional Area: -")

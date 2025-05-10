@@ -33,16 +33,17 @@ class StartWindow(QWidget):
         bg_label.lower()
 
         # Logo
-        logo_path = get_icon_path('logo_full')
+        # logo_path = get_icon_path('logo_full')
+        logo_path = get_path(os.path.join("assets", "backgrounds", "title.png"))
         logo_label = QLabel()
-        logo_pixmap = QPixmap(logo_path).scaledToHeight(60, Qt.TransformationMode.SmoothTransformation)
+        logo_pixmap = QPixmap(logo_path).scaledToHeight(180, Qt.TransformationMode.SmoothTransformation)
         logo_label.setPixmap(logo_pixmap)
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Title
-        title = QLabel("Deleum WireHub")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("font-size: 24px; font-weight: bold; color: #800020;")
+        # # Title
+        # title = QLabel("Deleum WireHub")
+        # title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # title.setStyleSheet("font-size: 24px; font-weight: bold; color: #800020;")
 
         # 3D Menu Container
         self.buttons = [
@@ -71,9 +72,9 @@ class StartWindow(QWidget):
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(logo_label)
         main_layout.addSpacing(10)
-        main_layout.addWidget(title)
+        # main_layout.addWidget(title)
 
-        main_layout.addSpacing(30)
+        # main_layout.addSpacing(30)
         main_layout.addLayout(self.menu_layout)
 
         # Footer
