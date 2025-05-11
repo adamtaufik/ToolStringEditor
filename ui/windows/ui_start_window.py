@@ -51,9 +51,11 @@ class StartWindow(QWidget):
             ("Wireline Tool String Editor", self.open_toolstring_editor_app),
             ("SGS/FGS Data Interpreter", self.open_sgsfgs_app),
             ("Wireline Calculator", self.open_calculations_app),
-            ("Wireline Simulator", self.open_simulator_app),
-            ("PCE Stack Up Editor (Coming Soon)", None)
+            ("Wireline Simulator", self.open_simulator_app)
         ]
+
+        # ,
+        # ("PCE Stack Up Editor (Coming Soon)", None)
 
         self.menu_layout = QVBoxLayout()
         self.menu_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)

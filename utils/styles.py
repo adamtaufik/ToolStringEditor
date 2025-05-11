@@ -105,14 +105,7 @@ DELEUM_STYLE = """
     background-color: rgba(93, 0, 20, 0.3); /* Deep wine tint */
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
-    
-    QGroupBox {
-        color: white;
-        font-weight: bold;
-        border: 1px solid white;
-        border-radius: 5px;
-    }
-        
+            
     QTabWidget::pane {
         border: 1px solid #76797C;
         background: rgba(45, 45, 45, 230);
@@ -359,4 +352,20 @@ DROPZONE_HEADERS = """
             border-bottom: 2px solid #A9A9A9; 
             color: black;
             border-radius: 5px;
+            """
+
+# Set the stylesheet for all group boxes to have white background
+GROUPBOX_STYLE = """
+            QGroupBox {
+                color: white;
+                border: 1px solid white;
+                border-radius: 4px;
+                margin-top: 10px;
+                padding-top: 15px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 3px;
+            }
             """
