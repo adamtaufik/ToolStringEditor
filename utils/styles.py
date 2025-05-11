@@ -97,7 +97,7 @@ DARK_STYLE = """
 """
 
 DELEUM_STYLE = """
-    QMainWindow, SGSFGSApp, HydrostaticPressureApp, WirelineCalculatorApp {
+    QMainWindow, SGSFGSApp, HydrostaticPressureApp, WirelineCalculatorApp, WirelineSimulatorApp {
         background: #3d000f;
     }
     
@@ -105,7 +105,14 @@ DELEUM_STYLE = """
     background-color: rgba(93, 0, 20, 0.3); /* Deep wine tint */
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
-
+    
+    QGroupBox {
+        color: white;
+        font-weight: bold;
+        border: 1px solid white;
+        border-radius: 5px;
+    }
+        
     QTabWidget::pane {
         border: 1px solid #76797C;
         background: rgba(45, 45, 45, 230);

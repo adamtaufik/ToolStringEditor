@@ -3,6 +3,7 @@ from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import Qt, QTimer
 
 from ui.apps.ui_calculations_app import WirelineCalculatorApp
+from ui.apps.ui_simulator_app import WirelineSimulatorApp
 from ui.apps.ui_toolstring_editor_app import ToolStringEditor
 from ui.apps.ui_sgs_fgs_app import SGSFGSApp
 from utils.path_finder import get_path, get_icon_path
@@ -50,6 +51,7 @@ class StartWindow(QWidget):
             ("Wireline Tool String Editor", self.open_toolstring_editor_app),
             ("SGS/FGS Data Interpreter", self.open_sgsfgs_app),
             ("Wireline Calculator", self.open_calculations_app),
+            ("Wireline Simulator", self.open_simulator_app),
             ("PCE Stack Up Editor (Coming Soon)", None)
         ]
 
@@ -104,5 +106,11 @@ class StartWindow(QWidget):
     def open_calculations_app(self):
         self.calculations_app = WirelineCalculatorApp()
         self.calculations_app.show()
+        self.close()
+        self.close()
+
+    def open_simulator_app(self):
+        self.simulator_app = WirelineSimulatorApp()
+        self.simulator_app.show()
         self.close()
 
