@@ -11,13 +11,13 @@ from database.file_io import save_configuration, load_configuration
 from editor.export_manager import export_configuration
 
 # UI Components
-from ui.components.inputs import AngleInput, LimitedTextEdit
+from ui.components.toolstring_editor.inputs import AngleInput, LimitedTextEdit
 from ui.components.ui_footer import FooterWidget
-from ui.components.ui_dropzone import DropZone
+from ui.components.toolstring_editor.ui_dropzone import DropZone
 from ui.components.ui_sidebar_widget import SidebarWidget
-from ui.components.ui_summary import SummaryWidget
+from ui.components.toolstring_editor.ui_summary import SummaryWidget
 from ui.components.ui_titlebar import CustomTitleBar
-from ui.components.ui_tool_library import ToolLibrary
+from ui.components.toolstring_editor.ui_tool_library import ToolLibrary
 
 # Windows
 from ui.windows.ui_database_window import DatabaseWindow

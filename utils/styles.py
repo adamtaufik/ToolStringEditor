@@ -369,3 +369,9 @@ GROUPBOX_STYLE = """
                 padding: 0 3px;
             }
             """
+
+CHECKBOX_STYLE = """
+            QCheckBox {
+                color: white;
+            }
+            """

@@ -6,13 +6,12 @@ from PyQt6.QtWidgets import QMessageBox, QFileDialog
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image as ExcelImage
 from openpyxl.styles import Font, Border, Side, Alignment
-from datetime import datetime
 from PIL import Image as PILImage
 
 from editor.loading_worker import LoadingWorker
 from editor.logic_image_processing import combine_tool_images, expand_and_center_images, remove_white_background
 from editor.logic_utils import get_number
-from ui.components.tool_widget import ToolWidget
+from ui.components.toolstring_editor.tool_widget import ToolWidget
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 from utils.check_file import is_file_open
 from utils.path_finder import get_icon_path, get_image_path
@@ -21,7 +20,7 @@ from io import BytesIO
 
 def export_configuration(main_window):
     """Exports the current tool string to an Excel file in a separate thread."""
-    from ui.components.workers import ExportWorker
+    from ui.components.toolstring_editor.workers import ExportWorker
 
     # Suggest filename based on client + location or last saved file
     default_name = main_window.current_file_name or f"{main_window.location.text()}_{main_window.well_no.text()}_{main_window.operation_details.text()}".replace(

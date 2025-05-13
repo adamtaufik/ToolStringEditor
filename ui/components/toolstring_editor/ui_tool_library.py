@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QScrollArea, QComboBox, QLabel
-from ui.components.ui_draggable_button import DraggableButton
+from ui.components.toolstring_editor.ui_draggable_button import DraggableButton
 from database.logic_database import get_tool_data
 from utils.styles import DARK_STYLE
 

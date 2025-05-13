@@ -3,7 +3,12 @@ from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import Qt, QTimer
 
 from ui.apps.ui_calculations_app import WirelineCalculatorApp
+
+
+# from ui.apps.original_simulator import WirelineSimulatorApp
 from ui.apps.ui_simulator_app import WirelineSimulatorApp
+
+
 from ui.apps.ui_toolstring_editor_app import ToolStringEditor
 from ui.apps.ui_sgs_fgs_app import SGSFGSApp
 from utils.path_finder import get_path, get_icon_path

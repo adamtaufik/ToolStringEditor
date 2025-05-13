@@ -4,7 +4,7 @@ import os
 from PyQt6.QtWidgets import QFileDialog
 
 from editor.logic_image_processing import expand_and_center_images
-from ui.components.tool_widget import ToolWidget
+from ui.components.toolstring_editor.tool_widget import ToolWidget
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 
 
