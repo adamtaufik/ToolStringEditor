@@ -80,7 +80,7 @@ class OperationTab(QWidget):
         panel = QWidget()
         layout = QVBoxLayout(panel)
         layout.addWidget(QLabel("Well Trajectory Overview"))
-        self.trajectory_canvas = FigureCanvasQTAgg(Figure(figsize=(6, 3)))
+        self.trajectory_canvas = FigureCanvasQTAgg(Figure(figsize=(18, 9)))
 
         # Connect mouse and scroll events
         self.trajectory_canvas.mpl_connect('button_press_event', self.on_trajectory_press)
@@ -496,11 +496,36 @@ class OperationTab(QWidget):
             STATIC_FRICTION_FACTOR = 1.2
             max_depth = self.trajectory_data['mds'][-1]
 
+            # Calculate wire friction for each segment (like in update_tension_plot)
+            mds = [float(md) for md in self.trajectory_data['mds']]
+            inclinations = [float(inc) for inc in self.trajectory_data['inclinations']]
+            wire_friction = []
+
+            for i in range(len(mds) - 2, -1, -1):
+                delta_L = mds[i+1] - mds[i]
+                theta_avg = math.radians((inclinations[i+1] + inclinations[i]) / 2)
+                avg_depth = (mds[i+1] + mds[i]) / 2
+
+                # Calculate segment buoyancy
+                if avg_depth >= FLUID_LEVEL:
+                    wire_submerged = WIRE_WEIGHT_PER_FT * delta_L * BUOYANCY_FACTOR
+                else:
+                    wire_submerged = WIRE_WEIGHT_PER_FT * delta_L
+
+                normal_force = wire_submerged * math.sin(theta_avg)
+                friction = FRICTION_COEFF * normal_force
+                wire_friction.append(friction)
+
+            wire_friction = wire_friction[::-1]  # Reverse to top-to-bottom order
+
             # Current well geometry
             if self.current_depth > 0:
                 idx = np.argmin(np.abs(np.array(self.trajectory_data['mds']) - self.current_depth))
                 current_inclination = self.trajectory_data['inclinations'][idx]
                 current_azimuth = self.trajectory_data['azimuths'][idx]
+
+                # Calculate cumulative wire friction up to current depth
+                cumulative_wire_friction = -sum(wire_friction[:idx]) if wire_friction else 0
 
                 # Weight calculations
                 wire_in_hole = min(self.current_depth, max_depth)
@@ -544,7 +569,13 @@ class OperationTab(QWidget):
                     self.last_operation_direction = 'RIH'
 
                 # Final tension calculation
-                tension = max(effective_weight + pressure_force + effective_friction, 0)
+                # Apply cumulative wire friction
+                tension_without_wire = effective_weight + pressure_force + effective_friction
+                if self.operation == "POOH":
+                    tension = max(tension_without_wire - cumulative_wire_friction, 0)
+                else:
+                    tension = max(tension_without_wire + cumulative_wire_friction, 0)
+
                 self.tension_label.setText(f"{tension:.1f} lbs")
 
                 # Draw well components
@@ -583,12 +614,14 @@ class OperationTab(QWidget):
                     f"Current Downhole Parameters:\n"
                     f"• Depth: {self.current_depth:.1f} {depth_unit}\n"
                     f"• Tool Weight: {round(TOOL_WEIGHT,1)} lbs\n"
-                    f"• Stuffing Box Friction: {STUFFING_BOX} lbs\n"
                     f"• Wire Weight: {WIRE_WEIGHT_PER_FT:.3f} {wire_weight_unit}\n"
                     f"• Buoyancy Reduction: {buoyancy_reduction:.1f} lbs\n"
                     f"• Effective Weight: {effective_weight:.1f} lbs\n"
                     f"• Pressure Force: {pressure_force:.1f} lbs\n"
-                    f"• Friction Force: {effective_friction:+.1f} lbs\n"
+                    f"• Stuffing Box Friction: {STUFFING_BOX} lbs\n"
+                    f"• Wire Friction: {cumulative_wire_friction:+.1f} lbs\n"
+                    f"• Tool String Friction: {effective_friction:+.1f} lbs\n"
+                    f"----------------------------------"
                     f"• Net Tension: {tension:.1f} lbs\n"
                     f"• Inclination: {current_inclination:.1f}°\n"
                     f"• Azimuth: {current_azimuth:.1f}°"

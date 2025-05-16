@@ -336,7 +336,7 @@ class PlotsTab(QWidget):
 
         idx = np.argmin(np.abs(np.array(self.trajectory_data['mds']) - self.current_depth))
         ax.plot(rih_weights[idx], mds[idx], 'bo')
-        ax.plot(pooh_weights[idx], mds[idx], 'ro')
+        ax.plot(pooh_weights[idx], mds[idx], 'go')
         ax.axhline(self.current_depth, color='gray', linestyle='--')
 
         ax.set_xlabel("Tension (lbs)")
@@ -453,15 +453,28 @@ class PlotsTab(QWidget):
             # Create twin axis for DLS
             ax2 = ax.twiny()
 
-            # Plot inclination (primary x-axis)
-            inc_line, = ax.plot(inclinations, mds, 'g-', label='Inclination')
-            dls_line, = ax2.plot(dls_values, mds, 'm--', label='DLS')
+            # Plot inclination (primary axis)
+            inc_line, = ax.plot(inclinations, mds, 'b-', label='Inclination')
+
+            # Plot DLS as step function (horizontal segments between depth points)
+            if len(mds) >= 2:
+                # Use DLS values from index 1 onward (skip initial 0)
+                dls_for_plot = dls_values[1:]
+                # Use starting depth of each interval (exclude last MD)
+                mds_for_plot = mds[:-1]
+                dls_line, = ax2.step(
+                    dls_for_plot, mds_for_plot,
+                    where='post', linestyle='-', color='r', label='DLS'
+                )
+            else:
+                # Not enough data for steps
+                dls_line, = ax2.plot([], [], 'r-', label='DLS')
 
             ax2.set_xlabel('DLS (°/30m)' if self.use_metric else 'DLS (°/100ft)')
 
             # Add cursor hover functionality
             cursor_inc = mplcursors.cursor(inc_line, hover=True)
-            cursor_dls = mplcursors.cursor(dls_line, hover=True)
+            cursor_dls = mplcursors.cursor(dls_line, hover=True) if len(mds) >= 2 else None
 
             @cursor_inc.connect("add")
             def _(sel):
@@ -478,8 +491,10 @@ class PlotsTab(QWidget):
                 current_depth = float(self.current_depth)  # Ensure float
                 idx = np.argmin(np.abs(mds - current_depth))  # Now works with numpy array
                 ax.axhline(y=mds[idx], color='gray', linestyle='--', alpha=0.5)
-                ax.plot(inclinations[idx], mds[idx], 'go', markersize=8, label='Current Inclination')
-                ax2.plot(dls_values[idx], mds[idx], 'mo', markersize=8, label='Current DLS')
+                ax.plot(inclinations[idx], mds[idx], 'bo', markersize=8, label='Current Inclination')
+
+                if len(mds) >= 2:
+                    ax2.plot(dls_values[idx], mds[idx], 'ro', markersize=8, label='Current DLS')
 
             # Formatting
             ax.set_title('Inclination & DLS vs Depth')
