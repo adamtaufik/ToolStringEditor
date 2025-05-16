@@ -247,6 +247,8 @@ class WirelineSimulatorApp(QMainWindow):
                 'fluid_density': self.input_tab.fluid_density_input.value(),
                 'pressure': self.input_tab.pressure_input.value(),
                 'tool_weight': self.input_tab.tool_weight_input.value(),
+                'tool_avg_diameter': self.input_tab.tool_avg_diameter_input.value(),
+                'tool_length': self.input_tab.tool_length_input.value(),
                 'stuffing_box': self.input_tab.stuffing_box_input.value(),
                 'friction_coeff': self.input_tab.friction_input.value(),
                 'wire_diameter': self.input_tab.wire_diameter,
@@ -275,7 +277,7 @@ class WirelineSimulatorApp(QMainWindow):
 
     # Replace create_plots_tab method
     def create_plots_tab(self):
-        self.plots_tab = PlotsTab()
+        self.plots_tab = PlotsTab(self)
         self.plots_tab.updateRequested.connect(self.handle_plots_update)
         self.tabs.addTab(self.plots_tab, "Plots")
 
@@ -283,9 +285,13 @@ class WirelineSimulatorApp(QMainWindow):
     def handle_plots_update(self):
         params = {
             'tool_weight': self.input_tab.tool_weight_input.value(),
+            'tool_avg_diameter': self.input_tab.tool_avg_diameter_input.value(),
+            'tool_length': self.input_tab.tool_length_input.value(),
             'stuffing_box': self.input_tab.stuffing_box_input.value(),
             'wire_weight': self.input_tab.wire_weight,
+            'breaking_strength': self.input_tab.breaking_strength,
             'wire_diameter': self.input_tab.wire_diameter,
+            'safe_operating_load': self.input_tab.safe_operating_load_input.value(),
             'fluid_density': self.input_tab.fluid_density_input.value(),
             'fluid_level': self.input_tab.fluid_level_input.value(),
             'pressure': self.input_tab.pressure_input.value(),

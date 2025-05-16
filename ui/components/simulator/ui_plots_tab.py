@@ -11,7 +11,7 @@ from scipy.interpolate import interp1d
 class PlotsTab(QWidget):
     updateRequested = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, parent=None):
         super().__init__()
         self.use_metric = False
         self.setup_ui()
@@ -21,6 +21,7 @@ class PlotsTab(QWidget):
         self.stuffing_box = 50
         self.wire_weight = 0.1
         self.wire_diameter = 0.108
+        self.breaking_strength = 2550
         self.fluid_density = 8.5
         self.fluid_level = 0
         self.pressure = 500
@@ -30,6 +31,9 @@ class PlotsTab(QWidget):
         self.depth_points_tension = None
         self.max_overpulls = None
         self.depth_points_overpull = None
+
+        input_tab = parent.input_tab
+        input_tab.units_toggled.connect(self.handle_units_toggle)
 
     def setup_ui(self):
         layout = QHBoxLayout(self)
@@ -106,6 +110,7 @@ class PlotsTab(QWidget):
     def handle_units_toggle(self, use_metric):
         """Called when units change in main application"""
         self.use_metric = use_metric
+
         if self.trajectory_data and hasattr(self, 'params'):
             self.update_plots(self.trajectory_data, self.params)
 
@@ -123,8 +128,12 @@ class PlotsTab(QWidget):
     def update_plots(self, trajectory_data, params):
         self.trajectory_data = trajectory_data
         self.tool_weight = params['tool_weight']
+        self.tool_avg_diameter = params['tool_avg_diameter']
+        self.tool_length = params['tool_length']
         self.stuffing_box = params['stuffing_box']
         self.wire_diameter = params['wire_diameter']
+        self.safe_operating_load = params['safe_operating_load']
+        self.breaking_strength = params['breaking_strength']
         self.fluid_density = params['fluid_density']
         self.fluid_level = params['fluid_level']
         self.pressure = params['pressure']
@@ -190,18 +199,17 @@ class PlotsTab(QWidget):
             self.min_tension_label.setText("Minimum tension data not available.")
 
         # Max overpull info
-        breaking_strength = 3200  # lbs
-        safe_pull_pct = 50
+        breaking_strength = self.breaking_strength  # lbs
+        safe_pull_pct = self.safe_operating_load
         if self.max_overpulls is not None and self.depth_points_overpull is not None:
             min_idx = np.argmin(self.max_overpulls)
             overpull = self.max_overpulls[min_idx]
             depth_ft = self.depth_points_overpull[min_idx]
             depth_m = depth_ft * 0.3048
-            wis_reading = (safe_pull_pct/100)*breaking_strength - overpull
             self.overpull_label.setText(
                 f"The maximum available overpull at {depth_ft:.1f} ft ({depth_m:.1f} m) "
-                f"based on {safe_pull_pct}% of cable breaking strength is {overpull:.1f} lbf.\n"
-                f"The weight indicator reading will then be {wis_reading:.1f} lbf.")
+                f"based on {safe_pull_pct}% of wire breaking strength is {overpull:.1f} lbf.\n"
+                f"The weight indicator reading will then be {breaking_strength:.1f} lbf.")
         else:
             self.overpull_label.setText("Overpull data not available.")
 
@@ -233,12 +241,21 @@ class PlotsTab(QWidget):
             inc = self.trajectory_data['inclinations'][idx]
 
             wire_in_hole = depth
+
             total_weight = self.tool_weight + self.wire_weight * wire_in_hole
 
-            wire_weight = depth * self.wire_weight
-            submerged_length = max(depth - self.fluid_level, 0)
-            buoyancy = submerged_length * self.wire_weight * (1 - buoyancy_factor)
-            submerged_weight = total_weight - buoyancy
+            if depth >= self.fluid_level:
+                tool_area = math.pi * (self.tool_avg_diameter/12/2) ** 2
+                tool_displacement = (tool_area * self.tool_length)
+                tool_displacement_gal = tool_displacement * 7.48052
+                buoyancy_weight = tool_displacement_gal * self.fluid_density
+
+                submerged_length = max(depth - self.fluid_level, 0)
+                buoyancy = buoyancy_weight + submerged_length * self.wire_weight * (1 - buoyancy_factor)
+                submerged_weight = total_weight - buoyancy
+            else:
+                buoyancy = 0
+                submerged_weight = total_weight
 
             inc_rad = math.radians(inc)
             effective_weight = submerged_weight * math.cos(inc_rad)
@@ -255,28 +272,40 @@ class PlotsTab(QWidget):
             rih_weights.append(rih_tension)
             pooh_weights.append(pooh_tension)
 
-            # if 30 < idx < 32:
-            #     print('From plot:')
-            #     print(f'{depth} m: {inc} degrees')
-            #     print('EW:',effective_weight)
-            #     print('WW:',self.wire_weight)
-            #     print('TW:',total_weight)
-            #     print('PF:',pressure_force)
-            #     print('NF:',normal_force)
-            #     print('SW:',submerged_weight)
-            #     print('IR:',inc_rad)
-            #     print('RF:',rih_friction)
-            #     print('PF:',pooh_friction)
-            #     print(f'RIH={rih_tension}')
-            #     print(f'POOH={pooh_tension}\n')
+        wire_friction = []
+
+        # Process segments from bottom to top
+        for i in range(len(mds) - 2, -1, -1):
+            delta_L = mds[i + 1] - mds[i]
+            theta_avg = math.radians((self.trajectory_data['inclinations'][i + 1] + self.trajectory_data['inclinations'][i]) / 2)
+            avg_depth = (mds[i + 1] + mds[i]) / 2
+
+            # Calculate segment buoyancy
+            if avg_depth >= self.fluid_level:
+                wire_submerged = self.wire_weight * delta_L * buoyancy_factor
+            else:
+                wire_submerged = self.wire_weight * delta_L
+
+            # Segment contributions
+            # effective_weight = wire_submerged * math.cos(theta_avg)
+            normal_force = wire_submerged * math.sin(theta_avg)
+            friction = self.friction_coeff * normal_force
+
+            wire_friction.append(friction)
+
+        wire_friction = wire_friction[::-1]
+
+        for i in range(len(wire_friction)):
+            rih_weights[i+1] -= sum(wire_friction[:i])
+            pooh_weights[i+1] += sum(wire_friction[:i])
 
         # Plotting (depth on y-axis, inverted)
-        rih_line, = ax.plot(rih_weights, mds, 'b-', label='RIH Tension')
-        pooh_line, = ax.plot(pooh_weights, mds, 'r-', label='POOH Tension')
+        self.rih_line, = ax.plot(rih_weights, mds, 'b-', label='RIH Tension')
+        self.pooh_line, = ax.plot(pooh_weights, mds, 'r-', label='POOH Tension')
 
         # Add cursor hover functionality
-        cursor_rih = mplcursors.cursor(rih_line, hover=True)
-        cursor_pooh = mplcursors.cursor(pooh_line, hover=True)
+        cursor_rih = mplcursors.cursor(self.rih_line, hover=True)
+        cursor_pooh = mplcursors.cursor(self.pooh_line, hover=True)
 
         @cursor_rih.connect("add")
         def _(sel):
@@ -330,96 +359,62 @@ class PlotsTab(QWidget):
             fig.clear()
             ax = fig.add_subplot(111)
 
-            if not hasattr(self, 'trajectory_data'):
+            # Check if required data is available
+            if not self.trajectory_data or self.pooh_weights is None:
                 return
 
-            # Ensure data is float
+            # Get depth points and POOH tensions from tension plot data
             mds = [float(md) for md in self.trajectory_data['mds']]
-            inclinations = [float(inc) for inc in self.trajectory_data['inclinations']]
-
+            pooh_weights = self.pooh_weights
             max_depth = float(mds[-1])
-            depth_points = np.linspace(0, max_depth, 100)
 
-            # Get parameters
-            TOOL_WEIGHT = float(self.tool_weight)
-            WIRE_WEIGHT_PER_FT = self.wire_weight
-            WIRE_DIAMETER = self.wire_diameter
-            FLUID_DENSITY = float(self.fluid_density)
-            FLUID_LEVEL = float(self.fluid_level)
-            PRESSURE = float(self.pressure)
-            FRICTION_COEFF = float(self.friction_coeff)
-            BUOYANCY_FACTOR = 1 - (FLUID_DENSITY / 65.4)
-
-            # Max allowable overpull force
-            breaking_strength = 3200  # lbs
-            safe_pull_limit = 0.5 * breaking_strength  # 50% of MBS = 1600 lbs
-
-            # Interpolate inclinations
-            incl_interp = interp1d(mds, inclinations, kind='linear', fill_value='extrapolate')
-            incl_at_points = incl_interp(depth_points)
-
-            max_overpulls = []
-
-            for depth, inclination in zip(depth_points, incl_at_points):
-                wire_weight = depth * WIRE_WEIGHT_PER_FT
-                total_weight = TOOL_WEIGHT + wire_weight
-
-                # Buoyancy
-                submerged_length = max(depth - FLUID_LEVEL, 0)
-                buoyancy_reduction = submerged_length * WIRE_WEIGHT_PER_FT * (1 - BUOYANCY_FACTOR)
-                submerged_weight = total_weight - buoyancy_reduction
-
-                # Effective weight
-                inclination_rad = math.radians(inclination)
-                effective_weight = submerged_weight * math.cos(inclination_rad)
-
-                # Pressure force
-                wire_area = math.pi * (WIRE_DIAMETER / 2) ** 2
-                pressure_force = PRESSURE * wire_area
-
-                # Friction (only in deviated sections)
-                if inclination > 1.0:
-                    normal_force = submerged_weight * math.sin(inclination_rad)
-                    pooh_friction = FRICTION_COEFF * normal_force
-                else:
-                    pooh_friction = 0
-
-                pooh_tension = max(effective_weight - pressure_force + pooh_friction, 0)
-
-                # Max overpull = safe limit - POOH tension
-                max_overpull = max(safe_pull_limit - pooh_tension, 0)
-                max_overpulls.append(max_overpull)
+            # Calculate safe pull limit correctly (accounting for percentage)
+            safe_pull_limit = (self.safe_operating_load / 100) * self.breaking_strength
+            # Calculate max overpull at each depth
+            max_overpulls = [max(safe_pull_limit - pooh, 0) for pooh in pooh_weights]
 
             # Plotting
-            overpull_line, = ax.plot(max_overpulls, depth_points, 'g-', label='Max Overpull (lbs)')
+            overpull_line, = ax.plot(max_overpulls, mds, 'g-', label='Max Overpull (lbs)')
 
-            # Add cursor hover functionality
+            # Cursor hover functionality with unit conversions
             cursor_overpull = mplcursors.cursor(overpull_line, hover=True)
 
             @cursor_overpull.connect("add")
             def _(sel):
-                sel.annotation.set_text(f'Overpull: {sel.target[0]:.1f} lbs\nDepth: {sel.target[1]:.1f} ft')
+                depth = sel.target[1]
+                if self.use_metric:
+                    depth_ft = depth / 0.3048
+                    text = f'Overpull: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} m ({depth_ft:.1f} ft)'
+                else:
+                    depth_m = depth * 0.3048
+                    text = f'Overpull: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} ft ({depth_m:.1f} m)'
+                sel.annotation.set_text(text)
                 sel.annotation.get_bbox_patch().set(fc="white", alpha=0.8)
 
-            # Current position marker
+            # Current depth marker
             if hasattr(self, 'current_depth'):
                 current_depth = float(self.current_depth)
                 if current_depth <= max_depth:
-                    current_idx = np.argmin(np.abs(depth_points - current_depth))
-                    ax.plot(max_overpulls[current_idx], depth_points[current_idx], 'go', label='Current Max Overpull')
-                    ax.axhline(y=current_depth, color='gray', linestyle='--', alpha=0.5)
+                    idx = np.argmin(np.abs(np.array(mds) - current_depth))
+                    ax.plot(max_overpulls[idx], mds[idx], 'go', label='Current Max Overpull')
+                    ax.axhline(current_depth, color='gray', linestyle='--', alpha=0.5)
 
+            # Axis labels and formatting
             ax.set_xlabel('Max Overpull (lbs)')
             ax.set_ylabel("Depth (m MD)" if self.use_metric else "Depth (ft MD)")
             ax.set_title('Maximum Overpull vs Depth')
             ax.grid(True)
             ax.legend()
-            ax.set_ylim(max_depth, 0)
+            ax.set_ylim(max_depth, 0)  # Invert depth axis
             ax.set_xlim(left=0)
             self.overpull_canvas.draw()
 
-            self.depth_points_overpull = depth_points
+            # Store data for info panel
+            self.depth_points_overpull = mds
             self.max_overpulls = max_overpulls
+
+        except Exception as e:
+            print('Error updating overpull plot:', e)
 
         except Exception as e:
             print('Update max overpull error:', e)

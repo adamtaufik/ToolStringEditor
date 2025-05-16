@@ -20,6 +20,7 @@ class InputTab(QWidget):
         self.init_ui()
 
         self.wire_weight = 0.03111  # Will be updated when combo box changes
+        self.breaking_strength = 2550
         self.wire_diameter = 0.108
 
     def init_ui(self):
@@ -95,12 +96,29 @@ class InputTab(QWidget):
         wire_size_layout.addWidget(self.wire_size_combo)
         layout.addLayout(wire_size_layout)
 
+        # Breaking strength display
+        breaking_strength_layout = QHBoxLayout()
+        breaking_strength_layout.addWidget(QLabel("Breaking Strength:"))
+        self.breaking_strength_label = QLabel("2550 lbs")
+        breaking_strength_layout.addWidget(self.breaking_strength_label)
+        layout.addLayout(breaking_strength_layout)
+
         # Wire weight display
         wire_weight_layout = QHBoxLayout()
         wire_weight_layout.addWidget(QLabel("Wire Weight:"))
         self.wire_weight_label = QLabel("0.021 lbs/ft")
         wire_weight_layout.addWidget(self.wire_weight_label)
         layout.addLayout(wire_weight_layout)
+
+        # Safe Operating Load input
+        safe_operating_load_layout = QHBoxLayout()
+        safe_operating_load_layout.addWidget(QLabel("Safe Operating Load:"))
+        self.safe_operating_load_input = QDoubleSpinBox()
+        self.safe_operating_load_input.setRange(0, 100)
+        self.safe_operating_load_input.setValue(50)
+        self.safe_operating_load_input.setSuffix(" %")
+        safe_operating_load_layout.addWidget(self.safe_operating_load_input)
+        layout.addLayout(safe_operating_load_layout)
 
         # Tool weight input
         tool_weight_layout = QHBoxLayout()
@@ -111,6 +129,30 @@ class InputTab(QWidget):
         self.tool_weight_input.setSuffix(" lbs")
         tool_weight_layout.addWidget(self.tool_weight_input)
         layout.addLayout(tool_weight_layout)
+
+        # Tool Avg Diameter input
+        tool_avg_diameter_layout = QHBoxLayout()
+        tool_avg_diameter_layout.addWidget(QLabel("Average Tool String Diameter:"))
+        self.tool_avg_diameter_input = QDoubleSpinBox()
+        self.tool_avg_diameter_input.setRange(1.000, 5.000)
+        self.tool_avg_diameter_input.setDecimals(3)
+        self.tool_avg_diameter_input.setSingleStep(0.125)
+        self.tool_avg_diameter_input.setValue(1.875)
+        self.tool_avg_diameter_input.setSuffix(" \"")
+        tool_avg_diameter_layout.addWidget(self.tool_avg_diameter_input)
+        layout.addLayout(tool_avg_diameter_layout)
+
+        # Tool String Length input
+        tool_length_layout = QHBoxLayout()
+        tool_length_layout.addWidget(QLabel("Tool String Length:"))
+        self.tool_length_input = QDoubleSpinBox()
+        self.tool_length_input.setRange(1, 50)
+        self.tool_length_input.setDecimals(1)
+        self.tool_length_input.setSingleStep(0.5)
+        self.tool_length_input.setValue(10)
+        self.tool_length_input.setSuffix(" ft")
+        tool_length_layout.addWidget(self.tool_length_input)
+        layout.addLayout(tool_length_layout)
 
         # Stuffing box friction input
         stuffing_box_layout = QHBoxLayout()
@@ -134,7 +176,7 @@ class InputTab(QWidget):
         fluid_density_layout.addWidget(QLabel("Fluid Density:"))
         self.fluid_density_input = QDoubleSpinBox()
         self.fluid_density_input.setRange(0, 20)
-        self.fluid_density_input.setValue(8.5)
+        self.fluid_density_input.setValue(8.33)
         self.fluid_density_input.setSuffix(" ppg")
         fluid_density_layout.addWidget(self.fluid_density_input)
         layout.addLayout(fluid_density_layout)
@@ -170,6 +212,7 @@ class InputTab(QWidget):
         self.friction_input = QDoubleSpinBox()
         self.friction_input.setRange(0, 1)
         self.friction_input.setValue(0.3)
+        self.friction_input.setSingleStep(0.05)
         friction_layout.addWidget(self.friction_input)
         layout.addLayout(friction_layout)
 
@@ -347,10 +390,20 @@ class InputTab(QWidget):
     def update_wire_properties(self):
         od = float(self.wire_size_combo.currentText())
         self.wire_weight = (od ** 2) * (8 / 3)
-        print('WIRE WEIGHT:',self.wire_weight)
         self.wire_diameter = od
 
         if self.use_metric:
             self.wire_weight_label.setText(f"{(self.wire_weight * 3.28084):.3f} lbs/m")
         else:
             self.wire_weight_label.setText(f"{self.wire_weight:.3f} lbs/ft")
+
+        breaking_strengths = {
+            0.092 : 1750,
+            0.108 : 2550,
+            0.125 : 3325,
+            0.140 : 4100,
+            0.160 : 5150
+        }
+
+        self.breaking_strength = breaking_strengths[self.wire_diameter]
+        self.breaking_strength_label.setText(f"{self.breaking_strength} lbs")

@@ -57,17 +57,24 @@ class OperationTab(QWidget):
         self.use_metric = use_metric
         # Convert current depth display
         if hasattr(self, 'current_depth'):
-            if self.use_metric:
-                depth = self.current_depth * 0.3048
-                self.depth_label.setText(f"{depth:.1f} m")
-            else:
-                self.depth_label.setText(f"{self.current_depth:.1f} ft")
+            self.depth_counter()
         # self.update_visualizations(
         #         current_depth=self.current_depth,
         #         trajectory_data=self.trajectory_data,
         #         params=visualization_params,
         #         operation=self.operation
         #     )
+
+    def depth_counter(self):
+        # if self.use_metric:
+        #     self.depth_label.setText(f"{self.current_depth * 0.3048:.1f} m")
+        # else:
+        #     self.depth_label.setText(f"{self.current_depth:.1f} ft")
+
+        if self.use_metric:
+            self.depth_label.setText(f"{self.current_depth:.1f} m")
+        else:
+            self.depth_label.setText(f"{self.current_depth/0.3048:.1f} ft")
 
     def create_trajectory_panel(self):
         panel = QWidget()
@@ -287,7 +294,8 @@ class OperationTab(QWidget):
             self.update_lubricator_view()
             self.update_tool_view()
             self.update_trajectory_view(self.trajectory_data)
-            self.depth_label.setText(f"{current_depth:.1f} ft")
+            self.depth_counter()
+            self.handle_units_toggle(self.use_metric)
 
         except Exception as e:
             print('Update vis error:', e)
@@ -465,7 +473,9 @@ class OperationTab(QWidget):
             BUOYANCY_FACTOR = 1 - (FLUID_DENSITY / 65.4)
 
             TOOL_WEIGHT = self.params['tool_weight']
-            # WIRE_WEIGHT_PER_FT = self.params['wire_weight']
+            TOOL_AVG_DIAMETER = self.params['tool_avg_diameter']
+            TOOL_LENGTH = self.params['tool_length']
+
             WIRE_DIAMETER = self.params['wire_diameter']
 
             if self.use_metric:
@@ -498,9 +508,14 @@ class OperationTab(QWidget):
                 total_weight = TOOL_WEIGHT + wire_weight
 
                 # Buoyancy calculations
-                if self.current_depth > FLUID_LEVEL:
+                if self.current_depth >= FLUID_LEVEL:
+                    tool_area = math.pi * (TOOL_AVG_DIAMETER/12/2) ** 2
+                    tool_displacement = (tool_area * TOOL_LENGTH)
+                    tool_displacement_gal = tool_displacement * 7.48052
+                    buoyancy_weight = tool_displacement_gal * FLUID_DENSITY
+
                     submerged_length = max(self.current_depth - FLUID_LEVEL, 0)
-                    buoyancy_reduction = -submerged_length * WIRE_WEIGHT_PER_FT * (1 - BUOYANCY_FACTOR)
+                    buoyancy_reduction = -buoyancy_weight -submerged_length * WIRE_WEIGHT_PER_FT * (1 - BUOYANCY_FACTOR)
                     submerged_weight = total_weight + buoyancy_reduction
                 else:
                     buoyancy_reduction = 0
@@ -528,25 +543,9 @@ class OperationTab(QWidget):
                     effective_friction = -friction_magnitude + STUFFING_BOX  # Friction opposes RIH (negative)
                     self.last_operation_direction = 'RIH'
 
-
                 # Final tension calculation
                 tension = max(effective_weight + pressure_force + effective_friction, 0)
                 self.tension_label.setText(f"{tension:.1f} lbs")
-
-                #
-                # if 30 < idx :
-                #     print('From tool view:')
-                #     print(f'{self.current_depth} m: {current_inclination} degrees')
-                #     print('EW:',effective_weight)
-                #     print('WW:',WIRE_WEIGHT_PER_FT)
-                #     print('TW:',total_weight)
-                #     print('PF:',pressure_force)
-                #     print('NF:',normal_force)
-                #     print('SW:',submerged_weight)
-                #     print('IR:',inclination_rad)
-                #     print('EF:',effective_friction)
-                #     print(f'={tension}\n')
-
 
                 # Draw well components
                 casing = plt.Rectangle((0, 0), WELL_WIDTH, max_depth,
