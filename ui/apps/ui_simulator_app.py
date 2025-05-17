@@ -95,6 +95,7 @@ class WirelineSimulatorApp(QMainWindow):
         north = []
         east = []
         inclinations = []
+        dls_list = []
         azimuths = []
 
         # Trajectory parameters
@@ -108,6 +109,7 @@ class WirelineSimulatorApp(QMainWindow):
         current_north = 0.0
         current_east = 0.0
         current_inc = 0.0
+        current_dls = 0.0
 
         for md in mds:
             if md <= ko_point:
@@ -146,6 +148,7 @@ class WirelineSimulatorApp(QMainWindow):
                 north.append(round(current_north, 2))
                 east.append(round(current_east, 2))
                 inclinations.append(current_inc)
+                dls_list.append(current_dls)
 
             azimuths.append(azimuth)
 
@@ -153,6 +156,7 @@ class WirelineSimulatorApp(QMainWindow):
             'mds': mds,
             'tvd': [round(x, 2) for x in tvd],  # Rounded for readability
             'inclinations': inclinations,
+            'dls_list': dls_list,
             'azimuths': azimuths,
             'north': [round(x, 2) for x in north],
             'east': [round(x, 2) for x in east]
@@ -284,6 +288,7 @@ class WirelineSimulatorApp(QMainWindow):
     # Add handler for plot updates
     def handle_plots_update(self):
         params = {
+            'speed': self.sim_speed * 60,
             'tool_weight': self.input_tab.tool_weight_input.value(),
             'tool_avg_diameter': self.input_tab.tool_avg_diameter_input.value(),
             'tool_length': self.input_tab.tool_length_input.value(),

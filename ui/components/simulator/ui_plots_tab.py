@@ -25,9 +25,12 @@ class PlotsTab(QWidget):
         self.fluid_density = 8.5
         self.fluid_level = 0
         self.pressure = 500
+        self.buoyancy = 0
+        self.surface_buoyancy = 0
         self.friction_coeff = 0.3
         # Initialize data storage for info panel
         self.rih_weights = None
+        self.dls_values = None
         self.depth_points_tension = None
         self.max_overpulls = None
         self.depth_points_overpull = None
@@ -69,28 +72,37 @@ class PlotsTab(QWidget):
         info_layout = QVBoxLayout(info_widget)
         info_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
+        self.speed_label = QLabel("Wire speed: ... ft/min")
         self.total_depth_label = QLabel("Total depth: ... ft (... m)")
         self.max_incl_label = QLabel("Max inclination: ...° at ... ft (... m)")
-        self.tool_weight_label = QLabel("Tool string weight in air: ... lbs")
-        self.stuffing_box_label = QLabel("Stuffing box friction: ... lbs")
-        self.pressure_label = QLabel("Pressure: ... psi")
+        self.max_dls_label = QLabel("Max DLS: ...°/...ft at ... ft (... m)")
+        self.pressure_label = QLabel("WHP: ... psi")
         self.separator1 = QLabel("_________________________")
-        self.min_tension_label = QLabel("The minimum predicted cable tension in normal running conditions is ... lbf with the toolstring at a measured depth of ... ft (... m) during RIH.")
+        self.C1_label = QLabel("The minimum predicted cable tension in normal running conditions is ... lbf with the toolstring at a measured depth of ... ft (... m) during RIH.")
         self.separator2 = QLabel("_________________________")
-        self.overpull_label = QLabel("The maximum available overpull at ... ft (... m) based on 50% of cable breaking strength is ... lbf. The weight indicator reading will then be ... lbf.")
+        self.MD1_label = QLabel("The maximum available overpull at ... ft (... m) based on 50% of cable breaking strength is ... lbf. The weight indicator reading will then be ... lbf.")
+        self.separator3 = QLabel("_________________________")
+        self.T1_label = QLabel("The current tool string weight in air is ... lbs (... kg).")
+        self.T2_label = QLabel("The minimum weight required at surface is ... lbs. This is the minimum weight needed to overcome the current well head pressure of ... psi, stuffing box friction of ... lbf and buoyant force of ... lbf")
+        self.T5_label = QLabel("The current tool weight is ... % of the wire breaking strength.")
 
-        self.min_tension_label.setWordWrap(True)
-        self.overpull_label.setWordWrap(True)
+        self.C1_label.setWordWrap(True)
+        self.T2_label.setWordWrap(True)
+        self.MD1_label.setWordWrap(True)
 
+        info_layout.addWidget(self.speed_label)
         info_layout.addWidget(self.total_depth_label)
-        info_layout.addWidget(self.stuffing_box_label)
         info_layout.addWidget(self.max_incl_label)
-        info_layout.addWidget(self.tool_weight_label)
+        info_layout.addWidget(self.max_dls_label)
         info_layout.addWidget(self.pressure_label)
         info_layout.addWidget(self.separator1)
-        info_layout.addWidget(self.min_tension_label)
+        info_layout.addWidget(self.C1_label)
         info_layout.addWidget(self.separator2)
-        info_layout.addWidget(self.overpull_label)
+        info_layout.addWidget(self.MD1_label)
+        info_layout.addWidget(self.separator3)
+        info_layout.addWidget(self.T1_label)
+        info_layout.addWidget(self.T2_label)
+        info_layout.addWidget(self.T5_label)
         info_layout.addStretch()
 
         splitter.addWidget(tension_widget)
@@ -129,6 +141,7 @@ class PlotsTab(QWidget):
         self.trajectory_data = trajectory_data
         self.tool_weight = params['tool_weight']
         self.tool_avg_diameter = params['tool_avg_diameter']
+        self.speed = params['speed']
         self.tool_length = params['tool_length']
         self.stuffing_box = params['stuffing_box']
         self.wire_diameter = params['wire_diameter']
@@ -155,6 +168,9 @@ class PlotsTab(QWidget):
         self.update_info_labels()
 
     def update_info_labels(self):
+
+        self.speed_label.setText(f"Wire speed: {self.speed} ft/min")
+
         # Total depth
         if self.trajectory_data and self.trajectory_data.get('mds'):
             max_depth = float(self.trajectory_data['mds'][-1])
@@ -180,23 +196,38 @@ class PlotsTab(QWidget):
         else:
             self.max_incl_label.setText("Max inclination: N/A")
 
-        # Tool weight and pressure
-        self.tool_weight_label.setText(f"Tool string weight in air: {self.tool_weight} lbs")
-        self.pressure_label.setText(f"Pressure: {self.pressure} psi")
+        # Max DLS
+        if self.dls_values:
+            dls_list = [float(dls) for dls in self.dls_values]
+            max_dls = max(dls_list)
+            idx = dls_list.index(max_dls)
+            depth_ft = float(self.trajectory_data['mds'][idx-1])
+            depth_m = depth_ft * 0.3048
+            self.max_dls_label.setText(f"Max DLS: {max_dls:.1f}°/100ft at {depth_ft:.1f} ft ({depth_m:.1f} m)")
+        else:
+            self.max_dls_label.setText("Max DLS: N/A")
 
-        self.stuffing_box_label.setText(f"Stuffing box friction: {self.stuffing_box} lbs")
+        # Tool weight and pressure
+        self.T1_label.setText(f"The current tool string weight in air is {self.tool_weight} lbs ({(self.tool_weight*0.453592):.1f} kg).")
+        self.T5_label.setText(f"The current tool weight is {(self.tool_weight/self.breaking_strength * 100):.1f} % of the wire breaking strength.")
+        self.pressure_label.setText(f"WHP: {self.pressure} psi")
 
         # Minimum RIH tension
         if self.rih_weights is not None and self.depth_points_tension is not None:
             min_tension = min(self.rih_weights)
+            surface_weight = self.rih_weights[0]
             idx = np.argmin(self.rih_weights)
             depth_ft = self.depth_points_tension[idx]
             depth_m = depth_ft * 0.3048
-            self.min_tension_label.setText(
+            self.T2_label.setText(
+                f"The minimum weight required at surface is {surface_weight} lbs. "
+                f"This is the minimum weight needed to overcome the current well head pressure of {self.pressure} psi, "
+                f"stuffing box friction of {self.stuffing_box} lbf and buoyant force of {self.buoyancy} lbf")
+            self.C1_label.setText(
                 f"The minimum predicted cable tension in normal running conditions is {min_tension:.1f} lbf "
                 f"with the toolstring at a measured depth of {depth_ft:.1f} ft ({depth_m:.1f} m) during RIH.")
         else:
-            self.min_tension_label.setText("Minimum tension data not available.")
+            self.C1_label.setText("Minimum tension data not available.")
 
         # Max overpull info
         breaking_strength = self.breaking_strength  # lbs
@@ -206,12 +237,12 @@ class PlotsTab(QWidget):
             overpull = self.max_overpulls[min_idx]
             depth_ft = self.depth_points_overpull[min_idx]
             depth_m = depth_ft * 0.3048
-            self.overpull_label.setText(
+            self.MD1_label.setText(
                 f"The maximum available overpull at {depth_ft:.1f} ft ({depth_m:.1f} m) "
                 f"based on {safe_pull_pct}% of wire breaking strength is {overpull:.1f} lbf.\n"
                 f"The weight indicator reading will then be {breaking_strength:.1f} lbf.")
         else:
-            self.overpull_label.setText("Overpull data not available.")
+            self.MD1_label.setText("Overpull data not available.")
 
     def update_tension_plot(self):
         fig = self.tension_canvas.figure
@@ -251,10 +282,12 @@ class PlotsTab(QWidget):
                 buoyancy_weight = tool_displacement_gal * self.fluid_density
 
                 submerged_length = max(depth - self.fluid_level, 0)
-                buoyancy = buoyancy_weight + submerged_length * self.wire_weight * (1 - buoyancy_factor)
-                submerged_weight = total_weight - buoyancy
+                self.buoyancy = buoyancy_weight + submerged_length * self.wire_weight * (1 - buoyancy_factor)
+                if idx == 0:
+                    self.surface_buoyancy = self.buoyancy
+                submerged_weight = total_weight - self.buoyancy
             else:
-                buoyancy = 0
+                self.buoyancy = 0
                 submerged_weight = total_weight
 
             inc_rad = math.radians(inc)
@@ -263,12 +296,39 @@ class PlotsTab(QWidget):
             area = math.pi * (self.wire_diameter / 2) ** 2
             pressure_force = self.pressure * area
 
+            # --- FLUID DRAG CALCULATION BASED ON FLOW REGIME ---
+            speed_ft_min = self.speed  # ft/min
+            v = speed_ft_min / 60  # ft/s
+
+            tool_diameter_ft = self.tool_avg_diameter / 12
+            projected_area = math.pi * (tool_diameter_ft / 2) ** 2
+
+            # Convert fluid density from ppg to slug/ft³
+            fluid_density_slug = self.fluid_density * 0.0160185
+
+            # Assume dynamic viscosity in lb·s/ft² (for water ~1 cP)
+            mu = 0.00002093
+
+            # Reynolds number
+            Re = fluid_density_slug * v * tool_diameter_ft / mu
+
+            # Decide drag model
+            if Re < 2300:
+                # Laminar (Stokes drag, proportional to velocity)
+                # F_d = 3 * pi * mu * D * v
+                drag_force = 3 * math.pi * mu * tool_diameter_ft * v
+            else:
+                # Turbulent (Quadratic drag)
+                Cd = 0.82  # for long cylinder moving axially
+                drag_force = 0.5 * Cd * self.fluid_density * projected_area * v ** 2
+
             normal_force = submerged_weight * math.sin(inc_rad)
             rih_friction = -self.friction_coeff * normal_force - self.stuffing_box
             pooh_friction = self.friction_coeff * normal_force + self.stuffing_box
 
-            rih_tension = max(effective_weight - pressure_force + rih_friction, 0)
-            pooh_tension = max(effective_weight - pressure_force + pooh_friction, 0)
+            rih_tension = max(effective_weight - pressure_force + rih_friction - drag_force, 0)
+            pooh_tension = max(effective_weight - pressure_force + pooh_friction + drag_force, 0)
+
             rih_weights.append(rih_tension)
             pooh_weights.append(pooh_tension)
 
@@ -329,14 +389,9 @@ class PlotsTab(QWidget):
                 text = f'POOH: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} ft ({depth_m:.1f} m)'
             sel.annotation.set_text(text)
 
-        # @cursor_pooh.connect("add")
-        # def _(sel):
-        #     sel.annotation.set_text(f'POOH: {sel.target[0]:.1f} lbs\nDepth: {sel.target[1]:.1f} ft')
-        #     sel.annotation.get_bbox_patch().set(fc="white", alpha=0.8)
-
         idx = np.argmin(np.abs(np.array(self.trajectory_data['mds']) - self.current_depth))
         ax.plot(rih_weights[idx], mds[idx], 'bo')
-        ax.plot(pooh_weights[idx], mds[idx], 'go')
+        ax.plot(pooh_weights[idx], mds[idx], 'ro')
         ax.axhline(self.current_depth, color='gray', linestyle='--')
 
         ax.set_xlabel("Tension (lbs)")
@@ -374,7 +429,7 @@ class PlotsTab(QWidget):
             max_overpulls = [max(safe_pull_limit - pooh, 0) for pooh in pooh_weights]
 
             # Plotting
-            overpull_line, = ax.plot(max_overpulls, mds, 'g-', label='Max Overpull (lbs)')
+            overpull_line, = ax.plot(max_overpulls, mds, 'r-', label='Max Overpull (lbs)')
 
             # Cursor hover functionality with unit conversions
             cursor_overpull = mplcursors.cursor(overpull_line, hover=True)
@@ -396,7 +451,7 @@ class PlotsTab(QWidget):
                 current_depth = float(self.current_depth)
                 if current_depth <= max_depth:
                     idx = np.argmin(np.abs(np.array(mds) - current_depth))
-                    ax.plot(max_overpulls[idx], mds[idx], 'go', label='Current Max Overpull')
+                    ax.plot(max_overpulls[idx], mds[idx], 'ro', label='Current Max Overpull')
                     ax.axhline(current_depth, color='gray', linestyle='--', alpha=0.5)
 
             # Axis labels and formatting
@@ -436,7 +491,7 @@ class PlotsTab(QWidget):
             max_depth = float(mds[-1])
 
             # Calculate DLS (Dog Leg Severity) in °/100ft
-            dls_values = []
+            self.dls_values = []
             for i in range(len(mds)):
                 if i == 0:
                     dls = 0.0
@@ -448,7 +503,7 @@ class PlotsTab(QWidget):
                         dls = (abs(delta_inc) / (delta_md / 30.48)) if delta_md != 0 else 0.0
                     else:  # Calculate DLS in °/100ft
                         dls = (abs(delta_inc) / delta_md) * 100 if delta_md != 0 else 0.0
-                dls_values.append(dls)
+                self.dls_values.append(dls)
 
             # Create twin axis for DLS
             ax2 = ax.twiny()
@@ -459,7 +514,7 @@ class PlotsTab(QWidget):
             # Plot DLS as step function (horizontal segments between depth points)
             if len(mds) >= 2:
                 # Use DLS values from index 1 onward (skip initial 0)
-                dls_for_plot = dls_values[1:]
+                dls_for_plot = self.dls_values[1:]
                 # Use starting depth of each interval (exclude last MD)
                 mds_for_plot = mds[:-1]
                 dls_line, = ax2.step(
@@ -494,7 +549,7 @@ class PlotsTab(QWidget):
                 ax.plot(inclinations[idx], mds[idx], 'bo', markersize=8, label='Current Inclination')
 
                 if len(mds) >= 2:
-                    ax2.plot(dls_values[idx], mds[idx], 'ro', markersize=8, label='Current DLS')
+                    ax2.plot(self.dls_values[idx], mds[idx], 'ro', markersize=8, label='Current DLS')
 
             # Formatting
             ax.set_title('Inclination & DLS vs Depth')

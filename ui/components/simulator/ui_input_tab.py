@@ -5,6 +5,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QClipboard, QGuiApplication
 import numpy as np
 
+from ui.windows.ui_messagebox_window import MessageBoxWindow
 from utils.styles import GROUPBOX_STYLE, CHECKBOX_STYLE
 
 
@@ -75,11 +76,18 @@ class InputTab(QWidget):
                 self.trajectory_updated.emit(self.trajectory_data)
             except Exception as e:
                 print('Error when emitting:', e)
-            QMessageBox.information(self, "Success", "Well trajectory generated")
+            MessageBoxWindow.message_simple(self,
+                                            "Success",
+                                            "Well trajectory generated",
+                                            "check")
 
         except Exception as e:
             print('Error to generate trajectory:',e)
             QMessageBox.warning(self, "Error", str(e))
+            # MessageBoxWindow.message_simple(self,
+            #                                 "Error",
+            #                                 str(e),
+            #                                 )
 
     def create_tool_group(self):
         group = QGroupBox("Tool String Configuration")
@@ -361,16 +369,6 @@ class InputTab(QWidget):
         # Convert spinbox values
         self.fluid_level_input.setSuffix(f" {suffix}")
         self.fluid_level_input.setValue(self.fluid_level_input.value() * factor)
-
-        # # Update tool weight units
-        # tool_weight = self.tool_weight_input.value()
-        # if self.use_metric:
-        #     tool_weight *= 0.453592  # Convert lbs to kg
-        #     self.tool_weight_input.setSuffix(" kg")
-        # else:
-        #     tool_weight /= 0.453592
-        #     self.tool_weight_input.setSuffix(" lbs")
-        # self.tool_weight_input.setValue(tool_weight)
 
         # Update tables and wire properties
         for table in [self.md_table, self.tvd_table]:

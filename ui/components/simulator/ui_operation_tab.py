@@ -19,6 +19,7 @@ class OperationTab(QWidget):
         super().__init__(parent)
         self.current_depth = 0
         self.max_depth = 100
+        self.speed = 60
         self.trajectory_data = None
         self.current_theme = "Deleum"
         self.operation = None
@@ -280,6 +281,7 @@ class OperationTab(QWidget):
 
     def handle_speed_change(self, value):
         self.speed_label.setText(f"{value} ft/min")
+        self.speed = value
         self.speedChanged.emit(value)
 
     def update_visualizations(self, current_depth, trajectory_data, params, operation):
@@ -443,7 +445,7 @@ class OperationTab(QWidget):
 
         # Add operation status
         if hasattr(self, 'operation'):
-            status_text = f"{self.operation} at {self.speed_slider.value()} ft/min"
+            status_text = f"{self.operation} at {self.speed} ft/min"
             ax.text(rsu_x - 100, rsu_y + rsu_height + 20, status_text,
                     ha='center', color='red', fontweight='bold')
 
@@ -554,10 +556,35 @@ class OperationTab(QWidget):
                 wire_area = math.pi * (WIRE_DIAMETER / 2) ** 2
                 pressure_force = -PRESSURE * wire_area
 
-                effective_friction = 0  # Initialize default value
+                # --- FLUID DRAG CALCULATION BASED ON FLOW REGIME ---
+                speed_ft_min = self.speed  # ft/min
+                v = speed_ft_min / 60  # ft/s
+
+                tool_diameter_ft = TOOL_AVG_DIAMETER / 12
+                projected_area = math.pi * (tool_diameter_ft / 2) ** 2
+
+                # Convert fluid density from ppg to slug/ft³
+                fluid_density_slug = FLUID_DENSITY * 0.0160185
+
+                # Assume dynamic viscosity in lb·s/ft² (for water ~1 cP)
+                mu = 0.00002093
+
+                # Reynolds number
+                Re = fluid_density_slug * v * tool_diameter_ft / mu
+
+                # Decide drag model
+                if Re < 2300:
+                    # Laminar (Stokes drag, proportional to velocity)
+                    # F_d = 3 * pi * mu * D * v
+                    drag_force = 3 * math.pi * mu * tool_diameter_ft * v
+                    flow = "Laminar"
+                else:
+                    # Turbulent (Quadratic drag)
+                    Cd = 0.82  # for long cylinder moving axially
+                    drag_force = 0.5 * Cd * FLUID_DENSITY * projected_area * v ** 2
+                    flow = "Turbulent"
 
                 # FRICTION CALCULATION
-                # if current_inclination > 0.0:  # Only in deviated wells
                 normal_force = submerged_weight * math.sin(math.radians(current_inclination))
                 friction_magnitude = FRICTION_COEFF * normal_force
 
@@ -572,9 +599,9 @@ class OperationTab(QWidget):
                 # Apply cumulative wire friction
                 tension_without_wire = effective_weight + pressure_force + effective_friction
                 if self.operation == "POOH":
-                    tension = max(tension_without_wire - cumulative_wire_friction, 0)
+                    tension = max(tension_without_wire - cumulative_wire_friction + drag_force, 0)
                 else:
-                    tension = max(tension_without_wire + cumulative_wire_friction, 0)
+                    tension = max(tension_without_wire + cumulative_wire_friction - drag_force, 0)
 
                 self.tension_label.setText(f"{tension:.1f} lbs")
 
@@ -618,10 +645,12 @@ class OperationTab(QWidget):
                     f"• Buoyancy Reduction: {buoyancy_reduction:.1f} lbs\n"
                     f"• Effective Weight: {effective_weight:.1f} lbs\n"
                     f"• Pressure Force: {pressure_force:.1f} lbs\n"
+                    f"• Fluid Drag: {drag_force:.1f} lbs\n"
+                    f"• Reynolds Number: {round(Re)} ({flow})\n"
                     f"• Stuffing Box Friction: {STUFFING_BOX} lbs\n"
                     f"• Wire Friction: {cumulative_wire_friction:+.1f} lbs\n"
                     f"• Tool String Friction: {effective_friction:+.1f} lbs\n"
-                    f"----------------------------------"
+                    f"----------------------------------\n"
                     f"• Net Tension: {tension:.1f} lbs\n"
                     f"• Inclination: {current_inclination:.1f}°\n"
                     f"• Azimuth: {current_azimuth:.1f}°"
