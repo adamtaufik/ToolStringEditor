@@ -56,38 +56,83 @@ class InputTab(QWidget):
     def generate_trajectory_from_tables(self):
         try:
             md_data = self.get_table_values(self.md_table['table'])
-            tvd_data = self.get_table_values(self.tvd_table['table']) if self.tvd_checkbox.isChecked() else md_data.copy()
-            incl_data = self.get_table_values(self.incl_table['table']) if self.incl_checkbox.isChecked() else self.calculate_inclinations(md_data, tvd_data)
-            azim_data = self.get_table_values(self.azim_table['table']) if self.azim_checkbox.isChecked() else [45.0]*len(md_data)
-
             if not md_data:
                 raise ValueError("Please enter MD values")
+
+            # Determine which parameters are provided and calculate others
+            if self.tvd_checkbox.isChecked():
+                tvd_data = self.get_table_values(self.tvd_table['table'])
+                if len(tvd_data) != len(md_data):
+                    raise ValueError("MD and TVD data must have the same number of entries")
+                incl_data = self.calculate_inclinations(md_data, tvd_data)
+            elif self.incl_checkbox.isChecked():
+                incl_data = self.get_table_values(self.incl_table['table'])
+                if len(incl_data) != len(md_data):
+                    raise ValueError("MD and Inclination data must have the same number of entries")
+                tvd_data = self.calculate_tvd(md_data, incl_data)
+            else:
+                # Default to vertical well if neither checked
+                tvd_data = md_data.copy()
+                incl_data = [0.0] * len(md_data)
+
+            azim_data = self.get_table_values(self.azim_table['table']) if self.azim_checkbox.isChecked() else [
+                                                                                                                   45.0] * len(
+                md_data)
 
             self.trajectory_data = {
                 'mds': md_data,
                 'tvd': tvd_data,
                 'inclinations': incl_data,
                 'azimuths': azim_data,
-                'north': [0.0]*len(md_data),
-                'east': [0.0]*len(md_data)
+                'north': [0.0] * len(md_data),
+                'east': [0.0] * len(md_data)
             }
             self.calculate_north_east()
-            try:
-                self.trajectory_updated.emit(self.trajectory_data)
-            except Exception as e:
-                print('Error when emitting:', e)
+            self.trajectory_updated.emit(self.trajectory_data)
+
             MessageBoxWindow.message_simple(self,
                                             "Success",
                                             "Well trajectory generated",
                                             "check")
 
         except Exception as e:
-            print('Error to generate trajectory:',e)
             QMessageBox.warning(self, "Error", str(e))
-            # MessageBoxWindow.message_simple(self,
-            #                                 "Error",
-            #                                 str(e),
-            #                                 )
+
+    def toggle_tvd_incl(self, state):
+        """Ensure TVD and Inclination checkboxes are mutually exclusive"""
+        sender = self.sender()
+        if sender == self.tvd_checkbox and state:
+            self.incl_checkbox.setChecked(False)
+        elif sender == self.incl_checkbox and state:
+            self.tvd_checkbox.setChecked(False)
+
+    def calculate_tvd(self, mds, incl_data):
+        """Calculate TVD from MD and Inclination data"""
+        if len(mds) != len(incl_data):
+            raise ValueError("MD and Inclination data must be the same length")
+
+        tvd = [mds[0] * np.cos(np.radians(incl_data[0]))]  # Initial TVD
+
+        for i in range(1, len(mds)):
+            delta_md = mds[i] - mds[i - 1]
+            avg_incl = np.radians(incl_data[i - 1])  # Use previous inclination for the segment
+            delta_tvd = delta_md * np.cos(avg_incl)
+            tvd.append(tvd[i - 1] + delta_tvd)
+
+        return tvd
+
+    def calculate_inclinations(self, mds, tvds):
+        """Calculate inclinations from MD and TVD data"""
+        incl = [0.0]
+        for i in range(1, len(mds)):
+            delta_md = mds[i] - mds[i-1]
+            delta_tvd = tvds[i] - tvds[i-1]
+            if delta_md == 0:
+                incl.append(0.0)
+            else:
+                angle = np.degrees(np.arccos(min(max(delta_tvd / delta_md, -1), 1)))
+                incl.append(angle)
+        return incl
 
     def create_tool_group(self):
         group = QGroupBox("Tool String Configuration")
@@ -241,6 +286,10 @@ class InputTab(QWidget):
         self.incl_checkbox.setStyleSheet(CHECKBOX_STYLE)
         self.azim_checkbox.setStyleSheet(CHECKBOX_STYLE)
 
+        # Connect mutual exclusivity
+        self.tvd_checkbox.stateChanged.connect(self.toggle_tvd_incl)
+        self.incl_checkbox.stateChanged.connect(self.toggle_tvd_incl)
+
         checkboxes.addWidget(self.tvd_checkbox)
         checkboxes.addWidget(self.incl_checkbox)
         checkboxes.addWidget(self.azim_checkbox)
@@ -339,14 +388,6 @@ class InputTab(QWidget):
                 except ValueError:
                     raise ValueError(f"Invalid number in row {row+1}")
         return values
-
-    def calculate_inclinations(self, mds, tvds):
-        incl = [0.0]
-        for i in range(1, len(mds)):
-            delta_md = mds[i] - mds[i-1]
-            delta_tvd = tvds[i] - tvds[i-1]
-            incl.append(np.degrees(np.arccos(delta_tvd/delta_md)) if delta_md > 0 else 0.0)
-        return incl
 
     def calculate_north_east(self):
         mds = self.trajectory_data['mds']

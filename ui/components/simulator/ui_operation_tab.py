@@ -93,9 +93,7 @@ class OperationTab(QWidget):
         return panel
 
     def update_trajectory_view(self, trajectory_data):
-
         try:
-
             self.trajectory_data = trajectory_data
             if not self.trajectory_data:
                 return
@@ -103,36 +101,109 @@ class OperationTab(QWidget):
             fig = self.trajectory_canvas.figure
             fig.clear()
             self.trajectory_ax = fig.add_subplot(111, projection='3d')  # Store axis reference
-
             ax = self.trajectory_ax
+
             mds = self.trajectory_data['mds']
-            tvd = self.trajectory_data['tvd']
-            north = self.trajectory_data['north']
-            east = self.trajectory_data['east']
+            if self.use_metric:
+                tvd = np.array([tvd * 3.281 for tvd in self.trajectory_data['tvd']])
+            else:
+                tvd = np.array([tvd / 3.281 for tvd in self.trajectory_data['tvd']])
+            north = np.array(self.trajectory_data['north'])
+            east = np.array(self.trajectory_data['east'])
 
-            ax.plot(north, east, tvd, 'b-', linewidth=2, label='Well Path')
+            # Convert units if metric is enabled
+            if self.use_metric:
+                north *= 0.3048
+                east *= 0.3048
+                tvd *= 0.3048
+                unit_label = 'm'
+            else:
+                unit_label = 'ft'
 
+            # Plot the well path as a thin navy line
+            ax.plot(north, east, tvd, color='navy', linewidth=4, linestyle='-', label='Well Path')
+
+            # Add translucent casing tube around the well path
+            if len(north) > 1:  # Ensure there are enough points to form a trajectory
+                points = np.vstack([north, east, tvd]).T
+                tangents = np.zeros_like(points)
+                tangents[1:-1] = points[2:] - points[:-2]
+                tangents[0] = points[1] - points[0]
+                tangents[-1] = points[-1] - points[-2]
+                tangents /= np.linalg.norm(tangents, axis=1, keepdims=True) + 1e-8  # Avoid division by zero
+
+                normals = np.zeros_like(tangents)
+                binormals = np.zeros_like(tangents)
+
+                # Set radius based on units
+                tube_radius = 0.15 if self.use_metric else 0.5  # ~6 inches in respective units
+                tube_radius *= 700
+
+                # Compute consistent normals and binormals
+                for i in range(len(tangents)):
+                    tangent = tangents[i]
+                    up = np.array([0, 0, 1])  # Global up direction (z-axis)
+                    normal = np.cross(tangent, up)
+                    if np.linalg.norm(normal) < 1e-6:
+                        up = np.array([1, 0, 0])  # Use x-axis if tangent is vertical
+                        normal = np.cross(tangent, up)
+                    normal /= np.linalg.norm(normal) + 1e-8
+                    binormal = np.cross(tangent, normal)
+                    binormal /= np.linalg.norm(binormal) + 1e-8
+                    normals[i] = normal
+                    binormals[i] = binormal
+
+                # Generate tube vertices
+                theta = np.linspace(0, 2 * np.pi, 20)  # 20 points around the circumference
+                X = np.zeros((len(theta), len(points)))
+                Y = np.zeros((len(theta), len(points)))
+                Z = np.zeros((len(theta), len(points)))
+
+                for i in range(len(points)):
+                    x = points[i, 0] + tube_radius * (normals[i, 0] * np.cos(theta) + binormals[i, 0] * np.sin(theta))
+                    y = points[i, 1] + tube_radius * (normals[i, 1] * np.cos(theta) + binormals[i, 1] * np.sin(theta))
+                    z = points[i, 2] + tube_radius * (normals[i, 2] * np.cos(theta) + binormals[i, 2] * np.sin(theta))
+                    X[:, i] = x
+                    Y[:, i] = y
+                    Z[:, i] = z
+
+                # Plot the translucent casing
+                ax.plot_surface(X, Y, Z, color='lightgray', alpha=0.5, linewidth=0)
+
+            # Plot current tool position
             if hasattr(self, 'current_depth'):
-                idx = np.argmin(np.abs(np.array(mds) - self.current_depth))
-                # print('idx:', idx, 'Current depth:', round(self.current_depth,2), [north[idx]], [east[idx]], [tvd[idx]])
+                current_depth_display = self.current_depth * (0.3048 if self.use_metric else 1)
+                idx = np.argmin(np.abs(np.array(mds) - current_depth_display))
                 ax.plot([north[idx]], [east[idx]], [tvd[idx]], 'ro', markersize=10, label='Tool Position')
 
-            ax.set_zlim(max(tvd), 0)
-            ax.set_xlabel('North (ft)')
-            ax.set_ylabel('East (ft)')
-            ax.set_zlabel('TVD (ft)')
+            # Calculate axis ranges
+            north_min, north_max = np.min(north), np.max(north)
+            east_min, east_max = np.min(east), np.max(east)
+            tvd_min, tvd_max = np.min(tvd), np.max(tvd)
+
+            # Get maximum range among all axes
+            ranges = [
+                north_max - north_min,
+                east_max - east_min,
+                tvd_max - tvd_min
+            ]
+            max_range = max(ranges)
+
+            # Calculate midpoints
+            north_center = (north_max + north_min) * 0.5
+            east_center = (east_max + east_min) * 0.5
+            tvd_center = (tvd_max + tvd_min) * 0.5
+
+            # Configure axis labels and limits
+            # Set equal limits for all axes
+            ax.set_xlim(north_center - max_range / 2, north_center + max_range / 2)
+            ax.set_ylim(east_center - max_range / 2, east_center + max_range / 2)
+            ax.set_zlim(tvd_center + max_range / 2, tvd_center - max_range / 2)  # Inverted for TVD
+            ax.set_xlabel(f'North ({unit_label})')
+            ax.set_ylabel(f'East ({unit_label})')
+            ax.set_zlabel(f'TVD ({unit_label})')
             ax.set_title("Well Trajectory Overview")
             ax.legend()
-
-            # Update labels based on units after drawing
-            if self.use_metric:
-                ax.set_xlabel('North (m)')
-                ax.set_ylabel('East (m)')
-                ax.set_zlabel('TVD (m)')
-            else:
-                ax.set_xlabel('North (ft)')
-                ax.set_ylabel('East (ft)')
-                ax.set_zlabel('TVD (ft)')
 
             self.trajectory_canvas.draw()
 
