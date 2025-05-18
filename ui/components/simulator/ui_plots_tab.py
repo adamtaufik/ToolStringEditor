@@ -1,22 +1,14 @@
-import math
 import textwrap
-from datetime import datetime
-
 import numpy as np
 import mplcursors
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QSplitter, QApplication, QHBoxLayout,
-                             QFileDialog)
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QSplitter, QApplication, QHBoxLayout)
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
-import io
 import tempfile
-import os
 
-from utils.path_finder import get_icon_path, get_path
+from features.simulator import plot
+from features.simulator.export import PDFExporter
 
 
 class PlotsTab(QWidget):
@@ -45,6 +37,7 @@ class PlotsTab(QWidget):
         self.depth_points_tension = None
         self.max_overpulls = None
         self.depth_points_overpull = None
+        self.params = {}
 
         input_tab = parent.input_tab
         input_tab.units_toggled.connect(self.handle_units_toggle)
@@ -99,7 +92,7 @@ class PlotsTab(QWidget):
 
         self.separator4 = QLabel("_________________________")
         self.export_btn = QPushButton("Export to PDF")
-        self.export_btn.clicked.connect(self.export_to_pdf)
+        self.export_btn.clicked.connect(self.handle_export_click)
 
         self.C1_label.setWordWrap(True)
         self.T2_label.setWordWrap(True)
@@ -154,6 +147,13 @@ class PlotsTab(QWidget):
             print(f"Error copying plot: {e}")
 
     def update_plots(self, trajectory_data, params):
+
+        if not params:  # Add parameter validation
+            print("Error: No parameters provided")
+            return
+
+        self.params = params.copy()
+
         self.trajectory_data = trajectory_data
         self.tool_weight = params['tool_weight']
         self.tool_avg_diameter = params['tool_avg_diameter']
@@ -178,12 +178,109 @@ class PlotsTab(QWidget):
             self.wire_weight = params['wire_weight']  # lbs/ft
             self.wire_weight_unit = "lbs/ft"
 
-        self.update_tension_plot()
-        self.update_overpull_plot()
-        self.update_inclination_plot()
+        self.rih_weights, self.pooh_weights, self.depth_points_tension = plot.plot_tension(
+            self.trajectory_data,
+            self.params,
+            self.current_depth,
+            self.use_metric,
+            self.tension_canvas
+        )
+
+        # Setup tension plot cursors
+        ax = self.tension_canvas.figure.axes[0]
+        self.rih_line = ax.lines[0]
+        self.pooh_line = ax.lines[1]
+
+        cursor_rih = mplcursors.cursor(self.rih_line, hover=True)
+
+        @cursor_rih.connect("add")
+        def _(sel):
+            depth = sel.target[1]
+            if self.use_metric:
+                text = f'RIH: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} m'
+            else:
+                text = f'RIH: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} ft'
+            sel.annotation.set_text(text)
+
+        cursor_pooh = mplcursors.cursor(self.pooh_line, hover=True)
+
+        @cursor_pooh.connect("add")
+        def _(sel):
+            depth = sel.target[1]
+            if self.use_metric:
+                text = f'POOH: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} m'
+            else:
+                text = f'POOH: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} ft'
+            sel.annotation.set_text(text)
+
+        # Update overpull plot
+        self.max_overpulls = plot.plot_overpull(
+            self.pooh_weights,
+            self.depth_points_tension,
+            self.breaking_strength,
+            self.safe_operating_load,
+            self.current_depth,
+            self.use_metric,
+            self.overpull_canvas
+        )
+
+        # Setup overpull cursor
+        ax_overpull = self.overpull_canvas.figure.axes[0]
+        overpull_line = ax_overpull.lines[0]
+        cursor_overpull = mplcursors.cursor(overpull_line, hover=True)
+
+        @cursor_overpull.connect("add")
+        def _(sel):
+            depth = sel.target[1]
+            if self.use_metric:
+                text = f'Overpull: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} m'
+            else:
+                text = f'Overpull: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} ft'
+            sel.annotation.set_text(text)
+
+        # Update inclination plot
+        self.dls_values = plot.plot_inclination_dls(
+            self.trajectory_data,
+            self.use_metric,
+            self.current_depth,
+            self.incl_canvas
+        )
+
+        # Setup inclination/DLS cursors
+        ax_incl = self.incl_canvas.figure.axes[0]
+        incl_line = ax_incl.lines[0]
+        cursor_incl = mplcursors.cursor(incl_line, hover=True)
+
+        @cursor_incl.connect("add")
+        def _(sel):
+            depth = sel.target[1]
+            if self.use_metric:
+                text = f'Inclination: {sel.target[0]:.1f}°\nDepth: {depth:.1f} m'
+            else:
+                text = f'Inclination: {sel.target[0]:.1f}°\nDepth: {depth:.1f} ft'
+            sel.annotation.set_text(text)
+
+        ax_dls = self.incl_canvas.figure.axes[0].twiny()
+        dls_line = ax_dls.lines[0] if ax_dls.lines else None
+        if dls_line:
+            cursor_dls = mplcursors.cursor(dls_line, hover=True)
+
+            @cursor_dls.connect("add")
+            def _(sel):
+                depth = sel.target[1]
+                if self.use_metric:
+                    text = f'DLS: {sel.target[0]:.1f}°/30m\nDepth: {depth:.1f} m'
+                else:
+                    text = f'DLS: {sel.target[0]:.1f}°/100ft\nDepth: {depth:.1f} ft'
+                sel.annotation.set_text(text)
+
         self.update_info_labels()
 
+
     def update_info_labels(self):
+
+        if not hasattr(self, 'params') or not self.params:
+            return  # Don't crash if params not loaded
 
         self.speed_label.setText(f"Wire speed: {self.speed} ft/min")
 
@@ -283,323 +380,6 @@ class PlotsTab(QWidget):
                 f"The weight indicator reading will then be {breaking_strength*safe_pull_pct/100:.1f} lbf.")
         else:
             self.MD1_label.setText("Overpull data not available.")
-
-    def update_tension_plot(self):
-        fig = self.tension_canvas.figure
-        fig.clear()
-        ax = fig.add_subplot(111)
-
-        if not self.trajectory_data:
-            return
-
-        mds = [float(md) for md in self.trajectory_data['mds']]
-        # inclinations = [float(inc) for inc in self.trajectory_data['inclinations']]
-        max_depth = float(mds[-1])
-        depth_points = np.linspace(0, max_depth, 100)
-
-        buoyancy_factor = 1 - (self.fluid_density / 65.4)
-
-        rih_weights, pooh_weights = [], []
-
-        # for depth, inc in zip(mds, inclinations):
-        for idx in range(len(self.trajectory_data['inclinations'])):
-            depth = mds[idx]
-            inc = self.trajectory_data['inclinations'][idx]
-
-            wire_in_hole = depth
-
-            total_weight = self.tool_weight + self.wire_weight * wire_in_hole
-
-            if depth >= self.fluid_level:
-                tool_area = math.pi * (self.tool_avg_diameter/12/2) ** 2
-                tool_displacement = (tool_area * self.tool_length)
-                tool_displacement_gal = tool_displacement * 7.48052
-                buoyancy_weight = tool_displacement_gal * self.fluid_density
-
-                submerged_length = max(depth - self.fluid_level, 0)
-                self.buoyancy = buoyancy_weight + submerged_length * self.wire_weight * (1 - buoyancy_factor)
-                if idx == 0:
-                    self.surface_buoyancy = self.buoyancy
-                submerged_weight = total_weight - self.buoyancy
-            else:
-                self.buoyancy = 0
-                submerged_weight = total_weight
-
-            inc_rad = math.radians(inc)
-            effective_weight = submerged_weight * math.cos(inc_rad)
-
-            area = math.pi * (self.wire_diameter / 2) ** 2
-            pressure_force = self.pressure * area
-
-            # --- FLUID DRAG CALCULATION BASED ON FLOW REGIME ---
-            speed_ft_min = self.speed  # ft/min
-            v = speed_ft_min / 60  # ft/s
-
-            tool_diameter_ft = self.tool_avg_diameter / 12
-            projected_area = math.pi * (tool_diameter_ft / 2) ** 2
-
-            # Convert fluid density from ppg to slug/ft³
-            fluid_density_slug = self.fluid_density * 0.0160185
-
-            # Assume dynamic viscosity in lb·s/ft² (for water ~1 cP)
-            mu = 0.00002093
-
-            # Reynolds number
-            Re = fluid_density_slug * v * tool_diameter_ft / mu
-
-            # Decide drag model
-            if Re < 2300:
-                # Laminar (Stokes drag, proportional to velocity)
-                # F_d = 3 * pi * mu * D * v
-                drag_force = 3 * math.pi * mu * tool_diameter_ft * v
-            else:
-                # Turbulent (Quadratic drag)
-                Cd = 0.82  # for long cylinder moving axially
-                drag_force = 0.5 * Cd * self.fluid_density * projected_area * v ** 2
-
-            normal_force = submerged_weight * math.sin(inc_rad)
-            rih_friction = -self.friction_coeff * normal_force - self.stuffing_box
-            pooh_friction = self.friction_coeff * normal_force + self.stuffing_box
-
-            rih_tension = max(effective_weight - pressure_force + rih_friction - drag_force, 0)
-            pooh_tension = max(effective_weight - pressure_force + pooh_friction + drag_force, 0)
-
-            rih_weights.append(rih_tension)
-            pooh_weights.append(pooh_tension)
-
-        wire_friction = []
-
-        # Process segments from bottom to top
-        for i in range(len(mds) - 2, -1, -1):
-            delta_L = mds[i + 1] - mds[i]
-            theta_avg = math.radians((self.trajectory_data['inclinations'][i + 1] + self.trajectory_data['inclinations'][i]) / 2)
-            avg_depth = (mds[i + 1] + mds[i]) / 2
-
-            # Calculate segment buoyancy
-            if avg_depth >= self.fluid_level:
-                wire_submerged = self.wire_weight * delta_L * buoyancy_factor
-            else:
-                wire_submerged = self.wire_weight * delta_L
-
-            # Segment contributions
-            normal_force = wire_submerged * math.sin(theta_avg)
-            friction = self.friction_coeff * normal_force
-
-            wire_friction.append(friction)
-
-        wire_friction = wire_friction[::-1]
-
-        for i in range(len(wire_friction)):
-            rih_weights[i+1] -= sum(wire_friction[:i])
-            pooh_weights[i+1] += sum(wire_friction[:i])
-
-        # Plotting (depth on y-axis, inverted)
-        self.rih_line, = ax.plot(rih_weights, mds, 'b-', label='RIH Tension')
-        self.pooh_line, = ax.plot(pooh_weights, mds, 'r-', label='POOH Tension')
-
-        # Add cursor hover functionality
-        cursor_rih = mplcursors.cursor(self.rih_line, hover=True)
-        cursor_pooh = mplcursors.cursor(self.pooh_line, hover=True)
-
-        @cursor_rih.connect("add")
-        def _(sel):
-            depth = sel.target[1]
-            if self.use_metric:
-                depth_ft = depth / 0.3048
-                text = f'RIH: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} m ({depth_ft:.1f} ft)'
-            else:
-                depth_m = depth * 0.3048
-                text = f'RIH: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} ft ({depth_m:.1f} m)'
-            sel.annotation.set_text(text)
-
-        @cursor_pooh.connect("add")
-        def _(sel):
-            depth = sel.target[1]
-            if self.use_metric:
-                depth_ft = depth / 0.3048
-                text = f'POOH: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} m ({depth_ft:.1f} ft)'
-            else:
-                depth_m = depth * 0.3048
-                text = f'POOH: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} ft ({depth_m:.1f} m)'
-            sel.annotation.set_text(text)
-
-        idx = np.argmin(np.abs(np.array(self.trajectory_data['mds']) - self.current_depth))
-        ax.plot(rih_weights[idx], mds[idx], 'bo')
-        ax.plot(pooh_weights[idx], mds[idx], 'ro')
-        ax.axhline(self.current_depth, color='gray', linestyle='--')
-
-        ax.set_xlabel("Tension (lbs)")
-        ax.set_ylabel("Depth (m MD)" if self.use_metric else "Depth (ft MD)")
-        ax.set_title("Tension vs Depth Profile")
-        ax.grid(True)
-        ax.legend()
-        ax.set_ylim(max_depth, 0)
-        if min(rih_weights) > 0:
-            ax.set_xlim(left=0)
-        self.tension_canvas.draw()
-
-        self.depth_points_tension = depth_points
-        self.rih_weights = rih_weights
-        self.pooh_weights = pooh_weights
-
-    def update_overpull_plot(self):
-        try:
-            fig = self.overpull_canvas.figure
-            fig.clear()
-            ax = fig.add_subplot(111)
-
-            # Check if required data is available
-            if not self.trajectory_data or self.pooh_weights is None:
-                return
-
-            # Get depth points and POOH tensions from tension plot data
-            mds = [float(md) for md in self.trajectory_data['mds']]
-            pooh_weights = self.pooh_weights
-            max_depth = float(mds[-1])
-
-            # Calculate safe pull limit correctly (accounting for percentage)
-            safe_pull_limit = (self.safe_operating_load / 100) * self.breaking_strength
-            # Calculate max overpull at each depth
-            max_overpulls = [max(safe_pull_limit - pooh, 0) for pooh in pooh_weights]
-
-            # Plotting
-            overpull_line, = ax.plot(max_overpulls, mds, 'r-', label='Max Overpull (lbs)')
-
-            # Cursor hover functionality with unit conversions
-            cursor_overpull = mplcursors.cursor(overpull_line, hover=True)
-
-            @cursor_overpull.connect("add")
-            def _(sel):
-                depth = sel.target[1]
-                if self.use_metric:
-                    depth_ft = depth / 0.3048
-                    text = f'Overpull: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} m ({depth_ft:.1f} ft)'
-                else:
-                    depth_m = depth * 0.3048
-                    text = f'Overpull: {sel.target[0]:.1f} lbs\nDepth: {depth:.1f} ft ({depth_m:.1f} m)'
-                sel.annotation.set_text(text)
-                sel.annotation.get_bbox_patch().set(fc="white", alpha=0.8)
-
-            # Current depth marker
-            if hasattr(self, 'current_depth'):
-                current_depth = float(self.current_depth)
-                if current_depth <= max_depth:
-                    idx = np.argmin(np.abs(np.array(mds) - current_depth))
-                    ax.plot(max_overpulls[idx], mds[idx], 'ro', label='Current Max Overpull')
-                    ax.axhline(current_depth, color='gray', linestyle='--', alpha=0.5)
-
-            # Axis labels and formatting
-            ax.set_xlabel('Max Overpull (lbs)')
-            ax.set_ylabel("Depth (m MD)" if self.use_metric else "Depth (ft MD)")
-            ax.set_title('Maximum Overpull vs Depth')
-            ax.grid(True)
-            ax.legend()
-            ax.set_ylim(max_depth, 0)  # Invert depth axis
-            ax.set_xlim(left=0)
-            self.overpull_canvas.draw()
-
-            # Store data for info panel
-            self.depth_points_overpull = mds
-            self.max_overpulls = max_overpulls
-
-        except Exception as e:
-            print('Error updating overpull plot:', e)
-
-        except Exception as e:
-            print('Update max overpull error:', e)
-
-    def update_inclination_plot(self):
-        try:
-
-            """Update the inclination and DLS vs depth plot with depth on the y-axis"""
-            fig = self.incl_canvas.figure
-            fig.clear()
-            ax = fig.add_subplot(111)
-
-            if not hasattr(self, 'trajectory_data'):
-                return
-
-            # Ensure all data is converted to float (critical fix)
-            mds = np.array([float(md) for md in self.trajectory_data['mds']])  # Convert to numpy array
-            inclinations = [float(inc) for inc in self.trajectory_data['inclinations']]
-            max_depth = float(mds[-1])
-
-            # Calculate DLS (Dog Leg Severity) in °/100ft
-            self.dls_values = []
-            for i in range(len(mds)):
-                if i == 0:
-                    dls = 0.0
-                else:
-                    delta_md = mds[i] - mds[i-1]
-                    delta_inc = inclinations[i] - inclinations[i-1]
-
-                    if self.use_metric:  # Calculate DLS in °/30m
-                        dls = (abs(delta_inc) / (delta_md / 30.48)) if delta_md != 0 else 0.0
-                    else:  # Calculate DLS in °/100ft
-                        dls = (abs(delta_inc) / delta_md) * 100 if delta_md != 0 else 0.0
-                self.dls_values.append(dls)
-
-            # Create twin axis for DLS
-            ax2 = ax.twiny()
-
-            # Plot inclination (primary axis)
-            inc_line, = ax.plot(inclinations, mds, 'b-', label='Inclination')
-
-            # Plot DLS as step function (horizontal segments between depth points)
-            if len(mds) >= 2:
-                # Use DLS values from index 1 onward (skip initial 0)
-                dls_for_plot = self.dls_values[1:]
-                # Use starting depth of each interval (exclude last MD)
-                mds_for_plot = mds[:-1]
-                dls_line, = ax2.step(
-                    dls_for_plot, mds_for_plot,
-                    where='post', linestyle='-', color='r', label='DLS'
-                )
-            else:
-                # Not enough data for steps
-                dls_line, = ax2.plot([], [], 'r-', label='DLS')
-
-            ax2.set_xlabel('DLS (°/30m)' if self.use_metric else 'DLS (°/100ft)')
-
-            # Add cursor hover functionality
-            cursor_inc = mplcursors.cursor(inc_line, hover=True)
-            cursor_dls = mplcursors.cursor(dls_line, hover=True) if len(mds) >= 2 else None
-
-            @cursor_inc.connect("add")
-            def _(sel):
-                sel.annotation.set_text(f'Inclination: {sel.target[0]:.1f}°\nDepth: {sel.target[1]:.1f} ft')
-                sel.annotation.get_bbox_patch().set(fc="white", alpha=0.8)
-
-            @cursor_dls.connect("add")
-            def _(sel):
-                sel.annotation.set_text(f'DLS: {sel.target[0]:.1f}°/100ft\nDepth: {sel.target[1]:.1f} ft')
-                sel.annotation.get_bbox_patch().set(fc="white", alpha=0.8)
-
-            # Add current position marker if available
-            if hasattr(self, 'current_depth') and self.current_depth <= max_depth:
-                current_depth = float(self.current_depth)  # Ensure float
-                idx = np.argmin(np.abs(mds - current_depth))  # Now works with numpy array
-                ax.axhline(y=mds[idx], color='gray', linestyle='--', alpha=0.5)
-                ax.plot(inclinations[idx], mds[idx], 'bo', markersize=8, label='Current Inclination')
-
-                if len(mds) >= 2:
-                    ax2.plot(self.dls_values[idx], mds[idx], 'ro', markersize=8, label='Current DLS')
-
-            # Formatting
-            ax.set_title('Inclination & DLS vs Depth')
-            ax.grid(True)
-            ax.set_ylim(max_depth, 0)  # Invert y-axis for depth increasing down
-
-            # Combine legends
-            lines, labels = ax.get_legend_handles_labels()
-            lines2, labels2 = ax2.get_legend_handles_labels()
-            ax.legend(lines + lines2, labels + labels2, loc='upper right')
-            ax.set_ylabel("Depth (m MD)" if self.use_metric else "Depth (ft MD)")
-
-            self.incl_canvas.draw()
-
-        except Exception as e:
-            print('Update inclination/DLS plot Error:', e)
 
     def generate_trajectory_image(self):
         """Generates a 3D trajectory plot image with equal axis scaling"""
@@ -737,388 +517,19 @@ class PlotsTab(QWidget):
             print(f"Error generating trajectory image: {e}")
             return None
 
-    def export_to_pdf(self):
-        try:
-            file_path, _ = QFileDialog.getSaveFileName(
-                self, "Save PDF Report", "", "PDF Files (*.pdf)"
-            )
-            if not file_path:
-                return
+    # Add this method to PlotsTab:
+    def handle_export_click(self):
+        exporter = PDFExporter(self)
+        exporter.export_to_pdf(
+            self.trajectory_data,
+            self.params,
+            self.use_metric,
+            self.generate_trajectory_image,
+            self.generate_plot_image,
+            self.get_info_text,
+            self.dls_values
+        )
 
-            # Generate temporary plot images
-            trajectory_img = self.generate_trajectory_image()
-            tension_img = self.generate_plot_image('tension')
-            inclination_img = self.generate_plot_image('inclination')
-            overpull_img = self.generate_plot_image('overpull')
-
-            # Header/footer definitions
-            def draw_header(canvas, page_num, width, height):
-                canvas.setFont("Helvetica-Bold", 14)
-                canvas.drawString(40, height - 40, "Deleum Oilfield Services Sdn. Bhd.")
-                logo_path = get_icon_path("logo_full")
-                if os.path.exists(logo_path):
-                    logo = ImageReader(logo_path)
-                    canvas.drawImage(logo, width - 120, height - 60,
-                                     width=80, height=40, preserveAspectRatio=True, mask='auto')
-                canvas.line(30, height - 70, width - 30, height - 70)
-
-            def draw_footer(canvas, page_num, width, height):
-                canvas.setFont("Helvetica", 10)
-                date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-
-                # Split into date and page number components
-                date_text = f"Report generated: {date_str}"
-                page_text = f"Page {page_num}"
-
-                # Draw date centered
-                canvas.drawCentredString(width / 2, 60, date_text)
-
-                # Draw page number aligned to right margin (40px from right edge)
-                canvas.drawRightString(width - 40, 60, page_text)
-
-                # Draw software logo
-                wirehub_path = get_path(os.path.join("assets", "backgrounds", "title.png"))
-                if os.path.exists(wirehub_path):
-                    wirehub = ImageReader(wirehub_path)
-                    canvas.drawImage(wirehub, 40, 30,
-                                     width=100, height=50, preserveAspectRatio=True, mask='auto')
-
-                # Keep existing footer line
-                canvas.line(30, 80, width - 30, 80)
-
-            c = canvas.Canvas(file_path, pagesize=A4)
-            width, height = A4
-            page_number = 1
-
-            # Add trajectory plot as first page
-            if trajectory_img:
-                # Draw header/footer
-                draw_header(c, page_number, width, height)
-                draw_footer(c, page_number, width, height)
-
-                # Add main titles
-                c.setFillColorRGB(0.6, 0, 0.1)  # Burgundy color
-                c.setFont("Helvetica-Bold", 24)
-                c.drawCentredString(width / 2, height - 100, "Deleum WireHub")
-                c.setFillColorRGB(0, 0, 0)  # Reset to black
-                c.setFont("Helvetica-Bold", 20)
-                c.drawCentredString(width / 2, height - 140, "Wireline Operation Simulation")
-
-                # Two-column layout
-                col_x = [50, width / 2 + 20]
-                line_height = 14
-                current_y = height - 180
-
-                # Column 1 content
-                col1 = [
-                    "Project: ...",
-                    "Prepared by: ...",
-                    "Client: ...",
-                    f"Simulation Date: {datetime.now().strftime('%Y-%m-%d')}",
-                    "Field: ...",
-                    "Location: ..."
-                ]
-                c.setFont("Helvetica", 12)
-                for line in col1:
-                    c.drawString(col_x[0], current_y, line)
-                    current_y -= line_height
-
-                # Column 2 content
-                current_y = height - 180
-                col2 = [
-                    "Well: ...",
-                    "Wire: ...",
-                    "Tool String: ...",
-                    "Weak Point: ...",
-                    "Country: Malaysia"
-                ]
-                for line in col2:
-                    c.drawString(col_x[1], current_y, line)
-                    current_y -= line_height
-
-                # Calculate image position
-                lowest_y = height - 180 - (len(col1) * line_height) - 40
-                img = ImageReader(trajectory_img)
-                img_w, img_h = img.getSize()
-                aspect = img_h / img_w
-
-                # Dynamic image scaling
-                max_width = width - 100
-                max_height = lowest_y - 130  # Account for title and footer
-                plot_width = min(max_width, max_height / aspect)
-                plot_height = plot_width * aspect
-
-                # Draw trajectory title and image
-                c.setFont("Helvetica-Bold", 12)
-                c.drawString(50, lowest_y - 20, "Well Trajectory Overview")
-                c.drawImage(img, 50, lowest_y - 10 - plot_height,
-                            width=plot_width, height=plot_height)
-
-                c.showPage()
-                page_number += 1
-
-            draw_header(c, page_number, width, height)
-            draw_footer(c, page_number, width, height)
-
-            # Proceed with other plots
-            plot_order = [
-                ('tension', 'Tension Analysis'),
-                ('inclination', 'Trajectory Analysis'),
-                ('overpull', 'Overpull Analysis')
-            ]
-
-            y_pos = height - 100
-            for plot_type, title in plot_order:
-                img_path = locals().get(f"{plot_type}_img")
-                if not img_path:
-                    continue
-
-                img = ImageReader(img_path)
-                img_w, img_h = img.getSize()
-                aspect = img_h / img_w
-                plot_width = width - 100
-                plot_height = plot_width * aspect
-
-                if y_pos - plot_height < 150:
-                    c.showPage()
-                    page_number += 1
-                    draw_header(c, page_number, width, height)
-                    draw_footer(c, page_number, width, height)
-                    y_pos = height - 100
-
-                c.setFont("Helvetica-Bold", 12)
-                c.drawString(50, y_pos - 20, title)
-                y_pos -= 40
-
-                c.drawImage(img, 50, y_pos - plot_height, width=plot_width, height=plot_height)
-                y_pos -= plot_height + 40
-
-                # Add text section if applicable
-                if plot_type == 'tension':
-                    text_section = self.get_info_text('tension')
-                    y_pos = self.add_text_section(c, text_section, y_pos, width, height, page_number)
-                elif plot_type == 'inclination':
-                    text_section = self.get_info_text('inclination')
-                    y_pos = self.add_text_section(c, text_section, y_pos, width, height, page_number)
-
-            # Add general info section
-            text_section = self.get_info_text('general')
-            self.add_text_section(c, text_section, y_pos, width, height, page_number)
-
-            # Add Input Data page
-            c.showPage()
-            page_number += 1
-            draw_header(c, page_number, width, height)
-            draw_footer(c, page_number, width, height)
-
-            # --- Input Data Page Content ---
-            y_pos = height - 100
-            c.setFont("Helvetica-Bold", 16)
-            c.drawCentredString(width / 2, y_pos, "Input Data")
-            # Underline title
-            c.line(width / 2 - 50, y_pos - 5, width / 2 + 50, y_pos - 5)
-            y_pos -= 40
-
-            # Well Parameters Section
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(50, y_pos, "Well Parameters")
-            c.setFont("Helvetica", 10)
-            y_pos -= 20
-
-            # Well Depth
-            if self.trajectory_data and self.trajectory_data.get('mds'):
-                max_depth = float(self.trajectory_data['mds'][-1])
-                if self.use_metric:
-                    max_depth_ft = max_depth / 0.3048
-                    depth_str = f"Well Depth: {max_depth:.1f} m ({max_depth_ft:.1f} ft)"
-                else:
-                    max_depth_m = max_depth * 0.3048
-                    depth_str = f"Well Depth: {max_depth:.1f} ft ({max_depth_m:.1f} m)"
-                c.drawString(60, y_pos, depth_str)
-                y_pos -= 15
-
-            # Other parameters
-            params = [
-                f"Wire Speed: {self.speed} ft/min",
-                f"Stuffing Box Friction: {self.stuffing_box} lbf",
-                f"Wellhead Pressure: {self.pressure} psi",
-                f"Safe Operating Load: {self.safe_operating_load}%",
-                f"Friction Coefficient: {self.friction_coeff}"
-            ]
-            for param in params:
-                c.drawString(60, y_pos, param)
-                y_pos -= 15
-            y_pos -= 10
-
-            # Wireline Data Section
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(50, y_pos, "Wireline Data")
-            c.setFont("Helvetica", 10)
-            y_pos -= 20
-
-            wire_data = [
-                f"Diameter: {self.wire_diameter}\"",
-                f"Weight: {self.wire_weight} {self.wire_weight_unit}",
-                f"Breaking Strength: {self.breaking_strength} lbs"
-            ]
-            for data in wire_data:
-                c.drawString(60, y_pos, data)
-                y_pos -= 15
-            y_pos -= 10
-
-            # Tool String Section
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(50, y_pos, "Tool String")
-            c.setFont("Helvetica", 10)
-            y_pos -= 20
-
-            # Calculate displacement volume
-            tool_radius_ft = (self.tool_avg_diameter / 12) / 2
-            tool_vol = math.pi * (tool_radius_ft ** 2) * self.tool_length
-            displacement_gal = tool_vol * 7.48052  # ft³ to gallons
-
-            tool_data = [
-                f"Length: {self.tool_length} {'m' if self.use_metric else 'ft'}",
-                f"Weight: {self.tool_weight} lbs",
-                f"Displacement: {displacement_gal:.1f} gallons"
-            ]
-            for data in tool_data:
-                c.drawString(60, y_pos, data)
-                y_pos -= 15
-            y_pos -= 10
-
-            # Fluid Data Section
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(50, y_pos, "Well Fluid Input")
-            c.setFont("Helvetica", 10)
-            y_pos -= 20
-
-            fluid_level = self.fluid_level * (0.3048 if self.use_metric else 1)
-            fluid_data = [
-                f"Fluid Level: {fluid_level:.1f} {'m' if self.use_metric else 'ft'}",
-                "Rheology Model: Newtonian",
-                f"Density: {self.fluid_density} ppg"
-            ]
-            for data in fluid_data:
-                c.drawString(60, y_pos, data)
-                y_pos -= 15
-
-            # Add Survey Data page(s)
-            if self.trajectory_data and 'mds' in self.trajectory_data and \
-                    'inclinations' in self.trajectory_data and hasattr(self, 'dls_values'):
-
-                # Calculate how many rows fit per page
-                rows_per_page = 45  # Adjust based on your font size and page layout
-                mds = self.trajectory_data['mds']
-                rows_per_page = len(mds)
-                total_rows = len(mds)
-                num_pages = math.ceil(total_rows / rows_per_page)
-
-                for page_idx in range(num_pages):
-                    c.showPage()
-                    page_number += 1
-                    draw_header(c, page_number, width, height)
-                    draw_footer(c, page_number, width, height)
-
-                    # Table title
-                    y_pos = height - 100
-                    c.setFont("Helvetica-Bold", 16)
-                    c.drawCentredString(width / 2, y_pos, "Survey Data")
-                    c.line(width / 2 - 50, y_pos - 5, width / 2 + 50, y_pos - 5)
-                    y_pos -= 30
-
-                    # Column headers
-                    col_widths = [100, 100, 100, 100]  # MD, Inclination, DLS
-                    headers = ["MD ({})".format("m" if self.use_metric else "ft"),
-                               "TVD ({})".format("m" if self.use_metric else "ft"),
-                               "Inclination (°)",
-                               "DLS (°/{})".format("30m" if self.use_metric else "100ft")]
-
-                    # Draw header row
-                    x_pos = 50
-                    c.setFont("Helvetica-Bold", 10)
-                    for i, header in enumerate(headers):
-                        c.drawString(x_pos, y_pos, header)
-                        x_pos += col_widths[i]
-
-                    y_pos -= 20
-                    c.line(50, y_pos, width - 50, y_pos)  # Header underline
-
-                    # Draw table rows
-                    c.setFont("Helvetica", 9)
-                    start_row = page_idx * rows_per_page
-                    end_row = min((page_idx + 1) * rows_per_page, total_rows)
-
-                    print('mds:', mds)
-                    print('tvds:', self.trajectory_data['tvd'])
-                    for row_idx in range(start_row, end_row):
-                        y_pos -= 15
-                        if y_pos < 150:  # Prevent overlapping with footer
-                            c.showPage()
-                            page_number += 1
-                            draw_header(c, page_number, width, height)
-                            draw_footer(c, page_number, width, height)
-                            y_pos = height - 80  # Reset Y position for new page
-
-                        # Get data for current row
-                        md = float(mds[row_idx])
-                        tvd = float(self.trajectory_data['tvd'][row_idx])
-                        incl = float(self.trajectory_data['inclinations'][row_idx])
-                        dls = self.dls_values[row_idx] if row_idx < len(self.dls_values) else 0.0
-
-                        # Format numbers
-                        md_str = "{:.1f}".format(md)
-                        tvd_str = "{:.1f}".format(tvd)
-                        incl_str = "{:.1f}".format(incl)
-                        dls_str = "{:.1f}".format(dls) if dls else "-"
-
-                        # Draw cells
-                        x_pos = 50
-                        c.drawString(x_pos, y_pos, md_str)
-                        x_pos += col_widths[0]
-                        c.drawString(x_pos, y_pos, tvd_str)
-                        x_pos += col_widths[1]
-                        c.drawString(x_pos, y_pos, incl_str)
-                        x_pos += col_widths[2]
-                        c.drawString(x_pos, y_pos, dls_str)
-
-                        # Draw row line
-                        c.line(50, y_pos - 5, width - 50, y_pos - 5)
-
-            c.save()
-
-            # Cleanup temporary files
-            if trajectory_img: os.remove(trajectory_img)
-            if tension_img: os.remove(tension_img)
-            if inclination_img: os.remove(inclination_img)
-            if overpull_img: os.remove(overpull_img)
-
-            self.update_btn.setText("Exported PDF!")
-            QTimer.singleShot(2000, lambda: self.update_btn.setText("Update All Plots"))
-
-        except Exception as e:
-            print(f"Error exporting PDF: {e}")
-
-    def add_text_section(self, canvas, text_lines, y_pos, width, height, page_number):
-        """Adds formatted text section to PDF"""
-        canvas.setFont("Helvetica", 10)
-
-        canvas.setFont("Helvetica", 10)
-        text_obj = canvas.beginText(50, y_pos)
-
-        for line in text_lines:
-            if line.startswith("•"):
-                text_obj.setFont("Helvetica-Bold", 10)
-                text_obj.textOut('• ')
-                text_obj.setFont("Helvetica", 10)
-                text_obj.textLine(line[2:])
-            else:
-                text_obj.textLine(line)
-
-            y_pos -= 14  # Reduced spacing for better fit
-
-        canvas.drawText(text_obj)
-        return y_pos
 
     def get_info_text(self, section='all'):
         """Returns formatted text with bullet points and wrapping"""

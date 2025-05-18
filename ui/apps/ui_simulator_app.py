@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QWidget, QVBoxLayout,
                              QHBoxLayout, QMessageBox)
 from PyQt6.QtCore import Qt, QTimer
 
+from ui.components.simulator.ui_equation_tab import EquationTab
 from ui.components.simulator.ui_operation_tab import OperationTab
 from ui.components.simulator.ui_input_tab import InputTab
 from ui.components.simulator.ui_plots_tab import PlotsTab
@@ -59,6 +60,7 @@ class WirelineSimulatorApp(QMainWindow):
         self.create_input_tab()
         self.create_main_operation_tab()
         self.create_plots_tab()
+        self.create_equation_tab()
         content_layout.addWidget(self.tabs)
 
         root_layout.addWidget(content_area)
@@ -90,7 +92,7 @@ class WirelineSimulatorApp(QMainWindow):
 
     def initial_trajectory(self):
 
-        mds = list(range(0, 401, 5))  # 0-10000 ft in 100 ft increments
+        mds = list(range(0, 5000, 100))  # 0-1000 ft in 100 ft increments
         tvd = []
         north = []
         east = []
@@ -99,9 +101,9 @@ class WirelineSimulatorApp(QMainWindow):
         azimuths = []
 
         # Trajectory parameters
-        ko_point = 200  # Kickoff at 5000 ft
+        ko_point = 800  # Kickoff at 5000 ft
         build_rate = 2.0  # 2°/100 ft
-        target_inc = 50  # Final inclination
+        target_inc = 30  # Final inclination
         azimuth = 45.0  # Constant azimuth
 
         # Initialize tracking variables WITH VERTICAL SECTION VALUES
@@ -221,12 +223,6 @@ class WirelineSimulatorApp(QMainWindow):
         self.sim_timer.stop()
         self.is_moving = False  # Add this if not already present
 
-
-    def update_calculations(self):
-        """Trigger recalculation when inputs change"""
-        if hasattr(self, 'current_depth'):
-            self.update_tool_view()
-
     def update_simulation(self):
         """Update the simulation state with all safety checks and visualization updates"""
         try:
@@ -284,6 +280,13 @@ class WirelineSimulatorApp(QMainWindow):
         self.plots_tab = PlotsTab(self)
         self.plots_tab.updateRequested.connect(self.handle_plots_update)
         self.tabs.addTab(self.plots_tab, "Plots")
+
+    def create_equation_tab(self):
+        try:
+            self.equation_tab = EquationTab(self.operation_tab)
+        except Exception as e:
+            print(e)
+        self.tabs.addTab(self.equation_tab, "Calculations")
 
     # Add handler for plot updates
     def handle_plots_update(self):

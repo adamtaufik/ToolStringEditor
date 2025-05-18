@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel,
                             QDoubleSpinBox, QComboBox, QTableWidget, QCheckBox,
                             QPushButton, QMessageBox, QTableWidgetItem)
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QClipboard, QGuiApplication
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QGuiApplication
 import numpy as np
 
 from ui.windows.ui_messagebox_window import MessageBoxWindow
@@ -334,26 +334,42 @@ class InputTab(QWidget):
     def create_table(self, title, btn_text, enabled=True):
         container = QWidget()
         layout = QVBoxLayout(container)
-        
+
         group = QGroupBox(title.split()[0])
         group.setStyleSheet(GROUPBOX_STYLE)
         group_layout = QVBoxLayout()
-        
+
+        # Create buttons
+        clear_btn = QPushButton("Clear Data")
+        clear_btn.clicked.connect(lambda: self.clear_table_data(table))
         paste_btn = QPushButton(btn_text)
+        paste_btn.clicked.connect(lambda: self.paste_table_data(table))
+
+        # Button layout
+        button_layout = QVBoxLayout()
+        button_layout.addWidget(clear_btn)
+        button_layout.addWidget(paste_btn)
+
+        # Create table
         table = QTableWidget()
         table.setColumnCount(1)
         table.setHorizontalHeaderLabels([title])
         table.setRowCount(20)
         table.setEnabled(enabled)
-        
-        paste_btn.clicked.connect(lambda: self.paste_table_data(table))
-        
-        group_layout.addWidget(paste_btn)
+
+        # Add components to group
+        group_layout.addLayout(button_layout)
         group_layout.addWidget(table)
         group.setLayout(group_layout)
-        
+
         layout.addWidget(group)
         return {'container': container, 'group': group, 'table': table}
+
+    def clear_table_data(self, table):
+        """Clear all data from the specified table"""
+        for row in range(table.rowCount()):
+            if table.item(row, 0):
+                table.item(row, 0).setText("")
 
     def paste_table_data(self, table):
         clipboard = QGuiApplication.clipboard()

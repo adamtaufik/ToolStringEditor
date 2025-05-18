@@ -1,19 +1,20 @@
 from PyQt6.QtWidgets import (QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QGroupBox,
                              QLabel, QPushButton, QSlider)
 from PyQt6.QtCore import Qt, pyqtSignal
-from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import numpy as np
-import math
 
+from features.simulator.plot import plot_trajectory, plot_tool_view, plot_lubricator
 from utils.styles import GROUPBOX_STYLE
-
 
 class OperationTab(QWidget):
     operationChanged = pyqtSignal(str)  # "RIH", "POOH", or "STOP"
     speedChanged = pyqtSignal(int)  # Current speed in ft/min
+    params_updated = pyqtSignal()  # New signal
+    WELL_WIDTH = 25
+    TUBING_WIDTH = WELL_WIDTH - 10
+    CENTER_X = WELL_WIDTH / 2
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -59,19 +60,8 @@ class OperationTab(QWidget):
         # Convert current depth display
         if hasattr(self, 'current_depth'):
             self.depth_counter()
-        # self.update_visualizations(
-        #         current_depth=self.current_depth,
-        #         trajectory_data=self.trajectory_data,
-        #         params=visualization_params,
-        #         operation=self.operation
-        #     )
 
     def depth_counter(self):
-        # if self.use_metric:
-        #     self.depth_label.setText(f"{self.current_depth * 0.3048:.1f} m")
-        # else:
-        #     self.depth_label.setText(f"{self.current_depth:.1f} ft")
-
         if self.use_metric:
             self.depth_label.setText(f"{self.current_depth:.1f} m")
         else:
@@ -93,122 +83,13 @@ class OperationTab(QWidget):
         return panel
 
     def update_trajectory_view(self, trajectory_data):
-        try:
-            self.trajectory_data = trajectory_data
-            if not self.trajectory_data:
-                return
-
-            fig = self.trajectory_canvas.figure
-            fig.clear()
-            self.trajectory_ax = fig.add_subplot(111, projection='3d')  # Store axis reference
-            ax = self.trajectory_ax
-
-            mds = self.trajectory_data['mds']
-            if self.use_metric:
-                tvd = np.array([tvd * 3.281 for tvd in self.trajectory_data['tvd']])
-            else:
-                tvd = np.array([tvd / 3.281 for tvd in self.trajectory_data['tvd']])
-            north = np.array(self.trajectory_data['north'])
-            east = np.array(self.trajectory_data['east'])
-
-            # Convert units if metric is enabled
-            if self.use_metric:
-                north *= 0.3048
-                east *= 0.3048
-                tvd *= 0.3048
-                unit_label = 'm'
-            else:
-                unit_label = 'ft'
-
-            # Plot the well path as a thin navy line
-            ax.plot(north, east, tvd, color='navy', linewidth=4, linestyle='-', label='Well Path')
-
-            # Add translucent casing tube around the well path
-            if len(north) > 1:  # Ensure there are enough points to form a trajectory
-                points = np.vstack([north, east, tvd]).T
-                tangents = np.zeros_like(points)
-                tangents[1:-1] = points[2:] - points[:-2]
-                tangents[0] = points[1] - points[0]
-                tangents[-1] = points[-1] - points[-2]
-                tangents /= np.linalg.norm(tangents, axis=1, keepdims=True) + 1e-8  # Avoid division by zero
-
-                normals = np.zeros_like(tangents)
-                binormals = np.zeros_like(tangents)
-
-                # Set radius based on units
-                tube_radius = 0.15 if self.use_metric else 0.5  # ~6 inches in respective units
-                tube_radius *= 700
-
-                # Compute consistent normals and binormals
-                for i in range(len(tangents)):
-                    tangent = tangents[i]
-                    up = np.array([0, 0, 1])  # Global up direction (z-axis)
-                    normal = np.cross(tangent, up)
-                    if np.linalg.norm(normal) < 1e-6:
-                        up = np.array([1, 0, 0])  # Use x-axis if tangent is vertical
-                        normal = np.cross(tangent, up)
-                    normal /= np.linalg.norm(normal) + 1e-8
-                    binormal = np.cross(tangent, normal)
-                    binormal /= np.linalg.norm(binormal) + 1e-8
-                    normals[i] = normal
-                    binormals[i] = binormal
-
-                # Generate tube vertices
-                theta = np.linspace(0, 2 * np.pi, 20)  # 20 points around the circumference
-                X = np.zeros((len(theta), len(points)))
-                Y = np.zeros((len(theta), len(points)))
-                Z = np.zeros((len(theta), len(points)))
-
-                for i in range(len(points)):
-                    x = points[i, 0] + tube_radius * (normals[i, 0] * np.cos(theta) + binormals[i, 0] * np.sin(theta))
-                    y = points[i, 1] + tube_radius * (normals[i, 1] * np.cos(theta) + binormals[i, 1] * np.sin(theta))
-                    z = points[i, 2] + tube_radius * (normals[i, 2] * np.cos(theta) + binormals[i, 2] * np.sin(theta))
-                    X[:, i] = x
-                    Y[:, i] = y
-                    Z[:, i] = z
-
-                # Plot the translucent casing
-                ax.plot_surface(X, Y, Z, color='lightgray', alpha=0.5, linewidth=0)
-
-            # Plot current tool position
-            if hasattr(self, 'current_depth'):
-                current_depth_display = self.current_depth * (0.3048 if self.use_metric else 1)
-                idx = np.argmin(np.abs(np.array(mds) - current_depth_display))
-                ax.plot([north[idx]], [east[idx]], [tvd[idx]], 'ro', markersize=10, label='Tool Position')
-
-            # Calculate axis ranges
-            north_min, north_max = np.min(north), np.max(north)
-            east_min, east_max = np.min(east), np.max(east)
-            tvd_min, tvd_max = np.min(tvd), np.max(tvd)
-
-            # Get maximum range among all axes
-            ranges = [
-                north_max - north_min,
-                east_max - east_min,
-                tvd_max - tvd_min
-            ]
-            max_range = max(ranges)
-
-            # Calculate midpoints
-            north_center = (north_max + north_min) * 0.5
-            east_center = (east_max + east_min) * 0.5
-            tvd_center = (tvd_max + tvd_min) * 0.5
-
-            # Configure axis labels and limits
-            # Set equal limits for all axes
-            ax.set_xlim(north_center - max_range / 2, north_center + max_range / 2)
-            ax.set_ylim(east_center - max_range / 2, east_center + max_range / 2)
-            ax.set_zlim(tvd_center + max_range / 2, tvd_center - max_range / 2)  # Inverted for TVD
-            ax.set_xlabel(f'North ({unit_label})')
-            ax.set_ylabel(f'East ({unit_label})')
-            ax.set_zlabel(f'TVD ({unit_label})')
-            ax.set_title("Well Trajectory Overview")
-            ax.legend()
-
-            self.trajectory_canvas.draw()
-
-        except Exception as e:
-            print('Update trajectory view Error:', e)
+        self.trajectory_data = trajectory_data
+        self.trajectory_ax = plot_trajectory(
+            trajectory_data=trajectory_data,
+            current_depth=self.current_depth,
+            use_metric=self.use_metric,
+            canvas=self.trajectory_canvas
+        )
 
     # --- Event Handlers for 3D Interaction ---
     def on_trajectory_press(self, event):
@@ -356,405 +237,44 @@ class OperationTab(QWidget):
         self.speedChanged.emit(value)
 
     def update_visualizations(self, current_depth, trajectory_data, params, operation):
-
-        try:
-
-            self.current_depth = current_depth
-            self.trajectory_data = trajectory_data
-            self.params = params
-            self.operation = operation
-
-            self.update_lubricator_view()
-            self.update_tool_view()
-            self.update_trajectory_view(self.trajectory_data)
-            self.depth_counter()
-            self.handle_units_toggle(self.use_metric)
-
-        except Exception as e:
-            print('Update vis error:', e)
-
-    def update_lubricator_view(self):
-
-        fig = self.lubricator_canvas.figure
-        fig.clear()
-        ax = fig.add_subplot(111)
-
-        # Lubricator drawing code (same as original)
-        wellhead_width = 30
-        wellhead_height = 20
-        christmas_tree_height = 25
-        lubricator_height = 240
-        lubricator_width = 25
-        pce_height = 40
-        pce_width = 30
-        drum_radius = 20
-        rsu_width = 50
-        rsu_height = 60
-        pp_width = 100
-        pp_height = 60
-        sheave_radius = 15
-
-        wellhead_x = 100
-        wellhead_bottom = 20
-        christmas_tree_bottom = wellhead_bottom + wellhead_height
-        pce_bottom = christmas_tree_bottom + christmas_tree_height
-        lubricator_bottom = pce_bottom + pce_height
-
-        # Draw all components (same as original)
-        wellhead = plt.Rectangle((wellhead_x, wellhead_bottom),
-                                 wellhead_width, wellhead_height,
-                                 linewidth=2, edgecolor='black', facecolor='#555555')
-        ax.add_patch(wellhead)
-
-        # Draw christmas tree
-        christmas_tree = plt.Rectangle((wellhead_x + (wellhead_width - 20) / 2, christmas_tree_bottom),
-                                       20, christmas_tree_height,
-                                       linewidth=2, edgecolor='darkgreen', facecolor='#006400')
-        ax.add_patch(christmas_tree)
-
-        # Draw PCE stack (pressure control equipment)
-        pce = plt.Rectangle((wellhead_x + (wellhead_width - pce_width) / 2, pce_bottom),
-                            pce_width, pce_height,
-                            linewidth=2, edgecolor='black', facecolor='#777777')
-        ax.add_patch(pce)
-
-        # Draw lubricator (3x taller)
-        lubricator = plt.Rectangle((wellhead_x + (wellhead_width - lubricator_width) / 2, lubricator_bottom),
-                                   lubricator_width, lubricator_height,
-                                   linewidth=2, edgecolor='black', facecolor='#999999')
-        ax.add_patch(lubricator)
-
-        # Draw RSU (reel service unit) on the side
-        rsu_x = wellhead_x - 320
-        rsu_y = wellhead_bottom + 40
-        rsu = plt.Rectangle((rsu_x, rsu_y), rsu_width, rsu_height,
-                            linewidth=2, edgecolor='black', facecolor='#aaaaaa')
-        ax.add_patch(rsu)
-
-        # Draw Power Pack on the side
-        pp_x = rsu_x - 150
-        pp_y = wellhead_bottom + 40
-        pp = plt.Rectangle((pp_x, pp_y), pp_width, pp_height,
-                           linewidth=2, edgecolor='black', facecolor='#aaaaaa')
-        ax.add_patch(pp)
-
-        # Draw drum with rotation
-        drum_center_x = rsu_x + rsu_width - drum_radius - 5
-        drum_center_y = rsu_y + rsu_height / 2
-
-        # Calculate rotation angle based on wire movement (3x faster rotation)
-        rotation_angle = 0
-        if hasattr(self, 'current_depth'):
-            rotation_angle = (self.current_depth * 50) % 360  # 3x faster rotation
-            if hasattr(self, 'operation'):
-                # Reverse direction for POOH
-                rotation_angle *= -50
-
-        drum = plt.Circle((drum_center_x, drum_center_y), drum_radius,
-                          linewidth=2, edgecolor='black', facecolor='#cccccc')
-        ax.add_patch(drum)
-
-        # Draw drum spokes (rotating)
-        for i in range(4):
-            angle = np.radians(rotation_angle + i * 90)
-            end_x = drum_center_x + drum_radius * np.cos(angle)
-            end_y = drum_center_y + drum_radius * np.sin(angle)
-            ax.plot([drum_center_x, end_x], [drum_center_y, end_y],
-                    'k-', linewidth=2)
-
-        # Calculate wire path points
-        drum_center_x = rsu_x + rsu_width - drum_radius - 5
-        drum_center_y = rsu_y + rsu_height / 2
-
-        # Wire starts tangent from top of drum
-        wire_start_angle = np.radians(90)
-        wire_start_x = drum_center_x + drum_radius * np.cos(wire_start_angle)
-        wire_start_y = drum_center_y + drum_radius * np.sin(wire_start_angle)
-
-        # First sheave position (where wire changes from horizontal to vertical)
-        turn_sheave_x = wellhead_x - 30
-        turn_sheave_y = wire_start_y - 15
-        turn_sheave = plt.Circle((turn_sheave_x, turn_sheave_y), sheave_radius,
-                                 linewidth=1, edgecolor='black', facecolor='#dddddd')
-        ax.add_patch(turn_sheave)
-
-        # Second sheave position (at top of lubricator)
-        top_sheave_x = wellhead_x
-        top_sheave_y = lubricator_bottom + lubricator_height
-        top_sheave = plt.Circle((top_sheave_x, top_sheave_y), sheave_radius,
-                                linewidth=1, edgecolor='black', facecolor='#dddddd')
-        ax.add_patch(top_sheave)
-
-        ax.plot([pp_x + pp_width, rsu_x],
-                [pp_y + 8, rsu_y + 8],
-                color='black', linewidth=3)
-
-        # Updated wire path that goes through both sheaves
-        # From drum to turn sheave (horizontal)
-        ax.plot([wire_start_x, turn_sheave_x],
-                [wire_start_y, turn_sheave_y - sheave_radius],
-                color='#8b4513', linewidth=2)
-
-        # From turn sheave to top sheave (vertical)
-        ax.plot([turn_sheave_x + sheave_radius, top_sheave_x - sheave_radius],
-                [turn_sheave_y, top_sheave_y],
-                color='#8b4513', linewidth=2)
-
-        # Draw load cell (between PCE and lubricator)
-        load_cell_x = wellhead_x + (wellhead_width - 15) / 2
-        load_cell_y = pce_bottom + pce_height - 5
-        load_cell = plt.Rectangle((load_cell_x, load_cell_y), 15, 10,
-                                  linewidth=1, edgecolor='red', facecolor='#ffcccc')
-        ax.add_patch(load_cell)
-
-        # Draw wireline valve (on PCE stack)
-        valve_x = wellhead_x + wellhead_width / 2 - 5
-        valve_y = pce_bottom + pce_height - 15
-        valve = plt.Rectangle((valve_x, valve_y), 10, 10,
-                              linewidth=1, edgecolor='blue', facecolor='#ccccff')
-        ax.add_patch(valve)
-
-        # Add operation status
-        if hasattr(self, 'operation'):
-            status_text = f"{self.operation} at {self.speed} ft/min"
-            ax.text(rsu_x - 100, rsu_y + rsu_height + 20, status_text,
-                    ha='center', color='red', fontweight='bold')
-
-        ax.set_xlim(rsu_x - 200, wellhead_x + wellhead_width + 20)
-        ax.set_ylim(0, lubricator_bottom + lubricator_height + 20)
-        ax.axis('off')
-        ax.set_aspect('equal')
-        self.lubricator_canvas.draw()
-
-    def update_tool_view(self):
-        """Update the tool string visualization with real-time parameters"""
-        try:
-            fig = self.tool_canvas.figure
-            fig.clear()
-            ax = fig.add_subplot(111)
-
-            if not self.params or not self.trajectory_data:
-                self.tool_canvas.draw()
-                return
-
-            # Unpack parameters
-            STUFFING_BOX = -self.params['stuffing_box']
-            FLUID_DENSITY = self.params['fluid_density']
-            FLUID_LEVEL = self.params['fluid_level']
-            PRESSURE = self.params['pressure']
-            FRICTION_COEFF = self.params['friction_coeff']
-            BUOYANCY_FACTOR = 1 - (FLUID_DENSITY / 65.4)
-
-            TOOL_WEIGHT = self.params['tool_weight']
-            TOOL_AVG_DIAMETER = self.params['tool_avg_diameter']
-            TOOL_LENGTH = self.params['tool_length']
-
-            WIRE_DIAMETER = self.params['wire_diameter']
-
-            if self.use_metric:
-                depth_unit = "m"
-                WIRE_WEIGHT_PER_FT = self.params['wire_weight'] * 3.28084  # lbs/m
-                wire_weight_unit = "lbs/m"
-                # WIRE_DIAMETER = self.params['wire_diameter'] * 25.4  # mm
-            else:
-                depth_unit = "ft"
-                WIRE_WEIGHT_PER_FT = self.params['wire_weight']  # lbs/ft
-                wire_weight_unit = "lbs/ft"
-                # WIRE_DIAMETER = self.params['wire_diameter']  # inches
-
-            # Geometry constants
-            WELL_WIDTH = 25
-            TUBING_WIDTH = WELL_WIDTH - 10
-            CENTER_X = WELL_WIDTH / 2
-            STATIC_FRICTION_FACTOR = 1.2
-            max_depth = self.trajectory_data['mds'][-1]
-
-            # Calculate wire friction for each segment (like in update_tension_plot)
-            mds = [float(md) for md in self.trajectory_data['mds']]
-            inclinations = [float(inc) for inc in self.trajectory_data['inclinations']]
-            wire_friction = []
-
-            for i in range(len(mds) - 2, -1, -1):
-                delta_L = mds[i+1] - mds[i]
-                theta_avg = math.radians((inclinations[i+1] + inclinations[i]) / 2)
-                avg_depth = (mds[i+1] + mds[i]) / 2
-
-                # Calculate segment buoyancy
-                if avg_depth >= FLUID_LEVEL:
-                    wire_submerged = WIRE_WEIGHT_PER_FT * delta_L * BUOYANCY_FACTOR
-                else:
-                    wire_submerged = WIRE_WEIGHT_PER_FT * delta_L
-
-                normal_force = wire_submerged * math.sin(theta_avg)
-                friction = FRICTION_COEFF * normal_force
-                wire_friction.append(friction)
-
-            wire_friction = wire_friction[::-1]  # Reverse to top-to-bottom order
-
-            # Current well geometry
-            if self.current_depth > 0:
-                idx = np.argmin(np.abs(np.array(self.trajectory_data['mds']) - self.current_depth))
-                current_inclination = self.trajectory_data['inclinations'][idx]
-                current_azimuth = self.trajectory_data['azimuths'][idx]
-
-                # Calculate cumulative wire friction up to current depth
-                cumulative_wire_friction = -sum(wire_friction[:idx]) if wire_friction else 0
-
-                # Weight calculations
-                wire_in_hole = min(self.current_depth, max_depth)
-                wire_weight = wire_in_hole * WIRE_WEIGHT_PER_FT
-                total_weight = TOOL_WEIGHT + wire_weight
-
-                # Buoyancy calculations
-                if self.current_depth >= FLUID_LEVEL:
-                    tool_area = math.pi * (TOOL_AVG_DIAMETER/12/2) ** 2
-                    tool_displacement = (tool_area * TOOL_LENGTH)
-                    tool_displacement_gal = tool_displacement * 7.48052
-                    buoyancy_weight = tool_displacement_gal * FLUID_DENSITY
-
-                    submerged_length = max(self.current_depth - FLUID_LEVEL, 0)
-                    buoyancy_reduction = -buoyancy_weight -submerged_length * WIRE_WEIGHT_PER_FT * (1 - BUOYANCY_FACTOR)
-                    submerged_weight = total_weight + buoyancy_reduction
-                else:
-                    buoyancy_reduction = 0
-                    submerged_weight = total_weight
-
-                # Effective weight components
-                inclination_rad = math.radians(current_inclination)
-                effective_weight = submerged_weight * math.cos(inclination_rad)
-
-                # Pressure force
-                wire_area = math.pi * (WIRE_DIAMETER / 2) ** 2
-                pressure_force = -PRESSURE * wire_area
-
-                # --- FLUID DRAG CALCULATION BASED ON FLOW REGIME ---
-                speed_ft_min = self.speed  # ft/min
-                v = speed_ft_min / 60  # ft/s
-
-                tool_diameter_ft = TOOL_AVG_DIAMETER / 12
-                projected_area = math.pi * (tool_diameter_ft / 2) ** 2
-
-                # Convert fluid density from ppg to slug/ft³
-                fluid_density_slug = FLUID_DENSITY * 0.0160185
-
-                # Assume dynamic viscosity in lb·s/ft² (for water ~1 cP)
-                mu = 0.00002093
-
-                # Reynolds number
-                Re = fluid_density_slug * v * tool_diameter_ft / mu
-
-                # Decide drag model
-                if Re < 2300:
-                    # Laminar (Stokes drag, proportional to velocity)
-                    # F_d = 3 * pi * mu * D * v
-                    drag_force = 3 * math.pi * mu * tool_diameter_ft * v
-                    flow = "Laminar"
-                else:
-                    # Turbulent (Quadratic drag)
-                    Cd = 0.82  # for long cylinder moving axially
-                    drag_force = 0.5 * Cd * FLUID_DENSITY * projected_area * v ** 2
-                    flow = "Turbulent"
-
-                # FRICTION CALCULATION
-                normal_force = submerged_weight * math.sin(math.radians(current_inclination))
-                friction_magnitude = FRICTION_COEFF * normal_force
-
-                if self.operation == "POOH":
-                    effective_friction = friction_magnitude - STUFFING_BOX  # Friction opposes POOH (positive)
-                    self.last_operation_direction = 'POOH'
-                else:
-                    effective_friction = -friction_magnitude + STUFFING_BOX  # Friction opposes RIH (negative)
-                    self.last_operation_direction = 'RIH'
-
-                # Final tension calculation
-                # Apply cumulative wire friction
-                tension_without_wire = effective_weight + pressure_force + effective_friction
-                if self.operation == "POOH":
-                    tension = max(tension_without_wire - cumulative_wire_friction + drag_force, 0)
-                else:
-                    tension = max(tension_without_wire + cumulative_wire_friction - drag_force, 0)
-
-                self.tension_label.setText(f"{tension:.1f} lbs")
-
-                # Draw well components
-                casing = plt.Rectangle((0, 0), WELL_WIDTH, max_depth,
-                                       linewidth=2, edgecolor='gray', facecolor='#f0f0f0')
-                ax.add_patch(casing)
-
-                # Fluid column
-                if FLUID_LEVEL < max_depth:
-                    fluid = plt.Rectangle((5, FLUID_LEVEL), TUBING_WIDTH,
-                                          max_depth - FLUID_LEVEL,
-                                          linewidth=0, edgecolor='none', facecolor='#e6f3ff')
-                    ax.add_patch(fluid)
-                ax.plot([5, 5 + TUBING_WIDTH], [FLUID_LEVEL, FLUID_LEVEL],
-                        color='#4682B4', linewidth=1, linestyle='--')
-
-                # Draw tubing
-                tubing = plt.Rectangle((5, 0), TUBING_WIDTH, max_depth,
-                                       linewidth=1, edgecolor='darkgray', facecolor='none')
-                ax.add_patch(tubing)
-
-                if self.current_depth > 0:
-                # Wireline visualization
-                    ax.plot([CENTER_X, CENTER_X], [0, self.current_depth],
-                            color='#8b4513', linewidth=2)
-
-                # Tool visualization
-                socket_height = 40
-                socket = plt.Rectangle(
-                    (CENTER_X - 3, self.current_depth), 6, socket_height,
-                    linewidth=2, edgecolor='darkgray', facecolor='#646464')
-                ax.add_patch(socket)
-
-                # Parameter display
-                param_text = (
-                    f"Current Downhole Parameters:\n"
-                    f"• Depth: {self.current_depth:.1f} {depth_unit}\n"
-                    f"• Tool Weight: {round(TOOL_WEIGHT,1)} lbs\n"
-                    f"• Wire Weight: {WIRE_WEIGHT_PER_FT:.3f} {wire_weight_unit}\n"
-                    f"• Buoyancy Reduction: {buoyancy_reduction:.1f} lbs\n"
-                    f"• Effective Weight: {effective_weight:.1f} lbs\n"
-                    f"• Pressure Force: {pressure_force:.1f} lbs\n"
-                    f"• Fluid Drag: {drag_force:.1f} lbs\n"
-                    f"• Reynolds Number: {round(Re)} ({flow})\n"
-                    f"• Stuffing Box Friction: {STUFFING_BOX} lbs\n"
-                    f"• Wire Friction: {cumulative_wire_friction:+.1f} lbs\n"
-                    f"• Tool String Friction: {effective_friction:+.1f} lbs\n"
-                    f"----------------------------------\n"
-                    f"• Net Tension: {tension:.1f} lbs\n"
-                    f"• Inclination: {current_inclination:.1f}°\n"
-                    f"• Azimuth: {current_azimuth:.1f}°"
-                )
-                ax.text(WELL_WIDTH + 70, 50, param_text,
-                        bbox=dict(facecolor='white', alpha=0.9,
-                                  edgecolor='gray', boxstyle='round'),
-                        fontsize=9, verticalalignment='top')
-
-                # Depth markers
-                for depth_mark in range(0, int(max_depth) + 1, 1000):
-                    ax.plot([WELL_WIDTH, WELL_WIDTH + 10], [depth_mark, depth_mark],
-                            color='black', linewidth=1)
-                ax.text(WELL_WIDTH + 15, depth_mark - 10, f"{depth_mark} ft")
-
-                # Configure axes
-                ax.set_xlim(-10, WELL_WIDTH + 180)
-                ax.set_ylim(max_depth, 0)  # Inverted depth axis
-
-                # Update axis labels
-                if self.use_metric:
-                    ax.set_ylabel(f"Depth ({depth_unit}-MD)", fontweight='bold')
-                else:
-                    ax.set_ylabel(f"Depth ({depth_unit}-MD)", fontweight='bold')
-
-                ax.grid(True, axis='y', linestyle='--', alpha=0.5)
-                ax.set_xticks([])
-                ax.set_title(f"Tool String Weight Calculation\n"
-                             f"Fluid: {FLUID_DENSITY} ppg, Pressure: {PRESSURE} psi",
-                             pad=20)
-
-                self.tool_canvas.draw()
-
-        except Exception as e:
-            print(f"Tool view update error: {str(e)}")
-            self.tool_canvas.draw()
+        self.current_depth = current_depth
+        self.trajectory_data = trajectory_data
+        self.params = params
+        self.operation = operation
+
+        # Update trajectory
+        self.trajectory_ax = plot_trajectory(
+            trajectory_data=trajectory_data,
+            current_depth=self.current_depth,
+            use_metric=self.use_metric,
+            canvas=self.trajectory_canvas
+        )
+
+        # Update lubricator
+        plot_lubricator(
+            operation=self.operation,
+            speed=self.speed,
+            current_depth=self.current_depth,
+            params=self.params,
+            canvas=self.lubricator_canvas
+        )
+
+        # Update tool view and get tension value
+        tension = plot_tool_view(
+            params=self.params,
+            trajectory_data=self.trajectory_data,
+            current_depth=self.current_depth,
+            operation=self.operation,
+            speed=self.speed,
+            use_metric=self.use_metric,
+            canvas=self.tool_canvas
+        )
+
+        # Update tension label with the new value
+        if tension is not None:
+            self.tension_label.setText(f"{tension:.1f} lbs")
+        else:
+            self.tension_label.setText("N/A")
+
+        self.depth_counter()
+        self.params_updated.emit()  # Emit signal when params update
