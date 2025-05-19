@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QSpacerItem
 from PyQt6.QtCore import Qt
 
-from editor.logic_image_processing import expand_and_center_images
+from features.ts_editor.logic_image_processing import expand_and_center_images
 from ui.components.toolstring_editor.tool_widget import ToolWidget
 from utils.screen_info import get_height
 from utils.styles import DROPZONE_STYLE, DROPZONE_HEADERS

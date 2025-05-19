@@ -1,3 +1,4 @@
+# ui_operatioon_tab.py
 from PyQt6.QtWidgets import (QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QGroupBox,
                              QLabel, QPushButton, QSlider)
 from PyQt6.QtCore import Qt, pyqtSignal

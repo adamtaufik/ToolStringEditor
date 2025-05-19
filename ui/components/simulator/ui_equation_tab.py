@@ -1,3 +1,4 @@
+# ui_equation_tab.py
 import math
 
 from PyQt6.QtWidgets import QVBoxLayout, QWidget, QScrollArea
@@ -61,69 +62,26 @@ class EquationTab(QWidget):
             use_metric = self.operation_tab.use_metric
             current_depth = self.operation_tab.current_depth
 
-
-            # Speed (ft/min or m/min to m/s)
-            if use_metric:
-                v = (self.operation_tab.speed / 3.28084) / 60  # Convert m/min to m/s
-            else:
-                v = self.operation_tab.speed * 0.00508  # ft/min to m/s
-
-            # Tool Diameter (inches to meters)
-            D = params['tool_avg_diameter'] * 0.0254
-
-            # Viscosity (fixed as per calculations.py)
-            mu = 0.001002  # Pa·s
-
-
-            # Steel Density (kg/m³)
-            rho_steel = 7850
-
-
-            # Wire Weight (N/m)
-            if use_metric:
-                w = params['wire_weight'] * 4.44822  # lbs/m to N/m
-            else:
-                w = params['wire_weight'] * 14.5939  # lbs/ft to N/m
-
-            # Depth (meters)
-            L = current_depth if use_metric else current_depth * 0.3048
-
             # Inclination (degrees)
             mds = [float(md) for md in self.operation_tab.trajectory_data['mds']]
             idx = np.argmin(np.abs(np.array(mds) - current_depth))
-            theta = float(self.operation_tab.trajectory_data['inclinations'][idx])
-
-            # Tool Weight (N)
-            W = params['tool_weight'] * 4.44822  # lbs to N
-
-            # Pressure (Pa)
-            P = params['pressure'] * 6894.76  # psi to Pa
-
-            # Wire Area (m²)
-            wire_diameter = params['wire_diameter'] * 0.0254
-            A_wire = math.pi * (wire_diameter / 2) ** 2
 
             # Cumulative Wire Friction (N)
             cumulative_friction, _ = calculate_wire_friction(
                 self.operation_tab.trajectory_data, params, current_depth, use_metric
             )
-            Ff_wire = cumulative_friction * 4.44822  # lbs to N
 
-            vals = {
-                'v': v,
-                'D': D,
-                'mu': mu,
-                'rho_steel': rho_steel,
-                'w': w,
-                'L': L,
-                'theta': theta,
-                'W': W,
-                'P': P,
-                'A_wire': A_wire,
-                'Ff_wire': Ff_wire
-            }
+            # Tool Volume (m³)
+            tool_diameter_in = params['tool_avg_diameter']
+            tool_diameter_ft = tool_diameter_in / 12
+            tool_area_ft2 = math.pi * (tool_diameter_ft / 2) ** 2
+            tool_length_ft = params['tool_length']
+            tool_volume_gal = tool_area_ft2 * tool_length_ft * 7.48052
 
-
+            # Wire Area (m²)
+            wire_diameter = params['wire_diameter']
+            A_wire_in2 = math.pi * (wire_diameter / 2) ** 2
+            A_wire_ft2 = math.pi * (wire_diameter / 12 / 2) ** 2
 
             # Reynolds Number
             density_ppg = params['fluid_density']
@@ -131,8 +89,6 @@ class EquationTab(QWidget):
             density_ppcf = density_ppg * 0.13368
             speed_ftmin = self.operation_tab.speed
             speed_fts = speed_ftmin / 60
-            tool_diameter_in = params['tool_avg_diameter']
-            tool_diameter_ft = tool_diameter_in / 12
             dyn_viscosity = 0.00002093
             Re = density_slug * speed_fts * tool_diameter_ft / dyn_viscosity
 
@@ -145,79 +101,120 @@ class EquationTab(QWidget):
             laminar_fd = 3 * np.pi * dyn_viscosity * tool_diameter_ft * speed_fts
             turbulent_fd = 0.5 * Cd * density_ppcf * A_tool * speed_fts**2
 
-            BF = 1 - (density_ppg / 65.4)
 
-            # Tool Volume (m³)
-            tool_area_ft2 = math.pi * (tool_diameter_ft / 2) ** 2
-            tool_length_ft = params['tool_length']
-            tool_volume_gal = tool_area_ft2 * tool_length_ft * 7.48052
-            Wb = tool_volume_gal * density_ppg
-            # wire_weight = vals['w'] * vals['L'] * BF
-            # N = vals['W'] * np.sin(np.radians(vals['theta']))
-            # Ff = vals['mu_friction'] * N
-            # Weff = vals['W'] * np.cos(np.radians(vals['theta']))
-            # Fp = -vals['P'] * vals['A_wire']
-            # T_pooh = max(Weff + Fp + Ff - vals['Ff_wire'] + laminar_fd, 0)
-            # T_rih = max(Weff + Fp - Ff + vals['Ff_wire'] - laminar_fd, 0)
+            # Depth
+            if use_metric:
+                L = current_depth
+                wire_weight_per_length = params['wire_weight'] * 3.28084
+            else:
+                L = current_depth * 3.28084
+                wire_weight_per_length = params['wire_weight']
+
+            # Wire and Tool Weight
+            tool_weight = params['tool_weight']
+            wire_weight = wire_weight_per_length * L
+            total_weight = tool_weight + wire_weight
+
+            # Submerged Weight
+            fluid_level = params['fluid_level']
+            submerged = L >= fluid_level
+            if submerged:
+                submerged_length = L - fluid_level
+            else:
+                submerged_length = 0
+                tool_volume_gal = 0
+
+            wire_volume_submerged_gal = submerged_length * A_wire_ft2 * 7.48052
+            Wb = (tool_volume_gal + wire_volume_submerged_gal) * density_ppg
+
+            submerged_weight = total_weight - Wb
+
+            theta = float(self.operation_tab.trajectory_data['inclinations'][idx])
+
+            N = submerged_weight * np.sin(np.radians(theta))
+            Ff = friction_coeff * N
+
+            stuffing_box = params['stuffing_box']
+            total_friction = Ff + cumulative_friction + stuffing_box
+
+            Weff = submerged_weight * np.cos(np.radians(theta))
+
+            # Pressure Force
+            P = params['pressure']
+            Fp = P * A_wire_in2
+
+            T_pooh = max(Weff - Fp + total_friction + turbulent_fd, 0)
+            T_rih = max(Weff - Fp - total_friction - turbulent_fd, 0)
 
             equations = [
-                # (r"\mathbf{Reynolds Number:}",
-                #  r"Re = \frac{\rho v D}{\mu}",
-                #  fr"Re = \frac{{{density_slug:.1f} \times {speed_fts:.1f} \times {tool_diameter_ft:.3f}}}{{{dyn_viscosity}}} = \mathbf{{{Re:.0f}}}"),
 
-                (r"\mathbf{Projected Area:}",
-                 r"A = \pi \left( \frac{D}{2} \right)^2",
+                (r"\mathbf{Projected Area of Tool String:}",
+                 r"A_{\text{tool face}} = \pi \left( \frac{D}{2} \right)^2",
                  # fr"A = \frac{{{tool_diameter_in:.3f}}}{{12}} \, \text{{in}} = \mathbf{{{tool_diameter_ft:.3f}}} \, \text{{ft}}",
-                 fr"A = \pi \left( \frac{{{tool_diameter_ft:.3f}}}{{2}} \right)^2 = \mathbf{{{A_tool:.5f}}} \, \text{{ft}}^2"),
-
-                # (r"\mathbf{Laminar Drag Force:}",
-                #  r"F_d = 3 \pi \mu D v",
-                #  fr"F_d = 3 \times \pi \times {dyn_viscosity} \times {tool_diameter_ft:.1f} \times {speed_fts} = \mathbf{{{laminar_fd:.5f}}} \, \text{{lbf}}"),
+                 fr"A_{{tool face}} = \pi \left( \frac{{{tool_diameter_ft:.3f}}}{{2}} \right)^2 = \mathbf{{{A_tool:.5f}}} \, \text{{ft}}^2"),
 
                 (r"\mathbf{Fluid Drag Force:}",
                  r"F_d = \frac{1}{2} C_d \rho A v^2",
                  fr"F_d = \frac{{1}}{{2}} \times {Cd} \times {density_slug:.3f} \times {A_tool:.5f} \times {speed_fts:.2f}^2 = \mathbf{{{turbulent_fd:.2f}}} \, \text{{lbf}}"),
 
-                (r"\mathbf{Buoyancy Factor:}",
-                 r"BF = 1 - \frac{\rho_{\text{fluid}}}{\rho_{\text{steel}}}",
-                 fr"BF = 1 - \frac{{{density_ppg}}}{{{65.4}}} = \mathbf{{{BF:.4f}}}"),
+                (r"\mathbf{Tool String + Wire Weight (in air):}",
+                 r"W_{\text{air}} = W_{\text{air}} + w_{\text{wire}} \cdot L_{\text{wire}}",
+                 fr"W_{{\text{{air}}}} = {tool_weight:.1f} + {wire_weight_per_length:.3f} \cdot {L:.1f} = \mathbf{{{total_weight:.2f}}} \, \text{{lbf}}"),
 
-                (r"\mathbf{Tool Buoyancy Weight:}",
-                 r"W_b = V \cdot \rho_{\text{fluid}}",
-                 fr"W_b = {tool_volume_gal:.1f} \cdot {density_ppg:.3f} = \mathbf{{{Wb:.2f}}} \, \text{{lbf}}"),
+                (r"\mathbf{Tool String Volume:}",
+                 r"V_{\text{tool string}} = A_{\text{tool face}} \times L_{\text{tool}}",
+                 fr"V_{{tool string}} = {A_tool:.3f} \times {tool_length_ft} \times {7.48052} \left( \frac{{gal}}{{ft^3}} \right) = \mathbf{{{tool_volume_gal:.3f}}} \, \text{{gal}}"),
 
-                # To check ------------------------------------------------------
+                (r"\mathbf{Submerged Wire Length:}",
+                 r"L_{\text{sub wire}} = L_{\text{submerged wire}} - Fluid Level",
+                 fr"L_{{sub_wire}} = {L:.1f} - {fluid_level:.1f} = \mathbf{{{submerged_length:.1f}}} \, \text{{ft}}"),
 
-                # (r"\mathbf{Wire Weight Submerged:}",
-                #  r"W_{\text{wire}} = w \cdot L \cdot BF",
-                #  fr"W_{{\text{{wire}}}} = {vals['w']} \cdot {vals['L']} \cdot {BF:.4f} = \mathbf{{{wire_weight:.2f}}} \, \text{{N}}"),
+                (r"\mathbf{Submerged Wire Volume:}",
+                 r"A = \pi \left( \frac{D}{2} \right)^2",
+                 fr"A = {submerged_length:.1f} \times {(A_wire_ft2):.5f} \times {7.48052} = \mathbf{{{wire_volume_submerged_gal:.3f}}} \, \text{{gal}}"),
 
-                # (r"\mathbf{Normal Force:}",
-                #  r"N = W \cdot \sin(\theta)",
-                #  fr"N = {vals['W']} \cdot \sin({vals['theta']}^\circ) = \mathbf{{{N:.2f}}} \, \text{{N}}"),
-                #
-                # (r"\mathbf{Friction Force:}",
-                #  r"F_f = \mu \cdot N",
-                #  fr"F_f = {friction_coeff} \cdot {N:.2f} = \mathbf{{{Ff:.2f}}} \, \text{{N}}"),
+                (r"\mathbf{Buoyancy Force:}",
+                 r"F_b = V \cdot \rho_{\text{fluid}}",
+                 fr"F_b = ({tool_volume_gal:.3f} + {wire_volume_submerged_gal:.3f}) \cdot {density_ppg:.3f} = \mathbf{{{Wb:.2f}}} \, \text{{lbf}}"),
 
-                # (r"\mathbf{Effective Weight:}",
-                #  r"W_{\text{eff}} = W \cdot \cos(\theta)",
-                #  fr"W_{{\text{{eff}}}} = {vals['W']} \cdot \cos({vals['theta']}^\circ) = \mathbf{{{Weff:.2f}}} \, \text{{N}}"),
+                (r"\mathbf{Submerged Weight:}",
+                 r"W_{\text{sub}} = W_{\text{air}} - F_{\text{b}}",
+                 fr"W_{{sub}} = {total_weight:.2f} - {Wb:.2f} = \mathbf{{{submerged_weight:.2f}}} \, \text{{lbf}}"),
 
-                # (r"\mathbf{Pressure Force:}",
-                #  r"F_p = -P \cdot A_{\text{wire}}",
-                #  fr"F_p = -{vals['P']} \cdot {vals['A_wire']} = \mathbf{{{Fp:.2f}}} \, \text{{N}}"),
-                #
-                # (r"\mathbf{Tension (POOH):}",
-                #  r"T = \max\left(W_{\text{eff}} + F_p + F_f - \Sigma F_{f,\text{wire}} + F_d, 0\right)",
-                #  fr"T = \max({Weff:.2f} + {Fp:.2f} + {Ff:.2f} - {vals['Ff_wire']} + {laminar_fd:.5f}, 0) = \mathbf{{{T_pooh:.2f}}} \, \mathbf{{N}}"),
-                #
-                # (r"\mathbf{Tension (RIH):}",
-                #  r"T = \max\left(W_{\text{eff}} + F_p - F_f + \Sigma F_{f,\text{wire}} - F_d, 0\right)",
-                #  fr"T = \max({Weff:.2f} + {Fp:.2f} - {Ff:.2f} + {vals['Ff_wire']} - {laminar_fd:.5f}, 0) = \mathbf{{{T_rih:.2f}}} \, \mathbf{{N}}"),
+                (r"\mathbf{Normal Force:}",
+                 r"N = W_{\text{sub}} \cdot \sin(\theta)",
+                 fr"N = {submerged_weight:.2f} \cdot \sin({theta:.1f}^\circ) = \mathbf{{{N:.2f}}} \, \text{{N}}"),
+
+                (r"\mathbf{Friction Force on Tool String:}",
+                 r"F_f = \mu \cdot N",
+                 fr"F_f = {friction_coeff} \cdot {N:.2f} = \mathbf{{{Ff:.2f}}} \, \text{{lbf}}"),
+
+                (r"\mathbf{Friction Force Along Wire:}",
+                 r"F_f = \Sigma (Wire Weight \cdot \delta l \cdot \sin(\theta))",
+                 fr"F_f = {cumulative_friction:.2f} \, \text{{lbf (computer calculated along trajectory)}}"),
+
+                (r"\mathbf{Total Friction:}",
+                 r"\Sigma F_f =  (Wire Weight \cdot \delta l \cdot \sin(\theta))",
+                 fr"\Sigma F_f = {Ff:.2f} + {cumulative_friction:.2f} + {stuffing_box:.2f} = \mathbf{{{total_friction:.2f}}} \, \text{{lbf}}"),
+
+                (r"\mathbf{Effective Weight:}",
+                 r"W_{\text{eff}} = W \cdot \cos(\theta)",
+                 fr"W_{{\text{{eff}}}} = {submerged_weight:.2f} \cdot \cos({theta}^\circ) = \mathbf{{{Weff:.2f}}} \, \text{{lbf}}"),
+
+                (r"\mathbf{Pressure Force:}",
+                 r"F_p = -P \cdot A_{\text{wire}}",
+                 fr"F_p = -{P} \cdot {A_wire_in2:.5f} = \mathbf{{{Fp:.2f}}} \, \text{{lbf}}"),
+
+                (r"\mathbf{Tension (POOH):}",
+                 r"T = \max\left(W_{\text{eff}} + F_p + F_f - \Sigma F_{f,\text{wire}} + F_d, 0\right)",
+                 fr"T = \max({Weff:.2f} - {Fp:.2f} + {Ff:.2f} + {turbulent_fd:.5f}, 0) = \mathbf{{{T_pooh:.2f}}} \, \mathbf{{lbf}}"),
+
+                (r"\mathbf{Tension (RIH):}",
+                 r"T = \max\left(W_{\text{eff}} + F_p - F_f + \Sigma F_{f,\text{wire}} - F_d, 0\right)",
+                 fr"T = \max({Weff:.2f} - {Fp:.2f} - {total_friction:.2f} - {turbulent_fd:.5f}, 0) = \mathbf{{{T_rih:.2f}}} \, \mathbf{{lbf}}"),
             ]
 
-            spacing = 0.07
+            spacing = 0.05
             split_index = (len(equations) + 1) // 2  # Split into two roughly equal parts
             equations_left = equations[:split_index]
             equations_right = equations[split_index:]
@@ -225,8 +222,8 @@ class EquationTab(QWidget):
             # Draw left column equations
             for i, (title, general, substituted) in enumerate(equations_left):
                 y = 1 - i * 2 * spacing
-                ax.text(0.01, y, fr"${title} \quad {general}$", fontsize=10, va='top')
-                ax.text(0.05, y - spacing, fr"${substituted}$", fontsize=9, va='top', color='gray')
+                ax.text(0.01, y, fr"${title} \quad {general}$", fontsize=9, va='top')
+                ax.text(0.05, y - spacing, fr"${substituted}$", fontsize=8, va='top', color='gray')
 
             # Draw right column equations
             for j, (title, general, substituted) in enumerate(equations_right):

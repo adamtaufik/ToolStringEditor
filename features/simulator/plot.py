@@ -1,4 +1,4 @@
-
+# plot.py
 def plot_trajectory(trajectory_data, current_depth, use_metric, canvas):
     try:
         if not trajectory_data:
@@ -33,7 +33,8 @@ def plot_trajectory(trajectory_data, current_depth, use_metric, canvas):
             normals = np.zeros_like(tangents)
             binormals = np.zeros_like(tangents)
             tube_radius = 0.15 if use_metric else 0.5
-            tube_radius *= 150
+            tube_radius *= abs((tvd[-1] - tvd[0])/10)
+            # tube_radius *= 150
 
             for i in range(len(tangents)):
                 tangent = tangents[i]
@@ -258,7 +259,7 @@ def plot_tool_view(params, trajectory_data, current_depth, operation, speed, use
             params, current_depth, use_metric
         )
 
-        drag_result = calculate_fluid_drag(params, speed, current_inclination)
+        drag_result = calculate_fluid_drag(params, speed)
         drag_force, Re, flow = drag_result
 
         friction_result = calculate_wire_friction(
@@ -272,11 +273,15 @@ def plot_tool_view(params, trajectory_data, current_depth, operation, speed, use
         )
         tension, effective_friction, pressure_force, _ = tension_result
 
-        depth_unit = "m" if use_metric else "ft"
-        wire_weight_display = (
-            params['wire_weight'] * 3.28084 if use_metric else params['wire_weight']
-        )
-        wire_weight_unit = "lbs/m" if use_metric else "lbs/ft"
+        if use_metric:
+            depth_unit = "m"
+            wire_weight_display = params['wire_weight'] * 3.28084
+            wire_weight_unit = "lbs/m"
+        else:
+            depth_unit = "ft"
+            wire_weight_display = params['wire_weight']
+            wire_weight_unit = "lbs/ft"
+            current_depth *= 3.28084
 
         param_text = (
             f"Current Downhole Parameters:\n"
@@ -284,7 +289,6 @@ def plot_tool_view(params, trajectory_data, current_depth, operation, speed, use
             f"• Tool Weight: {params['tool_weight']} lbs\n"
             f"• Wire Weight: {wire_weight_display:.3f} {wire_weight_unit}\n"
             f"• Buoyancy Reduction: {buoyancy_reduction:.1f} lbs\n"
-            f"• Effective Weight: {submerged_weight:.1f} lbs\n"
             f"• Pressure Force: {pressure_force:.1f} lbs\n"
             f"• Fluid Drag: {drag_force:.1f} lbs\n"
             f"• Reynolds Number: {Re:.0f} ({flow})\n"
@@ -356,7 +360,7 @@ def plot_tension(trajectory_data, params, current_depth, use_metric, canvas):
         inc = inclinations[idx]
 
         submerged_weight, _ = calculate_effective_weight(modified_params, depth, use_metric)
-        drag_force, _, _ = calculate_fluid_drag(modified_params, modified_params['speed'], inc)
+        drag_force, _, _ = calculate_fluid_drag(modified_params, modified_params['speed'])
         cumulative_friction = sum(wire_friction[:idx])
 
         rih_tension, _, _, _ = calculate_tension(

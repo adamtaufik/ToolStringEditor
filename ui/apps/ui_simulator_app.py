@@ -1,9 +1,11 @@
+# ui_simulator_app.py
 import math
 
 from PyQt6.QtWidgets import (QMainWindow, QTabWidget, QWidget, QVBoxLayout,
                              QHBoxLayout, QMessageBox)
 from PyQt6.QtCore import Qt, QTimer
 
+from features.simulator.calculations import calculate_wire_friction
 from ui.components.simulator.ui_equation_tab import EquationTab
 from ui.components.simulator.ui_operation_tab import OperationTab
 from ui.components.simulator.ui_input_tab import InputTab
@@ -90,6 +92,34 @@ class WirelineSimulatorApp(QMainWindow):
         # Initialize trajectory data with default vertical well
         self.initial_trajectory()
 
+    def create_input_tab(self):
+        """Create input tab using the new component"""
+        self.input_tab = InputTab()
+        try:
+            self.input_tab.trajectory_updated.connect(self.handle_new_trajectory)
+        except Exception as e:
+            print('Create input error:',e)
+        self.tabs.addTab(self.input_tab, "Input Panel")
+
+    def create_main_operation_tab(self):
+        """Create the main operation tab using the new component"""
+        self.operation_tab = OperationTab(self)
+        self.operation_tab.operationChanged.connect(self.handle_operation_change)
+        self.operation_tab.speedChanged.connect(self.handle_speed_change)
+        self.tabs.addTab(self.operation_tab, "Operation View")
+
+    def create_plots_tab(self):
+        self.plots_tab = PlotsTab(self)
+        self.plots_tab.updateRequested.connect(self.handle_plots_update)
+        self.tabs.addTab(self.plots_tab, "Results")
+
+    def create_equation_tab(self):
+        try:
+            self.equation_tab = EquationTab(self.operation_tab)
+        except Exception as e:
+            print(e)
+        self.tabs.addTab(self.equation_tab, "Calculations")
+
     def initial_trajectory(self):
 
         mds = list(range(0, 5000, 100))  # 0-1000 ft in 100 ft increments
@@ -172,28 +202,11 @@ class WirelineSimulatorApp(QMainWindow):
             summary_widget=None
         )
 
-    def create_input_tab(self):
-        """Create input tab using the new component"""
-        self.input_tab = InputTab()
-        try:
-            self.input_tab.trajectory_updated.connect(self.handle_new_trajectory)
-        except Exception as e:
-            print('Create input error:',e)
-        self.tabs.addTab(self.input_tab, "Input Panel")
-
     def handle_new_trajectory(self, trajectory_data):
-        """Handle new trajectory data from input tab"""
-        try:
-            self.trajectory_data = trajectory_data
-        except Exception as e:
-            print('Error with handling:', e)
-
-    def create_main_operation_tab(self):
-        """Create the main operation tab using the new component"""
-        self.operation_tab = OperationTab(self)
-        self.operation_tab.operationChanged.connect(self.handle_operation_change)
-        self.operation_tab.speedChanged.connect(self.handle_speed_change)
-        self.tabs.addTab(self.operation_tab, "Operation View")
+        self.trajectory_data = trajectory_data
+        # Precompute friction values
+        # self.friction_cache = calculate_wire_friction(trajectory_data, self.params, 0, False)
+        # self.trajectory_ax = None  # Force 3D plot recreation
 
     def handle_operation_change(self, operation):
         if operation == "RIH":
@@ -230,6 +243,9 @@ class WirelineSimulatorApp(QMainWindow):
             if not hasattr(self, 'trajectory_data') or not self.trajectory_data['mds']:
                 return
 
+            if not hasattr(self, '_update_counter'):
+                self._update_counter = 0
+
             # Get current operation parameters
             max_depth = self.trajectory_data['mds'][-1]
             speed = self.operation_tab.speed_slider.value() * self.sim_speed  # ft/min * speed multiplier
@@ -265,28 +281,17 @@ class WirelineSimulatorApp(QMainWindow):
                 operation=self.operation
             )
 
-            # # Update the weight vs depth plots
-            # self.update_combined_plots()
-            self.handle_plots_update()
+            # Only update plots tab every 5 frames
+            if self._update_counter % 5 == 0:
+                self.handle_plots_update()
+
+            self._update_counter += 1
 
         except Exception as e:
             print(f"Simulation Error: {str(e)}")
             self.sim_timer.stop()
             QMessageBox.critical(self, "Simulation Error",
                                  f"An error occurred:\n{str(e)}")
-
-    # Replace create_plots_tab method
-    def create_plots_tab(self):
-        self.plots_tab = PlotsTab(self)
-        self.plots_tab.updateRequested.connect(self.handle_plots_update)
-        self.tabs.addTab(self.plots_tab, "Plots")
-
-    def create_equation_tab(self):
-        try:
-            self.equation_tab = EquationTab(self.operation_tab)
-        except Exception as e:
-            print(e)
-        self.tabs.addTab(self.equation_tab, "Calculations")
 
     # Add handler for plot updates
     def handle_plots_update(self):

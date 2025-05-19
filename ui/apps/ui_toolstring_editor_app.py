@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
 
 # Database & Editor logic
 from database.file_io import save_configuration, load_configuration
-from editor.export_manager import export_configuration
+from features.ts_editor.export_manager import export_configuration
 
 # UI Components
 from ui.components.toolstring_editor.inputs import AngleInput, LimitedTextEdit
@@ -51,7 +51,7 @@ class ToolStringEditor(QMainWindow):
         # **Create Main Widget**
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        # Replace QVBoxLayout in editor with full vertical layout
+        # Replace QVBoxLayout in ts_editor with full vertical layout
         main_container = QVBoxLayout(central_widget)
         main_container.setContentsMargins(0, 0, 0, 0)
         main_container.setSpacing(0)

@@ -1,3 +1,4 @@
+# ui_plots_tab.py
 import textwrap
 import numpy as np
 import mplcursors

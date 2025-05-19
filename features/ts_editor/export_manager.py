@@ -8,9 +8,9 @@ from openpyxl.drawing.image import Image as ExcelImage
 from openpyxl.styles import Font, Border, Side, Alignment
 from PIL import Image as PILImage
 
-from editor.loading_worker import LoadingWorker
-from editor.logic_image_processing import combine_tool_images, expand_and_center_images, remove_white_background
-from editor.logic_utils import get_number
+from features.ts_editor.loading_worker import LoadingWorker
+from features.ts_editor.logic_image_processing import combine_tool_images, expand_and_center_images, remove_white_background
+from features.ts_editor.logic_utils import get_number
 from ui.components.toolstring_editor.tool_widget import ToolWidget
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 from utils.check_file import is_file_open
