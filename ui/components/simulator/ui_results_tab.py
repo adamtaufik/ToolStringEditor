@@ -1,4 +1,4 @@
-# ui_plots_tab.py
+# ui_results_tab.py
 import textwrap
 import numpy as np
 import mplcursors
@@ -17,6 +17,7 @@ class PlotsTab(QWidget):
 
     def __init__(self, parent=None):
         super().__init__()
+        self.tension_canvas = None
         self.use_metric = False
         self.setup_ui()
         self.current_depth = 0

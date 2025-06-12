@@ -1,7 +1,12 @@
 # ui_operatioon_tab.py
+import bisect
+import os
+
+import psutil
 from PyQt6.QtWidgets import (QWidget, QSplitter, QVBoxLayout, QHBoxLayout, QGroupBox,
                              QLabel, QPushButton, QSlider)
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import numpy as np
@@ -19,6 +24,8 @@ class OperationTab(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.is_closed = False
+        self.last_idx = None
         self.current_depth = 0
         self.max_depth = 100
         self.speed = 60
@@ -27,8 +34,12 @@ class OperationTab(QWidget):
         self.operation = None
         self.use_metric = False
         self.init_ui()
+        self.params = None
         self.connect_signals()
         self.trajectory_ax = None  # Added to store 3D axis reference
+        self.tool_line = None
+        self.wire_line = None
+        self.trajectory_ax = None
         # Connect to the trajectory_updated signal
 
         input_tab = parent.input_tab
@@ -51,7 +62,7 @@ class OperationTab(QWidget):
 
         main_splitter.addWidget(left_splitter)
         main_splitter.addWidget(right_panel)
-        main_splitter.setSizes([600, 400])
+        main_splitter.setSizes([500, 500])
 
         layout = QHBoxLayout(self)
         layout.addWidget(main_splitter)
@@ -68,6 +79,11 @@ class OperationTab(QWidget):
         else:
             self.depth_label.setText(f"{self.current_depth/0.3048:.1f} ft")
 
+    def force_redraw(self):
+        if self.trajectory_canvas:
+            self.trajectory_canvas.draw_idle()
+            # pass
+
     def create_trajectory_panel(self):
         panel = QWidget()
         layout = QVBoxLayout(panel)
@@ -83,16 +99,36 @@ class OperationTab(QWidget):
         layout.addWidget(self.trajectory_canvas)
         return panel
 
-    def update_trajectory_view(self, trajectory_data):
-        self.trajectory_data = trajectory_data
-        self.trajectory_ax = plot_trajectory(
-            trajectory_data=trajectory_data,
-            current_depth=self.current_depth,
-            use_metric=self.use_metric,
-            canvas=self.trajectory_canvas
-        )
+    def update_trajectory_view(self, trajectory_data, fluid_level=None):
 
-    # --- Event Handlers for 3D Interaction ---
+
+        # Convert lists to numpy arrays once and store
+        self.trajectory_data = {
+            'mds': np.array(trajectory_data['mds'], dtype=np.float32),
+            'tvd': np.array(trajectory_data['tvd'], dtype=np.float32),
+            'north': np.array(trajectory_data['north'], dtype=np.float32),
+            'east': np.array(trajectory_data['east'], dtype=np.float32),
+            'inclinations': np.array(trajectory_data['inclinations'], dtype=np.float32),
+            'azimuths': np.array(trajectory_data['azimuths'], dtype=np.float32)
+        }
+        self.last_idx = None
+
+        # Clear previous plot and redraw
+        self.trajectory_canvas.figure.clf()
+
+        try:
+            # Plot trajectory and get references
+            self.trajectory_ax, self.tool_line, self.wire_line = plot_trajectory(
+                trajectory_data=self.trajectory_data,
+                current_depth=self.current_depth,
+                use_metric=self.use_metric,
+                canvas=self.trajectory_canvas,
+                fluid_level=fluid_level
+            )
+        except Exception as e:
+            print('Update Trajectory Error:',e)
+        self.trajectory_canvas.draw_idle()
+
     def on_trajectory_press(self, event):
         if self.trajectory_ax is None or event.inaxes != self.trajectory_ax:
             return
@@ -237,19 +273,79 @@ class OperationTab(QWidget):
         self.speed = value
         self.speedChanged.emit(value)
 
-    def update_visualizations(self, current_depth, trajectory_data, params, operation):
+    def closeEvent(self, event):
+        self.is_closed = True
+        # Disconnect external signals
+        try:
+            self.parent().input_tab.trajectory_updated.disconnect(self.update_trajectory_view)
+            self.parent().input_tab.units_toggled.disconnect(self.handle_units_toggle)
+        except AttributeError:
+            pass
+
+        # Flag to block further updates
+        self.is_closed = True
+
+        # Close matplotlib figures
+        if self.trajectory_canvas:
+            plt.close(self.trajectory_canvas.figure)
+            self.trajectory_canvas = None
+        if self.lubricator_canvas:
+            plt.close(self.lubricator_canvas.figure)
+            self.lubricator_canvas = None
+        if self.tool_canvas:
+            plt.close(self.tool_canvas.figure)
+            self.tool_canvas = None
+
+        # Clear references to prevent access
+        self.trajectory_ax = None
+        self.tool_line = None
+        self.wire_line = None
+
+        super().closeEvent(event)
+
+    def update_visualizations(self, current_depth, params, operation):
+        if self.is_closed:  # Block updates if closed
+            return
+
         self.current_depth = current_depth
-        self.trajectory_data = trajectory_data
         self.params = params
         self.operation = operation
 
-        # Update trajectory
-        self.trajectory_ax = plot_trajectory(
-            trajectory_data=trajectory_data,
-            current_depth=self.current_depth,
-            use_metric=self.use_metric,
-            canvas=self.trajectory_canvas
-        )
+        # Safer tool position update
+        if (self.tool_line is not None and
+                self.trajectory_data is not None and
+                len(self.trajectory_data['mds']) > 0):
+
+            # idx = np.argmin(np.abs(self.trajectory_data['mds'] - self.current_depth))
+
+            mds = self.trajectory_data['mds']
+            idx = bisect.bisect_left(mds, self.current_depth)
+            # Handle edge cases and find nearest index
+            if idx == len(mds):
+                idx -= 1
+            elif idx > 0 and (mds[idx] - self.current_depth) > (self.current_depth - mds[idx - 1]):
+                idx -= 1
+
+            if idx != self.last_idx:
+                try:
+                    new_north = self.trajectory_data['north'][idx]
+                    new_east = self.trajectory_data['east'][idx]
+                    new_tvd = self.trajectory_data['tvd'][idx]
+
+                    self.tool_line.set_data([new_north], [new_east])
+                    self.tool_line.set_3d_properties([new_tvd])
+
+                    if self.wire_line is not None:
+                        self.wire_line.set_data(self.trajectory_data['north'][:idx + 1],
+                                                self.trajectory_data['east'][:idx + 1])
+                        self.wire_line.set_3d_properties(self.trajectory_data['tvd'][:idx + 1])
+
+                    self.trajectory_canvas.draw_idle()  # Redraw only on movement
+                    self.last_idx = idx
+
+                    # self.trajectory_canvas.draw_idle()
+                except IndexError:
+                    pass  # Handle case where index is out of bounds
 
         # Update lubricator
         plot_lubricator(
@@ -278,4 +374,7 @@ class OperationTab(QWidget):
             self.tension_label.setText("N/A")
 
         self.depth_counter()
-        self.params_updated.emit()  # Emit signal when params update
+        self.params_updated.emit()
+
+        # process = psutil.Process(os.getpid())
+        # print(f"Memory used: {process.memory_info().rss / 1024 ** 2:.2f} MB")

@@ -12,7 +12,7 @@ from utils.styles import GROUPBOX_STYLE, CHECKBOX_STYLE
 
 
 class InputTab(QWidget):
-    trajectory_updated = pyqtSignal(dict)  # Signal when new trajectory is generated
+    trajectory_updated = pyqtSignal(dict, float)  # Signal when new trajectory is generated
     units_toggled = pyqtSignal(bool)  # New signal for unit changes
 
     def __init__(self, parent=None):
@@ -95,7 +95,7 @@ class InputTab(QWidget):
             north, east = calculate_north_east(md_data, incl_data, azim_data)
             self.trajectory_data.update({'north': north, 'east': east})
 
-            self.trajectory_updated.emit(self.trajectory_data)
+            self.trajectory_updated.emit(self.trajectory_data, self.fluid_level_input.value())
             MessageBoxWindow.message_simple(self, "Success", "Well trajectory generated", "check")
 
         except Exception as e:
@@ -141,7 +141,7 @@ class InputTab(QWidget):
         # Wire weight display
         wire_weight_layout = QHBoxLayout()
         wire_weight_layout.addWidget(QLabel("Wire Weight:"))
-        self.wire_weight_label = QLabel("0.021 lbs/ft")
+        self.wire_weight_label = QLabel("0.031 lbs/ft")
         wire_weight_layout.addWidget(self.wire_weight_label)
         layout.addLayout(wire_weight_layout)
 
@@ -220,7 +220,7 @@ class InputTab(QWidget):
         fluid_level_layout.addWidget(QLabel("Fluid Level:"))
         self.fluid_level_input = QDoubleSpinBox()
         self.fluid_level_input.setRange(0, 10000)
-        self.fluid_level_input.setValue(300)
+        self.fluid_level_input.setValue(2000)
         self.fluid_level_input.setSuffix(" ft")
         fluid_level_layout.addWidget(self.fluid_level_input)
         layout.addLayout(fluid_level_layout)
@@ -410,6 +410,7 @@ class InputTab(QWidget):
 
         self.update_wire_properties()
         self.units_toggled.emit(self.use_metric)  # Emit signal
+        self.generate_trajectory_from_tables()
 
     def update_wire_properties(self):
         od = float(self.wire_size_combo.currentText())

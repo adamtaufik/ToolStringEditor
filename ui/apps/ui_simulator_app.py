@@ -9,7 +9,7 @@ from features.simulator.calculations import calculate_wire_friction
 from ui.components.simulator.ui_equation_tab import EquationTab
 from ui.components.simulator.ui_operation_tab import OperationTab
 from ui.components.simulator.ui_input_tab import InputTab
-from ui.components.simulator.ui_plots_tab import PlotsTab
+from ui.components.simulator.ui_results_tab import PlotsTab
 from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
@@ -18,8 +18,10 @@ from utils.theme_manager import toggle_theme, apply_theme
 
 
 class WirelineSimulatorApp(QMainWindow):
+
     def __init__(self):
         super().__init__()
+        self.visualization_params = None
         self.setWindowTitle("Wireline Operations Simulator")
         self.resize(1300, 700)
 
@@ -92,10 +94,12 @@ class WirelineSimulatorApp(QMainWindow):
         # Initialize trajectory data with default vertical well
         self.initial_trajectory()
 
+
     def create_input_tab(self):
         """Create input tab using the new component"""
         self.input_tab = InputTab()
         try:
+            # self.input_tab.units_toggled.connect(self.handle_new_trajectory)
             self.input_tab.trajectory_updated.connect(self.handle_new_trajectory)
         except Exception as e:
             print('Create input error:',e)
@@ -122,7 +126,7 @@ class WirelineSimulatorApp(QMainWindow):
 
     def initial_trajectory(self):
 
-        mds = list(range(0, 5000, 100))  # 0-1000 ft in 100 ft increments
+        mds = list(range(0, 4000, 20))  # 0-1000 ft in 100 ft increments
         tvd = []
         north = []
         east = []
@@ -132,7 +136,7 @@ class WirelineSimulatorApp(QMainWindow):
 
         # Trajectory parameters
         ko_point = 800  # Kickoff at 5000 ft
-        build_rate = 2.0  # 2°/100 ft
+        build_rate = 0.5  # 2°/100 ft
         target_inc = 30  # Final inclination
         azimuth = 45.0  # Constant azimuth
 
@@ -144,43 +148,30 @@ class WirelineSimulatorApp(QMainWindow):
         current_dls = 0.0
 
         for md in mds:
-            if md <= ko_point:
-                # Vertical section - simple straight down
-                tvd.append(md)
-                north.append(0.0)
-                east.append(0.0)
-                inclinations.append(0.0)
+            if current_inc < target_inc and md > ko_point:
+                current_inc = min(current_inc + build_rate, target_inc)
 
-                # Maintain current values for build section start
-                current_tvd = md
-                current_north = 0.0
-                current_east = 0.0
-            else:
-                # Build section calculations
-                if current_inc < target_inc:
-                    current_inc = min(current_inc + build_rate, target_inc)
+            # Convert angles to radians
+            inc_rad = math.radians(current_inc)
+            az_rad = math.radians(azimuth)
 
-                # Convert angles to radians
-                inc_rad = math.radians(current_inc)
-                az_rad = math.radians(azimuth)
+            # Calculate true vertical depth component
+            delta_tvd = 20 * math.cos(inc_rad)
+            current_tvd += delta_tvd
 
-                # Calculate true vertical depth component
-                delta_tvd = 100 * math.cos(inc_rad)
-                current_tvd += delta_tvd
+            # Calculate horizontal displacement
+            delta_horizontal = 20 * math.sin(inc_rad)
+            delta_north = delta_horizontal * math.cos(az_rad)
+            delta_east = delta_horizontal * math.sin(az_rad)
+            current_north += delta_north
+            current_east += delta_east
 
-                # Calculate horizontal displacement
-                delta_horizontal = 100 * math.sin(inc_rad)
-                delta_north = delta_horizontal * math.cos(az_rad)
-                delta_east = delta_horizontal * math.sin(az_rad)
-                current_north += delta_north
-                current_east += delta_east
-
-                # Store values
-                tvd.append(round(current_tvd, 2))
-                north.append(round(current_north, 2))
-                east.append(round(current_east, 2))
-                inclinations.append(current_inc)
-                dls_list.append(current_dls)
+            # Store values
+            tvd.append(round(current_tvd, 2))
+            north.append(round(current_north, 2))
+            east.append(round(current_east, 2))
+            inclinations.append(current_inc)
+            dls_list.append(current_dls)
 
             azimuths.append(azimuth)
 
@@ -194,6 +185,13 @@ class WirelineSimulatorApp(QMainWindow):
             'east': [round(x, 2) for x in east]
         }
 
+        self.operation_tab.update_trajectory_view(self.trajectory_data, self.input_tab.fluid_level_input.value())
+        self.operation_tab.update_visualizations(
+            current_depth=self.current_depth,
+            params=self.visualization_params,
+            operation=self.operation
+        )
+
     def toggle_theme(self):
         self.current_theme = toggle_theme(
             widget=self,
@@ -204,9 +202,6 @@ class WirelineSimulatorApp(QMainWindow):
 
     def handle_new_trajectory(self, trajectory_data):
         self.trajectory_data = trajectory_data
-        # Precompute friction values
-        # self.friction_cache = calculate_wire_friction(trajectory_data, self.params, 0, False)
-        # self.trajectory_ax = None  # Force 3D plot recreation
 
     def handle_operation_change(self, operation):
         if operation == "RIH":
@@ -259,7 +254,7 @@ class WirelineSimulatorApp(QMainWindow):
                 self.current_depth = max(0, self.current_depth)
 
             # Prepare parameters for visualization
-            visualization_params = {
+            self.visualization_params = {
                 'fluid_density': self.input_tab.fluid_density_input.value(),
                 'pressure': self.input_tab.pressure_input.value(),
                 'tool_weight': self.input_tab.tool_weight_input.value(),
@@ -276,8 +271,7 @@ class WirelineSimulatorApp(QMainWindow):
             # Update all visualizations through the operation tab
             self.operation_tab.update_visualizations(
                 current_depth=self.current_depth,
-                trajectory_data=self.trajectory_data,
-                params=visualization_params,
+                params=self.visualization_params,
                 operation=self.operation
             )
 

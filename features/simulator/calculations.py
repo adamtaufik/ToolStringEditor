@@ -13,10 +13,13 @@ def calculate_effective_weight(params, depth, use_metric=False):
     wire_diameter = params['wire_diameter']
 
     if use_metric:
-        wire_weight *= 3.28084
+        fluid_level *= 3.28084
     else:
         depth *= 3.28084
 
+    # if depth == 0:
+    #     print('metric:',use_metric,'\nf_level:',fluid_level)
+    #     print('metric:',use_metric,'\ndepth:',depth)
     wire_in_hole = depth
     total_weight = tool_weight + wire_weight * wire_in_hole
 
@@ -66,8 +69,7 @@ def calculate_wire_friction(trajectory_data, params, current_depth, use_metric=F
 
     if use_metric:
         wire_weight *= 3.28084
-    # else:
-    #     depth *= 3.28084
+        fluid_level *= 3.28084
 
     buoyancy_factor = 1 - (fluid_density / 65.4)
     wire_friction = []
@@ -92,7 +94,7 @@ def calculate_wire_friction(trajectory_data, params, current_depth, use_metric=F
 
     return cumulative_friction, wire_friction
 
-def calculate_tension(params, trajectory_data, current_depth, operation, cumulative_friction, drag_force):
+def calculate_tension(params, trajectory_data, current_depth, operation, cumulative_friction, drag_force, use_metric):
     stuffing_box = params['stuffing_box']
     pressure = params['pressure']
     wire_diameter = params['wire_diameter']
@@ -100,7 +102,7 @@ def calculate_tension(params, trajectory_data, current_depth, operation, cumulat
     idx = np.argmin(np.abs(np.array(trajectory_data['mds']) - current_depth))
     inclination = float(trajectory_data['inclinations'][idx])
 
-    submerged_weight, buoyancy_reduction = calculate_effective_weight(params, current_depth)
+    submerged_weight, buoyancy_reduction = calculate_effective_weight(params, current_depth, use_metric)
     inclination_rad = math.radians(inclination)
     effective_weight = submerged_weight * math.cos(inclination_rad)
 

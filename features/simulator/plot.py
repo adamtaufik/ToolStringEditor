@@ -1,5 +1,21 @@
 # plot.py
-def plot_trajectory(trajectory_data, current_depth, use_metric, canvas):
+
+import numpy as np
+import bisect
+from matplotlib import pyplot as plt
+from features.simulator.calculations import (
+    calculate_dls,
+    calculate_tension,
+    calculate_effective_weight,
+    calculate_wire_friction,
+    calculate_fluid_drag
+)
+from ui.components.simulator.ui_equation_tab import EquationTab
+
+def plot_trajectory(trajectory_data, current_depth, use_metric, canvas, fluid_level=None):
+    if not canvas:  # Check if canvas exists
+        return None, None
+
     try:
         if not trajectory_data:
             return None
@@ -15,13 +31,14 @@ def plot_trajectory(trajectory_data, current_depth, use_metric, canvas):
 
         if use_metric:
             unit_label = 'm'
-            # current_depth_display = current_depth
         else:
             unit_label = 'ft'
+            current_depth *= 3.28084
+
+
         current_depth_display = current_depth
 
-        ax.plot(north, east, tvd, color='navy', linewidth=4, linestyle='-', label='Well Path')
-
+        # Plot main casing tube with increased thickness
         if len(north) > 1:
             points = np.vstack([north, east, tvd]).T
             tangents = np.zeros_like(points)
@@ -32,9 +49,8 @@ def plot_trajectory(trajectory_data, current_depth, use_metric, canvas):
 
             normals = np.zeros_like(tangents)
             binormals = np.zeros_like(tangents)
-            tube_radius = 0.15 if use_metric else 0.5
-            tube_radius *= abs((tvd[-1] - tvd[0])/10)
-            # tube_radius *= 150
+            # Increase casing thickness by adjusting radius multiplier
+            tube_radius = abs((tvd[-1] - tvd[0]) / 20)  # Increased scaling factor
 
             for i in range(len(tangents)):
                 tangent = tangents[i]
@@ -49,10 +65,16 @@ def plot_trajectory(trajectory_data, current_depth, use_metric, canvas):
                 normals[i] = normal
                 binormals[i] = binormal
 
-            theta = np.linspace(0, 2 * np.pi, 20)
+            theta = np.linspace(0, 2 * np.pi, 12)  # More points for smoother tube
             X = np.zeros((len(theta), len(points)))
             Y = np.zeros((len(theta), len(points)))
             Z = np.zeros((len(theta), len(points)))
+            if len(north) > 1:
+                step = 2  # Plot every 2nd point
+                north = north[::step]
+                east = east[::step]
+                tvd = tvd[::step]
+                mds = mds[::step]
 
             for i in range(len(points)):
                 x = points[i, 0] + tube_radius * (normals[i, 0] * np.cos(theta) + binormals[i, 0] * np.sin(theta))
@@ -62,11 +84,55 @@ def plot_trajectory(trajectory_data, current_depth, use_metric, canvas):
                 Y[:, i] = y
                 Z[:, i] = z
 
-            ax.plot_surface(X, Y, Z, color='lightgray', alpha=0.5, linewidth=0)
+            ax.plot_surface(X, Y, Z, color='lightgray', alpha=0.3, linewidth=0, label='Tubing')
 
+        # Add fluid-filled tube if fluid level is available
+        if fluid_level:
+            # print(fluid_level)
+            # idx_fluid = np.argmin(np.abs(np.array(mds) - fluid_level))
+            idx_fluid = bisect.bisect_left(np.array(mds), fluid_level)
+            # Handle edge cases and find nearest index
+            if idx_fluid == len(mds):
+                idx_fluid -= 1
+            elif idx_fluid > 0 and (mds[idx_fluid] - fluid_level) > (fluid_level - mds[idx_fluid-1]):
+                idx_fluid -= 1
+
+            if idx_fluid < len(points):
+                fluid_points = points[idx_fluid:]
+                fluid_radius = tube_radius * 0.7  # Smaller than casing
+                # fluid_radius *= abs((tvd[-1] - tvd[0]) / 10)
+
+                # Create fluid tube
+                X_fluid = np.zeros((len(theta), len(fluid_points)))
+                Y_fluid = np.zeros((len(theta), len(fluid_points)))
+                Z_fluid = np.zeros((len(theta), len(fluid_points)))
+
+                for i in range(len(fluid_points)):
+                    x = fluid_points[i, 0] + fluid_radius * (
+                                normals[idx_fluid + i, 0] * np.cos(theta) + binormals[idx_fluid + i, 0] * np.sin(theta))
+                    y = fluid_points[i, 1] + fluid_radius * (
+                                normals[idx_fluid + i, 1] * np.cos(theta) + binormals[idx_fluid + i, 1] * np.sin(theta))
+                    z = fluid_points[i, 2] + fluid_radius * (
+                                normals[idx_fluid + i, 2] * np.cos(theta) + binormals[idx_fluid + i, 2] * np.sin(theta))
+                    X_fluid[:, i] = x
+                    Y_fluid[:, i] = y
+                    Z_fluid[:, i] = z
+
+                # Plot fluid tube with end caps
+                ax.plot_surface(X_fluid, Y_fluid, Z_fluid, color='lightblue',linewidth=0, label='Fluid', alpha=0.3)
+                ax.plot_trisurf(X_fluid[:, 0], Y_fluid[:, 0], Z_fluid[:, 0], color='lightblue', alpha=0.6)
+                ax.plot_trisurf(X_fluid[:, -1], Y_fluid[:, -1], Z_fluid[:, -1], color='lightblue', alpha=0.6)
+
+        # Add slickline wire to current tool position
+        tool_line = None
+        wire_line = None
         if current_depth is not None:
+            print(current_depth)
             idx = np.argmin(np.abs(np.array(mds) - current_depth_display))
-            ax.plot([north[idx]], [east[idx]], [tvd[idx]], 'ro', markersize=10, label='Tool Position')
+            wire_line = ax.plot(north[:idx + 1], east[:idx + 1], tvd[:idx + 1], color='#8b4513', linewidth=2, label='Slickline Wire')[0]
+            tool_line = ax.plot([north[idx]], [east[idx]], [tvd[idx]],'ro', markersize=6, label='Tool String')[0]
+
+            # print('data needed:',north)
 
         north_min, north_max = np.min(north), np.max(north)
         east_min, east_max = np.min(east), np.max(east)
@@ -83,15 +149,18 @@ def plot_trajectory(trajectory_data, current_depth, use_metric, canvas):
         ax.set_ylabel(f'East ({unit_label})')
         ax.set_zlabel(f'TVD ({unit_label})')
         ax.set_title("Well Trajectory Overview")
-        ax.legend()
+        leg = ax.legend()
+
 
         canvas.draw()
-        return ax
+        return ax, tool_line, wire_line
     except Exception as e:
         print('Plot trajectory error:', e)
-        return None
+        return None, None, None
 
 def plot_lubricator(operation, speed, current_depth, params, canvas):
+    if not canvas:
+        return
     fig = canvas.figure
     fig.clear()
     ax = fig.add_subplot(111)
@@ -149,7 +218,7 @@ def plot_lubricator(operation, speed, current_depth, params, canvas):
 
     rotation_angle = 0
     if current_depth is not None:
-        rotation_angle = (current_depth * 50) % 360
+        rotation_angle = (current_depth * -50) % 360
         if operation == "POOH":
             rotation_angle *= -1
 
@@ -210,6 +279,8 @@ def plot_lubricator(operation, speed, current_depth, params, canvas):
     canvas.draw()
 
 def plot_tool_view(params, trajectory_data, current_depth, operation, speed, use_metric, canvas):
+    if not canvas:
+        return
     try:
         fig = canvas.figure
         fig.clear()
@@ -219,14 +290,20 @@ def plot_tool_view(params, trajectory_data, current_depth, operation, speed, use
             canvas.draw()
             return
 
-        mds = [float(md) for md in trajectory_data['mds']]
-        idx = np.argmin(np.abs(np.array(mds) - current_depth))
-        max_depth = float(mds[-1])
-
         WELL_WIDTH = 25
         TUBING_WIDTH = WELL_WIDTH - 10
         CENTER_X = WELL_WIDTH / 2
         FLUID_LEVEL = params['fluid_level']
+
+        mds = [float(md) for md in trajectory_data['mds']]
+        idx = np.argmin(np.abs(np.array(mds) - current_depth))
+        max_depth = float(mds[-1])
+        # if use_metric:
+        #     # FLUID_LEVEL *= 3.28081
+        #     print('metric ON')
+        # else:
+        #     max_depth *= 3.28081
+        #     print('metric OFF')
 
         casing = plt.Rectangle((0, 0), WELL_WIDTH, max_depth,
                                linewidth=2, edgecolor='gray', facecolor='#f0f0f0')
@@ -243,14 +320,20 @@ def plot_tool_view(params, trajectory_data, current_depth, operation, speed, use
                                linewidth=1, edgecolor='darkgray', facecolor='none')
         ax.add_patch(tubing)
 
+        if not use_metric:
+            current_depth *= 3.28084
+
         if current_depth > 0:
+
             ax.plot([CENTER_X, CENTER_X], [0, current_depth],
                     color='#8b4513', linewidth=2)
 
         socket_height = 40
-        socket = plt.Rectangle((CENTER_X - 3, current_depth), 6, socket_height,
+        socket = plt.Rectangle((CENTER_X - 3, current_depth - socket_height), 6, socket_height,
                                linewidth=2, edgecolor='darkgray', facecolor='#646464')
         ax.add_patch(socket)
+        if not use_metric:
+            current_depth /= 3.28084
 
         current_inclination = float(trajectory_data['inclinations'][idx])
         current_azimuth = float(trajectory_data['azimuths'][idx])
@@ -269,7 +352,7 @@ def plot_tool_view(params, trajectory_data, current_depth, operation, speed, use
 
         tension_result = calculate_tension(
             params, trajectory_data, current_depth, operation,
-            cumulative_friction, drag_force
+            cumulative_friction, drag_force, use_metric
         )
         tension, effective_friction, pressure_force, _ = tension_result
 
@@ -304,9 +387,9 @@ def plot_tool_view(params, trajectory_data, current_depth, operation, speed, use
                 bbox=dict(facecolor='white', alpha=0.9, edgecolor='gray', boxstyle='round'),
                 fontsize=9, verticalalignment='top')
 
-        for depth_mark in range(0, int(max_depth) + 1, 1000):
-            ax.plot([WELL_WIDTH, WELL_WIDTH + 10], [depth_mark, depth_mark], color='black', linewidth=1)
-        ax.text(WELL_WIDTH + 15, depth_mark - 10, f"{depth_mark} ft")
+        # for depth_mark in range(0, int(max_depth) + 1, 1000):
+        #     ax.plot([WELL_WIDTH, WELL_WIDTH + 10], [depth_mark, depth_mark], color='black', linewidth=1)
+        # ax.text(WELL_WIDTH + 15, depth_mark - 10, f"{depth_mark} ft")
 
         ax.set_xlim(-10, WELL_WIDTH + 180)
         ax.set_ylim(max_depth, 0)
@@ -321,18 +404,6 @@ def plot_tool_view(params, trajectory_data, current_depth, operation, speed, use
         canvas.draw()
         return None  # Return None in case of error
 
-# In plot.py
-
-import numpy as np
-from matplotlib import pyplot as plt
-from features.simulator.calculations import (
-    calculate_dls,
-    calculate_tension,
-    calculate_effective_weight,
-    calculate_wire_friction,
-    calculate_fluid_drag
-)
-
 def plot_tension(trajectory_data, params, current_depth, use_metric, canvas):
     """Plot tension vs depth for RIH and POOH operations."""
     fig = canvas.figure
@@ -343,32 +414,48 @@ def plot_tension(trajectory_data, params, current_depth, use_metric, canvas):
         return None, None, None
 
     modified_params = params.copy()
-    if use_metric:
-        modified_params['wire_weight'] *= 3.28084  # Convert lbs/ft to lbs/m
-
     mds = [float(md) for md in trajectory_data['mds']]
+    # if use_metric:
+    #     modified_params['wire_weight'] *= 3.28084  # Convert lbs/ft to lbs/m
+
+        # mds = [float(md) / 3.28084 for md in trajectory_data['mds']]
+
+
+    print(mds[-1])
     inclinations = [float(inc) for inc in trajectory_data['inclinations']]
     max_depth = float(mds[-1]) if mds else 0
 
     rih_weights, pooh_weights = [], []
 
-    # Pre-calculate cumulative wire friction
-    _, wire_friction = calculate_wire_friction(trajectory_data, modified_params, max_depth + 1, use_metric)
+    # # Pre-calculate cumulative wire friction
+    # cumulative_friction, _  = calculate_wire_friction(trajectory_data, params, max_depth + 1, use_metric)
 
     for idx in range(len(mds)):
         depth = mds[idx]
+        # if use_metric:
+
         inc = inclinations[idx]
 
-        submerged_weight, _ = calculate_effective_weight(modified_params, depth, use_metric)
-        drag_force, _, _ = calculate_fluid_drag(modified_params, modified_params['speed'])
-        cumulative_friction = sum(wire_friction[:idx])
+        submerged_weight, _ = calculate_effective_weight(params, depth, use_metric)
+        if idx == max(range(len(mds))):
+            toprint = submerged_weight
+            print(toprint)
+            # print(params[toprint])
+        drag_force, _, _ = calculate_fluid_drag(params, params['speed'])
+
+        friction_result = calculate_wire_friction(
+            trajectory_data, params, depth, use_metric
+        )
+        cumulative_friction, _ = friction_result
 
         rih_tension, _, _, _ = calculate_tension(
-            modified_params, trajectory_data, depth, "RIH", cumulative_friction, drag_force
+            params, trajectory_data, depth, "RIH", cumulative_friction, drag_force, use_metric
         )
         pooh_tension, _, _, _ = calculate_tension(
-            modified_params, trajectory_data, depth, "POOH", cumulative_friction, drag_force
+            params, trajectory_data, depth, "POOH", cumulative_friction, drag_force, use_metric
         )
+
+        # rih_tension, pooh_tension = EquationTab.full_calculation()
 
         rih_weights.append(rih_tension)
         pooh_weights.append(pooh_tension)
