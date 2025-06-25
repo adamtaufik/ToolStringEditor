@@ -3,7 +3,7 @@ from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import Qt, QTimer
 
 from ui.apps.ui_calculations_app import WirelineCalculatorApp
-
+from ui.apps.ui_sgs_txt_app import SGSTXTApp
 
 # from ui.apps.original_simulator import WirelineSimulatorApp
 from ui.apps.ui_simulator_app import WirelineSimulatorApp
@@ -22,7 +22,7 @@ class StartWindow(QWidget):
     def __init__(self, app_icon=None):
         super().__init__()
         self.setWindowTitle("Deleum WireHub")
-        self.setFixedSize(500, 400)
+        self.setFixedSize(500, 500)
         if app_icon:
             self.setWindowIcon(app_icon)
 
@@ -54,6 +54,7 @@ class StartWindow(QWidget):
         # 3D Menu Container
         self.buttons = [
             ("Wireline Tool String Editor", self.open_toolstring_editor_app),
+            ("SGS/FGS txt processing", self.open_sgstxt_app),
             ("SGS/FGS Data Interpreter", self.open_sgsfgs_app),
             ("Wireline Calculator", self.open_calculations_app),
             ("Wireline Simulator", self.open_simulator_app)
@@ -103,6 +104,11 @@ class StartWindow(QWidget):
     def open_toolstring_editor_app(self):
         self.editor_window = ToolStringEditor()
         self.editor_window.show()
+        self.close()
+
+    def open_sgstxt_app(self):
+        self.sgstxt_app = SGSTXTApp()
+        self.sgstxt_app.show()
         self.close()
 
     def open_sgsfgs_app(self):

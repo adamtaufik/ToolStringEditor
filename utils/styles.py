@@ -2,7 +2,7 @@
 from utils.path_finder import get_icon_path
 
 DARK_STYLE = """
-    QMainWindow, SGSFGSApp, HydrostaticPressureApp, WirelineCalculatorApp {
+    QMainWindow, SGSFGSApp, SGSTXTApp, HydrostaticPressureApp, WirelineCalculatorApp {
         background: #1e1e1e;
     }
 
@@ -97,7 +97,7 @@ DARK_STYLE = """
 """
 
 DELEUM_STYLE = """
-    QMainWindow, SGSFGSApp, HydrostaticPressureApp, WirelineCalculatorApp, WirelineSimulatorApp {
+    QMainWindow, SGSFGSApp, SGSTXTApp, HydrostaticPressureApp, WirelineCalculatorApp, WirelineSimulatorApp {
         background: #3d000f;
     }
     
