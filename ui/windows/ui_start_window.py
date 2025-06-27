@@ -22,7 +22,7 @@ class StartWindow(QWidget):
     def __init__(self, app_icon=None):
         super().__init__()
         self.setWindowTitle("Deleum WireHub")
-        self.setFixedSize(500, 500)
+        self.setFixedSize(500, 450)
         if app_icon:
             self.setWindowIcon(app_icon)
 
@@ -54,8 +54,8 @@ class StartWindow(QWidget):
         # 3D Menu Container
         self.buttons = [
             ("Wireline Tool String Editor", self.open_toolstring_editor_app),
-            ("SGS/FGS txt processing", self.open_sgstxt_app),
-            ("SGS/FGS Data Interpreter", self.open_sgsfgs_app),
+            ("SGS/FGS Data Processor", self.open_sgstxt_app),
+            # ("SGS/FGS Data Interpreter", self.open_sgsfgs_app),
             ("Wireline Calculator", self.open_calculations_app),
             ("Wireline Simulator", self.open_simulator_app)
         ]
