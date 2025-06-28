@@ -1,6 +1,6 @@
 
 
-# python rec2txt.py input.rec output.txt
+# python temporary_rectotxt.py input.rec output.txt
 
 
 import sys

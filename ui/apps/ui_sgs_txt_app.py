@@ -4,7 +4,6 @@ import io
 import openpyxl
 import pandas as pd
 import matplotlib.pyplot as plt
-import bisect
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtWidgets import (
@@ -22,7 +21,8 @@ from utils.path_finder import get_icon_path
 from utils.theme_manager import apply_theme, toggle_theme
 import re
 import matplotlib.dates as mdates
-
+from matplotlib.widgets import SpanSelector
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 class QuadrupleDragDropWidget(QWidget):
     def __init__(self, callback, parent=None):
@@ -505,9 +505,6 @@ class SGSTXTApp(QWidget):
             }
         """)
 
-        # # Connect item changed signal
-        # self.table_widget.itemChanged.connect(self.on_table_item_changed)
-
         # Add table to group
         table_group_layout.addWidget(self.table_widget)
 
@@ -764,6 +761,57 @@ class SGSTXTApp(QWidget):
 
     def save_file(self):
         MessageBoxWindow.message_simple(self, "Save", "Save functionality will be implemented here")
+
+    def init_zoom_toolbar(self):
+        """Initialize zoom toolbar with reset button"""
+        # Create toolbar widget
+        self.toolbar_widget = QWidget()
+        toolbar_layout = QHBoxLayout(self.toolbar_widget)
+        toolbar_layout.setContentsMargins(0, 5, 0, 5)
+
+        # Reset zoom button
+        self.reset_zoom_btn = QPushButton("Reset Zoom")
+        self.reset_zoom_btn.setStyleSheet("""
+            QPushButton {
+                background-color: red;
+                border: 1px solid #aaa;
+                border-radius: 5px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: pink;
+            }
+        """)
+        self.reset_zoom_btn.setFixedHeight(30)
+        self.reset_zoom_btn.clicked.connect(self.reset_graph_zoom)
+        self.reset_zoom_btn.setEnabled(False)
+
+        # Add to layout
+        toolbar_layout.addWidget(self.reset_zoom_btn)
+        toolbar_layout.addStretch()
+
+    # Add this method to SGSTXTApp
+    def reset_graph_zoom(self):
+        """Reset graph zoom to original view"""
+        if self.initial_x_lim:
+            ax_top = self.current_canvas.figure.axes[0]
+            ax_bottom = self.current_canvas.figure.axes[1]
+
+            ax_top.set_xlim(self.initial_x_lim)
+            ax_bottom.set_xlim(self.initial_x_lim)
+            self.current_canvas.draw_idle()
+            self.reset_zoom_btn.setEnabled(False)
+
+    # Add this method to SGSTXTApp
+    def on_horizontal_select(self, xmin, xmax):
+        """Handle horizontal zoom selection"""
+        ax_top = self.current_canvas.figure.axes[0]
+        ax_bottom = self.current_canvas.figure.axes[1]
+
+        ax_top.set_xlim(xmin, xmax)
+        ax_bottom.set_xlim(xmin, xmax)
+        self.current_canvas.draw_idle()
+        self.reset_zoom_btn.setEnabled(True)
 
     def process_all_files(self, top_file_path, bottom_file_path, timesheet_file_path, tvd_file_path):
         try:
@@ -1054,6 +1102,27 @@ class SGSTXTApp(QWidget):
         # Switch back to file upload screen
         self.content_stack.setCurrentIndex(0)
 
+    # Add this method to SGSTXTApp
+    def init_span_selectors(self, ax_top, ax_bottom):
+        """Initialize span selectors for both top and bottom graphs"""
+        # Create SpanSelector for top graph
+        self.span_selector_top = SpanSelector(
+            ax_top,
+            self.on_horizontal_select,
+            'horizontal',
+            useblit=True,
+            props=dict(alpha=0.5, facecolor='tab:blue')
+        )
+
+        # Create SpanSelector for bottom graph
+        self.span_selector_bottom = SpanSelector(
+            ax_bottom,
+            self.on_horizontal_select,
+            'horizontal',
+            useblit=True,
+            props=dict(alpha=0.5, facecolor='tab:blue')
+        )
+
     def show_stacked_graphs(self, top_file_path, bottom_file_path):
         # Clear previous graph
         while self.graph_layout.count():
@@ -1068,6 +1137,19 @@ class SGSTXTApp(QWidget):
         ax_bottom = fig.add_subplot(gs[1], sharex=ax_top)
         ax_status = fig.add_subplot(gs[2])
         ax_status.axis('off')  # Hide axes for status area
+
+        # Store initial x-axis limits for reset functionality
+        if self.top_data or self.bottom_data:
+            all_times = []
+            if self.top_data:
+                all_times.extend([item[0] for item in self.top_data])
+            if self.bottom_data:
+                all_times.extend([item[0] for item in self.bottom_data])
+            min_time = min(all_times)
+            max_time = max(all_times)
+            self.initial_x_lim = (min_time, max_time)
+        else:
+            self.initial_x_lim = None
 
         # Plot top gauge data
         if self.top_data:
@@ -1163,9 +1245,18 @@ class SGSTXTApp(QWidget):
         ax_top.legend(lines_top + lines_top2, labels_top + labels_top2, loc='upper left', fontsize=8)
 
         fig.tight_layout()
+
+        # Initialize span selectors for both graphs
+        self.init_span_selectors(ax_top, ax_bottom)
+
+        # Initialize zoom toolbar
+        self.init_zoom_toolbar()
+
+        # Add canvas and toolbar to layout
         canvas = FigureCanvas(fig)
         self.graph_layout.addWidget(canvas)
-        self.current_canvas = canvas  # Store reference here
+        self.graph_layout.addWidget(self.toolbar_widget)  # Add zoom toolbar
+        self.current_canvas = canvas
         canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
 
     def on_mouse_move(self, event):
