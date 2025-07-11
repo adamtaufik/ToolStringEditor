@@ -54,7 +54,7 @@ class StartWindow(QWidget):
         # 3D Menu Container
         self.buttons = [
             ("Wireline Tool String Editor", self.open_toolstring_editor_app),
-            ("SGS/FGS Data Processor", self.open_sgstxt_app),
+            ("SGS/FGS Data Interpreter", self.open_sgstxt_app),
             # ("SGS/FGS Data Interpreter", self.open_sgsfgs_app),
             ("Wireline Calculator", self.open_calculations_app),
             ("Wireline Simulator", self.open_simulator_app)

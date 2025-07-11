@@ -1,29 +1,34 @@
-import bisect
 import datetime
 import io
+import os
+import re
+import shutil
+import tempfile
 
 import openpyxl
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import xlrd
+import matplotlib.dates as mdates
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.widgets import SpanSelector
+from PyQt6.QtCore import Qt, QTimer, QSize
+from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QImage, QIcon
 from PyQt6.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog,
     QMessageBox, QTableWidget, QTableWidgetItem, QHBoxLayout, QApplication,
-    QSplitter, QGridLayout, QGroupBox, QStackedWidget, QTimeEdit, QLineEdit
+    QSplitter, QGridLayout, QGroupBox, QStackedWidget, QTimeEdit, QLineEdit, QToolButton
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QImage
+
+# Local imports
 from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
 from ui.windows.ui_messagebox_window import MessageBoxWindow
-from utils.path_finder import get_icon_path
-from utils.styles import GROUPBOX_STYLE
+from utils.path_finder import get_icon_path, get_path
+from utils.styles import GROUPBOX_STYLE, MESSAGEBOX_STYLE
 from utils.theme_manager import apply_theme, toggle_theme
-import re
-import matplotlib.dates as mdates
-from matplotlib.widgets import SpanSelector
 
 
 class QuadrupleDragDropWidget(QWidget):
@@ -32,180 +37,111 @@ class QuadrupleDragDropWidget(QWidget):
         self.callback = callback
         self.setAcceptDrops(True)
 
+        # Define file type configurations
+        self.file_types = {
+            "top": {
+                "label": "Drag & Drop Top Gauge Data File (.txt)",
+                "drop_text": "Top Gauge Data\n(.txt)",
+                "extensions": ('.txt',),
+                "file_path": None
+            },
+            "bottom": {
+                "label": "Drag & Drop Bottom Gauge Data File (.txt)",
+                "drop_text": "Bottom Gauge Data\n(.txt)",
+                "extensions": ('.txt',),
+                "file_path": None
+            },
+            "timesheet": {
+                "label": "Drag & Drop Survey Timesheet (.xls/.xlsx)",
+                "drop_text": "Survey Timesheet\n(.xls/.xlsx)",
+                "extensions": ('.xls', '.xlsx', '.XLS'),
+                "file_path": None
+            },
+            "tvd": {
+                "label": "Drag & Drop TVD Calculation File (.xls/.xlsx)",
+                "drop_text": "TVD Calculation\n(.xls/.xlsx)",
+                "extensions": ('.xls', '.xlsx', '.XLS'),
+                "file_path": None
+            }
+        }
+
         layout = QGridLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(15)
 
-        # Top gauge section
-        self.top_label = QLabel("Drag & Drop Top Gauge Data File (.txt)")
-        self.top_drop = self.create_drop_area("Top Gauge Data\n(.txt)")
-        self.top_buttons = self.create_file_buttons("top")
-        layout.addWidget(self.create_group_box("TOP GAUGE", self.top_drop, self.top_label, self.top_buttons), 0, 0)
+        # Create drop areas and store references
+        self.drop_areas = {}
+        self.labels = {}
+        self.clear_buttons = {}
+        self.browse_buttons = {}
 
-        # Bottom gauge section
-        self.bottom_label = QLabel("Drag & Drop Bottom Gauge Data File (.txt)")
-        self.bottom_drop = self.create_drop_area("Bottom Gauge Data\n(.txt)")
-        self.bottom_buttons = self.create_file_buttons("bottom")
-        layout.addWidget(
-            self.create_group_box("BOTTOM GAUGE", self.bottom_drop, self.bottom_label, self.bottom_buttons), 0, 1)
+        for i, (file_type, config) in enumerate(self.file_types.items()):
+            row = i // 2
+            col = i % 2
 
-        # Timesheet section
-        self.timesheet_label = QLabel("Drag & Drop Survey Timesheet (.xls/.xlsx)")
-        self.timesheet_drop = self.create_drop_area("Survey Timesheet\n(.xls/.xlsx)")
-        self.timesheet_buttons = self.create_file_buttons("timesheet")
-        layout.addWidget(
-            self.create_group_box("TIMESHEET", self.timesheet_drop, self.timesheet_label, self.timesheet_buttons), 1, 0)
+            # Create UI components
+            label = QLabel(config["label"])
+            drop_area = self.create_drop_area(config["drop_text"])
+            buttons_layout = self.create_file_buttons(file_type)
 
-        # TVD Calculation section
-        self.tvd_label = QLabel("Drag & Drop TVD Calculation File (.xlsx)")
-        self.tvd_drop = self.create_drop_area("TVD Calculation\n(.xlsx)")
-        self.tvd_buttons = self.create_file_buttons("tvd")
-        layout.addWidget(
-            self.create_group_box("TVD CALCULATION", self.tvd_drop, self.tvd_label, self.tvd_buttons), 1, 1)
+            # Create group box
+            title = file_type.upper() + (" GAUGE" if file_type in ["top", "bottom"] else "")
+            group_box = self.create_group_box(title, drop_area, label, buttons_layout)
 
-        # Process button and Clear All button
+            # Add to layout and store references
+            layout.addWidget(group_box, row, col)
+            self.drop_areas[file_type] = drop_area
+            self.labels[file_type] = label
+
+        # Process and Clear buttons
         button_container = QWidget()
         button_layout = QHBoxLayout(button_container)
         button_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Add Clear All button
-        self.clear_all_btn = QPushButton("Clear All")
-        self.clear_all_btn.setMinimumHeight(40)
-        self.clear_all_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
-                color: white;
-                font-weight: bold;
-                border-radius: 5px;
-                padding: 8px;
-            }
-            QPushButton:hover {
-                background-color: #c0392b;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-                color: #888888;
-            }
-        """)
+        self.clear_all_btn = self.create_button("Clear All", "#e74c3c", "#c0392b", 40)
         self.clear_all_btn.clicked.connect(self.clear_all_files)
         button_layout.addWidget(self.clear_all_btn)
 
-        # Process button
-        self.process_btn = QPushButton("Process Files")
+        self.process_btn = self.create_button("Process Files", "#3498db", None, 40)
         self.process_btn.setEnabled(False)
-        self.process_btn.setMinimumHeight(40)
-        self.process_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3498db;
+        self.process_btn.clicked.connect(self.process_files)
+        button_layout.addWidget(self.process_btn)
+
+        layout.addWidget(button_container, 2, 0, 1, 2)
+
+    # --- Helper Methods ---#
+    def create_button(self, text, color, hover_color=None, height=None):
+        """Create standardized buttons with consistent styling"""
+        button = QPushButton(text)
+        if height:
+            button.setMinimumHeight(height)
+
+        style = f"""
+            QPushButton {{
+                background-color: {color};
                 color: white;
                 font-weight: bold;
                 border-radius: 5px;
                 padding: 8px;
-            }
-            QPushButton:disabled {
+            }}
+            QPushButton:disabled {{
                 background-color: #cccccc;
                 color: #888888;
-            }
-        """)
-        self.process_btn.clicked.connect(self.process_files)
-        button_layout.addWidget(self.process_btn)
+            }}
+        """
 
-        layout.addWidget(button_container, 2, 0, 1, 2)  # Replace the existing process_btn addWidget
+        if hover_color:
+            style += f"""
+            QPushButton:hover {{
+                background-color: {hover_color};
+            }}
+            """
 
-        # Store file paths
-        self.top_file_path = None
-        self.bottom_file_path = None
-        self.timesheet_file_path = None
-        self.tvd_file_path = None
-
-    def create_group_box(self, title, widget, label, buttons):
-        group = QGroupBox(title)
-        group_layout = QVBoxLayout(group)
-        group_layout.addWidget(label)
-        group_layout.addWidget(widget)
-        group_layout.addLayout(buttons)
-        group.setStyleSheet(GROUPBOX_STYLE)
-        return group
-
-    def create_file_buttons(self, file_type):
-        button_layout = QHBoxLayout()
-
-        # In create_file_buttons() method
-        browse_btn = QPushButton("Browse")
-        browse_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #f0f0f0;
-                border: 1px solid #aaa;
-                border-radius: 3px;
-                padding: 3px;
-                color: black;  /* Add this line to make font color black */
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-        """)
-        browse_btn.setFixedHeight(25)
-
-        clear_btn = QPushButton("Clear")
-        clear_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #f8d7da;
-                border: 1px solid #f5c6cb;
-                border-radius: 3px;
-                padding: 3px;
-                color: #721c24;
-            }
-            QPushButton:hover {
-                background-color: #f5c6cb;
-            }
-            QPushButton:disabled {
-                background-color: #f8f9fa;
-                color: #6c757d;
-            }
-        """)
-        clear_btn.setFixedHeight(25)
-        clear_btn.setEnabled(False)
-
-        # Connect signals
-        browse_btn.clicked.connect(lambda: self.browse_file(file_type))
-        clear_btn.clicked.connect(lambda: self.clear_file(file_type))
-
-        button_layout.addWidget(browse_btn)
-        button_layout.addWidget(clear_btn)
-
-        # FIX: Properly handle all file types including "tvd"
-        if file_type == "top":
-            self.top_browse_btn = browse_btn
-            self.top_clear_btn = clear_btn
-        elif file_type == "bottom":
-            self.bottom_browse_btn = browse_btn
-            self.bottom_clear_btn = clear_btn
-        elif file_type == "timesheet":
-            self.timesheet_browse_btn = browse_btn
-            self.timesheet_clear_btn = clear_btn
-        elif file_type == "tvd":  # ADDED: Handle tvd file type
-            self.tvd_browse_btn = browse_btn
-            self.tvd_clear_btn = clear_btn
-
-        return button_layout
-
-    def clear_all_files(self):
-        """Clear all uploaded files and reset UI"""
-        self.clear_file("top")
-        self.clear_file("bottom")
-        self.clear_file("timesheet")
-        self.clear_file("tvd")
-
-        # Also reset any stored file paths
-        self.top_file_path = None
-        self.bottom_file_path = None
-        self.timesheet_file_path = None
-        self.tvd_file_path = None
-
-        # Disable process button
-        self.process_btn.setEnabled(False)
+        button.setStyleSheet(style)
+        return button
 
     def create_drop_area(self, text):
+        """Create a consistent drop area widget"""
         drop_area = QLabel(text)
         drop_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
         drop_area.setStyleSheet("""
@@ -220,15 +156,124 @@ class QuadrupleDragDropWidget(QWidget):
         drop_area.setMinimumSize(200, 180)
         drop_area.setAcceptDrops(True)
         drop_area.dragEnterEvent = self.dragEnterEvent
-        drop_area.dropEvent = lambda event: self.dropEvent(event, drop_area)
+        drop_area.dropEvent = lambda event, da=drop_area: self.dropEvent(event, da)
         return drop_area
 
+    def create_file_buttons(self, file_type):
+        """Create browse/clear buttons for a file type"""
+        button_layout = QHBoxLayout()
+
+        browse_btn = self.create_button("Browse", "#f0f0f0", "#e0e0e0", 25)
+        browse_btn.setStyleSheet(browse_btn.styleSheet() + "color: black;")
+        browse_btn.clicked.connect(lambda _, ft=file_type: self.browse_file(ft))
+
+        clear_btn = self.create_button("Clear", "#f8d7da", "#f5c6cb", 25)
+        clear_btn.setStyleSheet(clear_btn.styleSheet() + "color: #721c24;")
+        clear_btn.setEnabled(False)
+        clear_btn.clicked.connect(lambda _, ft=file_type: self.clear_file(ft))
+
+        button_layout.addWidget(browse_btn)
+        button_layout.addWidget(clear_btn)
+
+        # Store button references
+        self.browse_buttons[file_type] = browse_btn
+        self.clear_buttons[file_type] = clear_btn
+
+        return button_layout
+
+    def create_group_box(self, title, widget, label, buttons):
+        """Create a standardized group box container"""
+        group = QGroupBox(title)
+        group_layout = QVBoxLayout(group)
+        group_layout.addWidget(label)
+        group_layout.addWidget(widget)
+        group_layout.addLayout(buttons)
+        group.setStyleSheet(GROUPBOX_STYLE)
+        return group
+
+    # --- File Handling ---#
+    def handle_file_drop(self, drop_area, file_path):
+        """Handle file drop on a specific area"""
+        for file_type, config in self.file_types.items():
+            if drop_area == self.drop_areas[file_type]:
+                if file_path.lower().endswith(config["extensions"]):
+                    self.set_file(file_type, file_path)
+                    return
+
+        MessageBoxWindow.message_simple(self, "Invalid File", "Please drop the correct file type in each area")
+
+    def browse_file(self, file_type):
+        """Open file dialog for specific file type"""
+        config = self.file_types[file_type]
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            f"Open {file_type.capitalize()} File",
+            "",
+            f"Files ({' '.join(['*' + ext for ext in config['extensions']])})"
+        )
+        if file_path:
+            self.set_file(file_type, file_path)
+
+    def set_file(self, file_type, file_path):
+        """Set file for a specific type and update UI"""
+        config = self.file_types[file_type]
+        config["file_path"] = file_path
+        filename = file_path.split('/')[-1]
+
+        drop_area = self.drop_areas[file_type]
+        drop_area.setText(f"Loaded:\n{filename}")
+        drop_area.setStyleSheet("""
+            QLabel {
+                border: 3px solid #2ecc71;
+                border-radius: 15px;
+                font: bold 12pt 'Segoe UI';
+                padding: 30px;
+                background-color: rgba(200, 255, 200, 150);
+            }
+        """)
+
+        self.clear_buttons[file_type].setEnabled(True)
+        self.update_process_button()
+
+    def clear_file(self, file_type):
+        """Clear file for a specific type and reset UI"""
+        config = self.file_types[file_type]
+        config["file_path"] = None
+
+        drop_area = self.drop_areas[file_type]
+        drop_area.setText(config["drop_text"])
+        drop_area.setStyleSheet("""
+            QLabel {
+                border: 3px dashed #aaa;
+                border-radius: 15px;
+                font: bold 12pt 'Segoe UI';
+                padding: 30px;
+                background-color: rgba(240, 240, 240, 100);
+            }
+        """)
+
+        self.clear_buttons[file_type].setEnabled(False)
+        self.update_process_button()
+
+    def clear_all_files(self):
+        """Clear all uploaded files and reset UI"""
+        for file_type in self.file_types:
+            self.clear_file(file_type)
+
+    def update_process_button(self):
+        """Enable process button only when all files are loaded"""
+        all_loaded = all(
+            config["file_path"] is not None
+            for config in self.file_types.values()
+        )
+        self.process_btn.setEnabled(all_loaded)
+
+    # --- Event Handlers ---#
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
-            # Only highlight the drop area being dragged over
             widget = self.childAt(event.position().toPoint())
-            if widget in [self.top_drop, self.bottom_drop, self.timesheet_drop, self.tvd_drop]:
+            if widget in self.drop_areas.values():
                 widget.setStyleSheet("""
                     QLabel {
                         border: 3px dashed #3498db;
@@ -244,189 +289,44 @@ class QuadrupleDragDropWidget(QWidget):
         if urls and urls[0].isLocalFile():
             file_path = urls[0].toLocalFile()
             self.handle_file_drop(drop_area, file_path)
-
-    def handle_file_drop(self, drop_area, file_path):
-        # Determine which drop area received the file
-        if drop_area == self.top_drop and file_path.endswith('.txt'):
-            self.set_file("top", file_path)
-        elif drop_area == self.bottom_drop and file_path.endswith('.txt'):
-            self.set_file("bottom", file_path)
-        elif drop_area == self.timesheet_drop and file_path.endswith(('.xls', '.xlsx')):
-            self.set_file("timesheet", file_path)
-        elif drop_area == self.tvd_drop and file_path.endswith('.xlsx'):
-            self.set_file("tvd", file_path)
-        else:
-            QMessageBox.warning(self, "Invalid File", "Please drop the correct file type in each area")
-
-    def browse_file(self, file_type):
-        if file_type == "top":
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Open Top Gauge Data File", "",
-                "Text Files (*.txt)"
-            )
-            if file_path:
-                self.set_file("top", file_path)
-        elif file_type == "bottom":
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Open Bottom Gauge Data File", "",
-                "Text Files (*.txt)"
-            )
-            if file_path:
-                self.set_file("bottom", file_path)
-        elif file_type == "timesheet":
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Open Survey Timesheet", "",
-                "Excel Files (*.xls *.xlsx)"
-            )
-            if file_path:
-                self.set_file("timesheet", file_path)
-        elif file_type == "tvd":
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Open TVD Calculation File", "",
-                "Excel Files (*.xlsx)"
-            )
-            if file_path:
-                self.set_file("tvd", file_path)
-
-    def clear_file(self, file_type):
-        if file_type == "top":
-            self.top_file_path = None
-            self.top_drop.setText("Top Gauge Data\n(.txt)")
-            self.top_drop.setStyleSheet("""
-                QLabel {
-                    border: 3px dashed #aaa;
-                    border-radius: 15px;
-                    font: bold 12pt 'Segoe UI';
-                    padding: 30px;
-                    background-color: rgba(240, 240, 240, 100);
-                }
-            """)
-            self.top_clear_btn.setEnabled(False)
-        elif file_type == "bottom":
-            self.bottom_file_path = None
-            self.bottom_drop.setText("Bottom Gauge Data\n(.txt)")
-            self.bottom_drop.setStyleSheet("""
-                QLabel {
-                    border: 3px dashed #aaa;
-                    border-radius: 15px;
-                    font: bold 12pt 'Segoe UI';
-                    padding: 30px;
-                    background-color: rgba(240, 240, 240, 100);
-                }
-            """)
-            self.bottom_clear_btn.setEnabled(False)
-        elif file_type == "timesheet":
-            self.timesheet_file_path = None
-            self.timesheet_drop.setText("Survey Timesheet\n(.xls/.xlsx)")
-            self.timesheet_drop.setStyleSheet("""
-                QLabel {
-                    border: 3px dashed #aaa;
-                    border-radius: 15px;
-                    font: bold 12pt 'Segoe UI';
-                    padding: 30px;
-                    background-color: rgba(240, 240, 240, 100);
-                }
-            """)
-            self.timesheet_clear_btn.setEnabled(False)
-        elif file_type == "tvd":
-            self.tvd_file_path = None
-            self.tvd_drop.setText("TVD Calculation\n(.xlsx)")
-            self.tvd_drop.setStyleSheet("""
-                QLabel {
-                    border: 3px dashed #aaa;
-                    border-radius: 15px;
-                    font: bold 12pt 'Segoe UI';
-                    padding: 30px;
-                    background-color: rgba(240, 240, 240, 100);
-                }
-            """)
-            self.tvd_clear_btn.setEnabled(False)
-
-        # Disable process button if not all files are loaded
-        self.process_btn.setEnabled(
-            self.top_file_path is not None and
-            self.bottom_file_path is not None and
-            self.timesheet_file_path is not None and
-            self.tvd_file_path is not None
-        )
-
-    def set_file(self, file_type, file_path):
-        filename = file_path.split('/')[-1]
-
-        if file_type == "top":
-            self.top_file_path = file_path
-            self.top_drop.setText(f"Loaded:\n{filename}")
-            self.top_drop.setStyleSheet("""
-                QLabel {
-                    border: 3px solid #2ecc71;
-                    border-radius: 15px;
-                    font: bold 12pt 'Segoe UI';
-                    padding: 30px;
-                    background-color: rgba(200, 255, 200, 150);
-                }
-            """)
-            self.top_clear_btn.setEnabled(True)
-        elif file_type == "bottom":
-            self.bottom_file_path = file_path
-            self.bottom_drop.setText(f"Loaded:\n{filename}")
-            self.bottom_drop.setStyleSheet("""
-                QLabel {
-                    border: 3px solid #2ecc71;
-                    border-radius: 15px;
-                    font: bold 12pt 'Segoe UI';
-                    padding: 30px;
-                    background-color: rgba(200, 255, 200, 150);
-                }
-            """)
-            self.bottom_clear_btn.setEnabled(True)
-        elif file_type == "timesheet":
-            self.timesheet_file_path = file_path
-            self.timesheet_drop.setText(f"Loaded:\n{filename}")
-            self.timesheet_drop.setStyleSheet("""
-                QLabel {
-                    border: 3px solid #2ecc71;
-                    border-radius: 15px;
-                    font: bold 12pt 'Segoe UI';
-                    padding: 30px;
-                    background-color: rgba(200, 255, 200, 150);
-                }
-            """)
-            self.timesheet_clear_btn.setEnabled(True)
-        elif file_type == "tvd":
-            self.tvd_file_path = file_path
-            self.tvd_drop.setText(f"Loaded:\n{filename}")
-            self.tvd_drop.setStyleSheet("""
-                QLabel {
-                    border: 3px solid #2ecc71;
-                    border-radius: 15px;
-                    font: bold 12pt 'Segoe UI';
-                    padding: 30px;
-                    background-color: rgba(200, 255, 200, 150);
-                }
-            """)
-            self.tvd_clear_btn.setEnabled(True)
-
-        # Enable process button if all files are loaded
-        self.process_btn.setEnabled(
-            self.top_file_path is not None and
-            self.bottom_file_path is not None and
-            self.timesheet_file_path is not None and
-            self.tvd_file_path is not None
-        )
+            # Reset style after drop
+            if self.file_types[[k for k, v in self.drop_areas.items() if v == drop_area][0]]["file_path"]:
+                drop_area.setStyleSheet("""
+                    QLabel {
+                        border: 3px solid #2ecc71;
+                        border-radius: 15px;
+                        font: bold 12pt 'Segoe UI';
+                        padding: 30px;
+                        background-color: rgba(200, 255, 200, 150);
+                    }
+                """)
+            else:
+                drop_area.setStyleSheet("""
+                    QLabel {
+                        border: 3px dashed #aaa;
+                        border-radius: 15px;
+                        font: bold 12pt 'Segoe UI';
+                        padding: 30px;
+                        background-color: rgba(240, 240, 240, 100);
+                    }
+                """)
 
     def process_files(self):
-        if all([self.top_file_path, self.bottom_file_path, self.timesheet_file_path, self.tvd_file_path]):
+        """Process files when all are loaded"""
+        if all(config["file_path"] for config in self.file_types.values()):
             self.callback(
-                self.top_file_path,
-                self.bottom_file_path,
-                self.timesheet_file_path,
-                self.tvd_file_path
+                self.file_types["top"]["file_path"],
+                self.file_types["bottom"]["file_path"],
+                self.file_types["timesheet"]["file_path"],
+                self.file_types["tvd"]["file_path"]
             )
 
 
 class SGSTXTApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.location = None
+        self.well = None
         self.setWindowTitle("SGS / FGS txt processing")
         self.setMinimumSize(1400, 800)
         self.current_theme = "Deleum"
@@ -440,7 +340,9 @@ class SGSTXTApp(QWidget):
         self.timesheet_file_path = None
         self.ahd_tvd_map = {}
         self.events = []
-        self.current_canvas = None  # Add this line
+        self.current_canvas = None
+        self.bdf = 0
+        self.sea_level = 0
 
     def init_ui(self):
         main_container = QVBoxLayout(self)
@@ -451,11 +353,9 @@ class SGSTXTApp(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
 
         items = [
-            (get_icon_path('save'), "Save", self.save_file, "Save the current file (Ctrl+S)"),
-            (get_icon_path('load'), "Load Top", lambda: self.open_file_dialog('top'), "Open top gauge data file"),
-            (get_icon_path('load'), "Load Bottom", lambda: self.open_file_dialog('bottom'),
-             "Open bottom gauge data file"),
-            (get_icon_path('load'), "Load Timesheet", lambda: self.open_file_dialog('timesheet'), "Open timesheet")
+            (get_icon_path('save'), "Save Survey", self.save_file, "Save the current survey (Ctrl+S)"),
+            (get_icon_path('load'), "Load Survey", lambda: self.open_file_dialog('top'), "Open a survey (Ctrl+O)"),
+            (get_icon_path('export'), "Process && Export", self.process_data, "Export to Interpretation File")
         ]
 
         self.sidebar = SidebarWidget(self, items)
@@ -560,10 +460,131 @@ class SGSTXTApp(QWidget):
         # Add table to group
         table_group_layout.addWidget(self.table_widget)
 
-        # Create button row
+        # Create button row with two group boxes
         button_row = QWidget()
         button_layout = QHBoxLayout(button_row)
         button_layout.setContentsMargins(0, 10, 0, 0)
+        button_layout.setSpacing(20)  # Add spacing between group boxes
+
+        # Group Box 1: Template Downloads
+        template_group = QGroupBox("Download Blank Templates")
+        template_group.setStyleSheet(GROUPBOX_STYLE)
+        template_layout = QVBoxLayout(template_group)
+        template_layout.setSpacing(8)  # Add spacing between buttons
+
+        self.download_template_button = QPushButton("Interpretation")
+        self.download_template_button.setStyleSheet("""
+            QPushButton {
+                background-color: #17a2b8;
+                color: white;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #138496;
+            }
+        """)
+        self.download_template_button.clicked.connect(self.download_interpretation_template)
+
+        self.download_md_tvd_button = QPushButton("TVD Calculation")
+        self.download_md_tvd_button.setStyleSheet("""
+            QPushButton {
+                background-color: #17a2b8;
+                color: white;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #138496;
+            }
+        """)
+        self.download_md_tvd_button.clicked.connect(self.download_md_tvd_template)
+
+        template_layout.addWidget(self.download_template_button)
+        template_layout.addWidget(self.download_md_tvd_button)
+
+        # Group Box 2: Actions
+        action_group = QGroupBox("Actions")
+        action_group.setStyleSheet(GROUPBOX_STYLE)
+        action_layout = QVBoxLayout(action_group)
+        action_layout.setSpacing(8)
+
+        self.copy_button = QPushButton()
+        self.copy_button.setIcon(QIcon(get_icon_path('copy')))  # Add copy icon
+        self.copy_button.setText("Copy Statistics")
+        self.copy_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #888888;
+            }
+        """)
+        self.copy_button.clicked.connect(self.copy_statistics)
+        self.copy_button.setEnabled(False)  # Disabled until data is loaded
+
+        self.generate_as2_button = QPushButton("Generate AS2 Files")
+        self.generate_as2_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #888888;
+            }
+        """)
+        self.generate_as2_button.clicked.connect(self.generate_as2_files)
+        self.generate_as2_button.setEnabled(False)  # Disabled until data is loaded
+
+        self.process_data_button = QToolButton()
+        self.process_data_button.setIcon(QIcon(get_icon_path('export')))
+        self.process_data_button.setText("Process && Export")
+        self.process_data_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+)
+        self.process_data_button.setIconSize(QSize(32, 32))  # Increase icon size
+        self.process_data_button.setStyleSheet("""
+            QToolButton {
+                background-color: #28a745;
+                color: white;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QToolButton:hover {
+                background-color: #218838;
+            }
+            QToolButton:disabled {
+                background-color: #cccccc;
+                color: #888888;
+            }
+        """)
+        self.process_data_button.clicked.connect(self.process_data)
+        self.process_data_button.setEnabled(False)  # Disabled until data is loaded
+
+        action_layout.addWidget(self.copy_button)
+        action_layout.addWidget(self.generate_as2_button)
+
+        # Add group boxes to the button layout
+        button_layout.addWidget(template_group, 1)
+        button_layout.addWidget(action_group, 1)
+        button_layout.addWidget(self.process_data_button)
 
         # Create event section
         event_group = QGroupBox("Events")
@@ -627,48 +648,6 @@ class SGSTXTApp(QWidget):
         table_layout.addWidget(event_group)
         table_layout.addWidget(button_row)
 
-        self.copy_button = QPushButton("Copy Statistics")
-        self.copy_button.setFixedWidth(150)
-        self.copy_button.setStyleSheet("""
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                border-radius: 5px;
-                padding: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-                color: #888888;
-            }
-        """)
-        self.copy_button.clicked.connect(self.copy_statistics)
-        self.copy_button.setEnabled(False)  # Disabled until data is loaded
-
-        self.generate_as2_button = QPushButton("Generate AS2 Files")
-        self.generate_as2_button.setFixedWidth(150)
-        self.generate_as2_button.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                border-radius: 5px;
-                padding: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-                color: #888888;
-            }
-        """)
-        self.generate_as2_button.clicked.connect(self.generate_as2_files)
-        self.generate_as2_button.setEnabled(False)  # Disabled until data is loaded
-
         # Inside the button_row section for results screen:
         self.copy_graphs_button = QPushButton("Copy Graphs")
         self.copy_graphs_button.setFixedWidth(150)
@@ -690,11 +669,6 @@ class SGSTXTApp(QWidget):
         """)
         self.copy_graphs_button.clicked.connect(self.copy_graphs)
         self.copy_graphs_button.setEnabled(False)  # Disabled until data is loaded
-
-        # Add it to the button layout BEFORE the generate_as2_button
-        button_layout.addWidget(self.copy_button)
-        button_layout.addWidget(self.copy_graphs_button)  # NEW BUTTON
-        button_layout.addWidget(self.generate_as2_button)
 
         # Add group to container
         table_layout.addWidget(event_group)
@@ -721,306 +695,6 @@ class SGSTXTApp(QWidget):
 
         # Apply theme after UI is set up
         apply_theme(self, self.current_theme)
-
-    def toggle_theme(self):
-        self.current_theme = toggle_theme(
-            widget=self,
-            current_theme=self.current_theme,
-            theme_button=self.theme_button,
-            summary_widget=None
-        )
-
-    def add_event(self):
-        """Add a new event to the events list and table"""
-        time_val = self.event_time_edit.time()
-        time_str = time_val.toString("HH:mm:ss")
-        desc = self.event_desc_edit.text().strip()
-
-        if not desc:
-            QMessageBox.warning(self, "Missing Description", "Please enter an event description")
-            return
-
-        # Get last time from data
-        last_time = None
-        if self.top_data:
-            last_time = self.top_data[-1][0].time()
-        elif self.bottom_data:
-            last_time = self.bottom_data[-1][0].time()
-
-        # Validate time
-        if last_time and time_val > last_time:
-            QMessageBox.warning(
-                self,
-                "Invalid Time",
-                f"Event time exceeds last data point time ({last_time.toString('HH:mm:ss')})"
-            )
-            return
-
-        # Add to events list
-        self.events.append((time_str, desc))
-
-        # Add to table
-        row = self.event_table.rowCount()
-        self.event_table.insertRow(row)
-        self.event_table.setItem(row, 0, QTableWidgetItem(time_str))
-        self.event_table.setItem(row, 1, QTableWidgetItem(desc))
-
-        # Clear input fields
-        self.event_desc_edit.clear()
-
-        # Enable remove button
-        self.remove_event_btn.setEnabled(True)
-
-    def remove_event(self):
-        """Remove selected event from the events list and table"""
-        selected_row = self.event_table.currentRow()
-        if selected_row >= 0:
-            self.event_table.removeRow(selected_row)
-            del self.events[selected_row]
-
-            # Disable remove button if no events left
-            if not self.events:
-                self.remove_event_btn.setEnabled(False)
-
-    def open_file_dialog(self, file_type):
-        if file_type == 'tvd':  # Add this case
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Open TVD Calculation File", "",
-                "Excel Files (*.xlsx)"
-            )
-            if file_path:
-                self.drag_drop_widget.set_file("tvd", file_path)
-        elif file_type == 'top':
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Open Top Gauge Data File", "",
-                "Text Files (*.txt)"
-            )
-            if file_path:
-                self.drag_drop_widget.set_file("top", file_path)
-        elif file_type == 'bottom':
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Open Bottom Gauge Data File", "",
-                "Text Files (*.txt)"
-            )
-            if file_path:
-                self.drag_drop_widget.set_file("bottom", file_path)
-        else:  # timesheet
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Open Survey Timesheet", "",
-                "Excel Files (*.xls *.xlsx)"
-            )
-            if file_path:
-                self.drag_drop_widget.set_file("timesheet", file_path)
-
-    def save_file(self):
-        MessageBoxWindow.message_simple(self, "Save", "Save functionality will be implemented here")
-
-    def init_zoom_toolbar(self):
-        """Initialize zoom toolbar with reset button"""
-        # Create toolbar widget
-        self.toolbar_widget = QWidget()
-        toolbar_layout = QHBoxLayout(self.toolbar_widget)
-        toolbar_layout.setContentsMargins(0, 5, 0, 5)
-
-        # Reset zoom button
-        self.reset_zoom_btn = QPushButton("Reset Zoom")
-        self.reset_zoom_btn.setStyleSheet("""
-            QPushButton {
-                background-color: red;
-                border: 1px solid #aaa;
-                border-radius: 5px;
-                padding: 5px;
-            }
-            QPushButton:hover {
-                background-color: pink;
-            }
-        """)
-        self.reset_zoom_btn.setFixedHeight(30)
-        self.reset_zoom_btn.clicked.connect(self.reset_graph_zoom)
-        self.reset_zoom_btn.setEnabled(False)
-
-        # Add to layout
-        toolbar_layout.addWidget(self.reset_zoom_btn)
-        toolbar_layout.addStretch()
-
-    # Add this method to SGSTXTApp
-    def reset_graph_zoom(self):
-        """Reset graph zoom to original view"""
-        if self.initial_x_lim:
-            ax_top = self.current_canvas.figure.axes[0]
-            ax_bottom = self.current_canvas.figure.axes[1]
-
-            ax_top.set_xlim(self.initial_x_lim)
-            ax_bottom.set_xlim(self.initial_x_lim)
-            self.current_canvas.draw_idle()
-            self.reset_zoom_btn.setEnabled(False)
-
-    # Add this method to SGSTXTApp
-    def on_horizontal_select(self, xmin, xmax):
-        """Handle horizontal zoom selection"""
-        ax_top = self.current_canvas.figure.axes[0]
-        ax_bottom = self.current_canvas.figure.axes[1]
-
-        ax_top.set_xlim(xmin, xmax)
-        ax_bottom.set_xlim(xmin, xmax)
-        self.current_canvas.draw_idle()
-        self.reset_zoom_btn.setEnabled(True)
-
-    def process_all_files(self, top_file_path, bottom_file_path, timesheet_file_path, tvd_file_path):
-        try:
-            self.top_file_path = top_file_path
-            self.bottom_file_path = bottom_file_path
-            self.timesheet_file_path = timesheet_file_path
-            self.tvd_file_path = tvd_file_path
-
-            # Process TVD file first
-            self.tvd_data = self.process_tvd_file(tvd_file_path)
-
-            # Process timesheet to get station timings
-            self.station_timings = self.process_excel_timesheet(timesheet_file_path)
-
-            # Process both gauge data files
-            self.top_data = self.process_sgs_txt_file(top_file_path)
-            self.bottom_data = self.process_sgs_txt_file(bottom_file_path)
-
-            # Reset events when processing new files
-            self.events = []
-            self.event_table.setRowCount(0)
-            self.remove_event_btn.setEnabled(False)
-
-            if self.top_data and self.bottom_data and self.station_timings and self.tvd_data:
-                # Show results screen
-                self.content_stack.setCurrentIndex(1)
-
-                # Create stacked graphs
-                self.show_stacked_graphs(top_file_path, bottom_file_path)
-
-                # Populate table with station timings and gauge data
-                self.populate_station_table()
-            else:
-                QMessageBox.critical(self, "Error", "Failed to process one or more files")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to process files:\n{str(e)}")
-
-    def process_tvd_file(self, file_path):
-        try:
-            # Use data_only=True to get computed values instead of formulas
-            wb = openpyxl.load_workbook(file_path, data_only=True)
-            sheet = wb[wb.sheetnames[0]]
-
-            # Extract metadata
-            tvd_data = {
-                'bdf': sheet['D2'].value,
-                'sea_level': sheet['D3'].value,
-                'location': sheet['I3'].value,
-                'well': sheet['I4'].value,
-                'ahd_values': [],
-                'tvd_values': []
-            }
-
-            # Extract AHD from column C (starting at row 9)
-            row = 9
-            while True:
-                ahd_cell = sheet.cell(row=row, column=3).value  # Column C
-                tvd_cell = sheet.cell(row=row, column=9).value  # Column I
-
-                # Stop when we find empty cells
-                if ahd_cell is None and tvd_cell is None:
-                    break
-
-                # Add AHD value if exists
-                if ahd_cell is not None:
-                    try:
-                        # Handle both numbers and strings that represent numbers
-                        if isinstance(ahd_cell, str):
-                            ahd_cell = float(ahd_cell.replace(',', ''))
-                        ahd_value = float(ahd_cell)
-                        tvd_data['ahd_values'].append(ahd_value)
-                    except (ValueError, TypeError):
-                        # Skip if conversion fails
-                        pass
-
-                # Add TVD value if exists
-                if tvd_cell is not None:
-                    try:
-                        # Handle both numbers and strings that represent numbers
-                        if isinstance(tvd_cell, str):
-                            tvd_cell = float(tvd_cell.replace(',', ''))
-                        tvd_value = float(tvd_cell)
-                        tvd_data['tvd_values'].append(tvd_value)
-                    except (ValueError, TypeError):
-                        # Skip if conversion fails
-                        pass
-
-                row += 1
-
-            return tvd_data
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to process TVD file:\n{str(e)}")
-            return {}
-
-    def generate_as2_files(self):
-        """Generate AS2 files for both top and bottom gauges"""
-        if not self.top_data or not self.bottom_data:
-            QMessageBox.warning(self, "No Data", "No gauge data available to generate AS2 files")
-            return
-
-        try:
-            top_as2_path = self.generate_as2_file(self.top_file_path, self.top_data)
-            bottom_as2_path = self.generate_as2_file(self.bottom_file_path, self.bottom_data)
-
-            if top_as2_path and bottom_as2_path:
-                QMessageBox.information(
-                    self,
-                    "Files Created",
-                    f"Successfully created AS2 files:\n\n"
-                    f"Top Gauge: {top_as2_path.split('/')[-1]}\n"
-                    f"Bottom Gauge: {bottom_as2_path.split('/')[-1]}",
-                    QMessageBox.StandardButton.Ok
-                )
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to create AS2 files:\n{str(e)}")
-
-    def generate_as2_file(self, input_file_path, data):
-        """Generate AS2 formatted file from processed data with right-aligned columns"""
-        # Determine output file path
-        if input_file_path.endswith('.txt'):
-            output_file_path = input_file_path.replace('.txt', '.AS2')
-        else:
-            output_file_path = input_file_path + '.AS2'
-
-        if not data:
-            # Create empty file if no data
-            with open(output_file_path, 'w'):
-                pass
-            return output_file_path
-
-        # Create event lookup dictionary
-        event_dict = {time: desc for time, desc in self.events}
-
-        # Calculate column widths
-        max_pressure_width = max(len(f"{p:.2f}") for _, p, _ in data) if data else 0
-        max_temp_width = max(len(f"{t:.3f}") for _, _, t in data) if data else 0
-
-        with open(output_file_path, 'w') as f:
-            for dt, pressure, temperature in data:
-                date_str = dt.strftime("%d/%m/%Y")
-                time_str = dt.strftime("%H:%M:%S")
-
-                # Format numbers with fixed decimals and right-align
-                temp_str = f"{temperature:.2f}".rjust(max_temp_width)
-                pressure_str = f"{pressure:.3f}".rjust(max_pressure_width)
-
-                # Check if there's an event at this time
-                event_desc = event_dict.get(time_str, "")
-
-                # Format line with event if exists
-                line = f"{date_str}  {time_str}    {temp_str}     {pressure_str}  {event_desc}\n"
-                f.write(line)
-
-        return output_file_path
 
     def process_sgs_txt_file(self, file_path):
         try:
@@ -1065,87 +739,130 @@ class SGSTXTApp(QWidget):
 
     def process_excel_timesheet(self, file_path):
         try:
-            if file_path.endswith('.xlsx'):
+            lower_path = file_path.lower()
+            if lower_path.endswith('.xlsx'):
                 df = pd.read_excel(file_path, header=None, engine='openpyxl')
-            else:
+            elif lower_path.endswith('.xls'):  # Now handles both .xls and .XLS
                 df = pd.read_excel(file_path, header=None, engine='xlrd')
-
-            # Find the date
+            else:
+                QMessageBox.critical(self, "Error", "Unsupported timesheet format. Must be .xlsx or .xls")
+                return []
+            # Find the date - handles both formats
             date_value = None
             for i in range(len(df)):
                 cell_value = str(df.iloc[i, 2])
-                if "Date :" in cell_value:
-                    date_match = re.search(r'Date :\s*(\d{2}\.\d{2}\.\d{4})', cell_value)
-                    if date_match:
-                        date_value = datetime.datetime.strptime(date_match.group(1), "%d.%m.%Y").date()
+                if "Date of Survey" in cell_value or "Date :" in cell_value:
+                    # Main format: "Date of Survey  :  1/05/2025"
+                    if "Date of Survey" in cell_value:
+                        date_match = re.search(r'(\d{1,2}/\d{1,2}/\d{4})', cell_value)
+                        if date_match:
+                            date_value = datetime.datetime.strptime(date_match.group(1), "%d/%m/%Y").date()
+                    # Alternate format: "Date : 01.05.2025"
+                    elif "Date :" in cell_value:
+                        date_match = re.search(r'Date :\s*(\d{2}\.\d{2}\.\d{4})', cell_value)
+                        if date_match:
+                            date_value = datetime.datetime.strptime(date_match.group(1), "%d.%m.%Y").date()
                     break
 
-            # Find the start of the data table
-            data_start = None
-            for i in range(len(df)):
-                cell_value = str(df.iloc[i, 3])
-                if 'ATM' in cell_value:
-                    data_start = i + 1
-                    break
-
-            if data_start is None:
-                QMessageBox.critical(self, "Error", "Could not find data table in timesheet")
+            if date_value is None:
+                QMessageBox.critical(self, "Error", "Could not find survey date in timesheet")
                 return []
 
-            # Extract station data
+            # Determine format and find data start
+            format_type = None
+            data_start = None
+
+            # Check for main format (has "No" in D and "Depth (ft)" in E)
+            for i in range(len(df)):
+                col_d = str(df.iloc[i, 3]).strip() if pd.notna(df.iloc[i, 3]) else ""
+                col_e = str(df.iloc[i, 4]).strip() if pd.notna(df.iloc[i, 4]) else ""
+
+                if col_d == 'No' and col_e == 'Depth (ft)':
+                    format_type = 'main'
+                    data_start = i + 1  # Data starts next row
+                    break
+
+            # Check for alternate format (has "ATM" in D)
+            if format_type is None:
+                for i in range(len(df)):
+                    col_d = str(df.iloc[i, 3]).strip() if pd.notna(df.iloc[i, 3]) else ""
+                    if col_d == 'ATM':
+                        format_type = 'alternate'
+                        data_start = i
+                        break
+
+            if format_type is None or data_start is None:
+                QMessageBox.critical(self, "Error", "Could not determine timesheet format")
+                return []
+
+            # Parse station data based on format
             stations = []
             i = data_start
+
             while i < len(df):
-                station_type = str(df.iloc[i, 3]).strip() if pd.notna(df.iloc[i, 3]) else ""
-                depth = df.iloc[i, 4]
-                duration = df.iloc[i, 5]
-                start_time = df.iloc[i, 6]
-                end_time = df.iloc[i, 8]
-                print(start_time, '\t', end_time)
+                # Main format columns
+                if format_type == 'main':
+                    station_type = str(df.iloc[i, 4]).strip() if pd.notna(df.iloc[i, 4]) else ""  # Column E
+                    depth = station_type  # Depth is in same column
+                    duration = df.iloc[i, 5]  # Column F
+                    start_time = df.iloc[i, 6]  # Column G
+                    end_time = df.iloc[i, 8]  # Column I
+
+                    # Skip ATM stations
+                    if station_type == 'ATM':
+                        i += 1
+                        continue
+
+                    # Set THP depth to 0
+                    if station_type == 'THP':
+                        depth = 0
+
+                # Alternate format columns
+                else:  # format_type == 'alternate'
+                    station_type = str(df.iloc[i, 3]).strip() if pd.notna(df.iloc[i, 3]) else ""  # Column D
+                    depth = df.iloc[i, 4]  # Column E
+                    duration = df.iloc[i, 5]  # Column F
+                    start_time = df.iloc[i, 6]  # Column G
+                    end_time = df.iloc[i, 8]  # Column I
+
+                    # Skip ATM stations
+                    if station_type == 'ATM':
+                        i += 1
+                        continue
+
+                    # Set THP depth to 0
+                    if station_type == 'THP':
+                        depth = 0
 
                 # Skip if any critical value is missing
-                if pd.isna(start_time) or pd.isna(end_time):
+                if (not station_type or
+                        pd.isna(duration) or
+                        pd.isna(start_time) or
+                        pd.isna(end_time)):
                     i += 1
                     continue
 
-                # Convert times to 4-digit strings
-                if isinstance(start_time, (int, float)):
-                    start_time = f"{int(start_time):04d}"
-                else:
-                    start_time = str(start_time).strip().replace(':', '')[:4]
+                # Convert times to time objects
+                start_time_obj = self.parse_time(start_time)
+                end_time_obj = self.parse_time(end_time)
 
-                if isinstance(end_time, (int, float)):
-                    end_time = f"{int(end_time):04d}"
-                else:
-                    end_time = str(end_time).strip().replace(':', '')[:4]
-
-                print(start_time, '\t\t', end_time)
                 # Create datetime objects
                 try:
-                    start_dt = datetime.datetime.combine(
-                        date_value,
-                        datetime.time(int(start_time[:2]), int(start_time[2:]))
-                    )
-                    end_dt = datetime.datetime.combine(
-                        date_value,
-                        datetime.time(int(end_time[:2]), int(end_time[2:]))
-                    )
+                    start_dt = datetime.datetime.combine(date_value, start_time_obj)
+                    end_dt = datetime.datetime.combine(date_value, end_time_obj)
+                except Exception as e:
+                    print(f"Error creating datetime: {e}")
+                    i += 1
+                    continue
 
-                    if station_type != 'ATM':
-                        stations.append({
-                            'station': station_type,
-                            'depth': depth,
-                            'start': start_dt,
-                            'end': end_dt,
-                            'duration': duration
-                        })
-                except ValueError:
-                    pass
-
+                stations.append({
+                    'station': station_type,
+                    'depth': depth,
+                    'start': start_dt,
+                    'end': end_dt,
+                    'duration': duration
+                })
                 i += 1
-                # Stop when we hit an empty row or end of table
-                if i >= len(df) or (pd.isna(df.iloc[i, 3]) and not stations):
-                    break
 
             return stations
 
@@ -1153,11 +870,42 @@ class SGSTXTApp(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to process timesheet:\n{str(e)}")
             return []
 
+    def parse_time(self, time_val):
+        """Parse time values from various formats into time objects"""
+        if isinstance(time_val, datetime.time):
+            return time_val
+
+        if isinstance(time_val, str):
+            time_val = time_val.strip()
+            # Handle colon-separated times (12:17:00)
+            if ':' in time_val:
+                parts = time_val.split(':')
+                hour = int(parts[0])
+                minute = int(parts[1])
+                second = int(parts[2]) if len(parts) >= 3 else 0
+                return datetime.time(hour, minute, second)
+            # Handle 4-digit times (1217)
+            else:
+                # Remove non-digits and pad with zeros
+                digits = ''.join(filter(str.isdigit, time_val)).zfill(4)[:4]
+                hour = int(digits[:2])
+                minute = int(digits[2:4])
+                return datetime.time(hour, minute)
+
+        elif isinstance(time_val, (int, float)):
+            # Handle integer times (1217)
+            time_val = int(time_val)
+            hour = time_val // 100
+            minute = time_val % 100
+            return datetime.time(hour, minute)
+
+        # Return midnight as default
+        return datetime.time(0, 0)
+
     def show_file_upload(self):
         # Switch back to file upload screen
         self.content_stack.setCurrentIndex(0)
 
-    # Add this method to SGSTXTApp
     def init_span_selectors(self, ax_top, ax_bottom):
         """Initialize span selectors for both top and bottom graphs"""
         # Create SpanSelector for top graph
@@ -1314,6 +1062,605 @@ class SGSTXTApp(QWidget):
         self.current_canvas = canvas
         canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
 
+    def populate_station_table(self):
+        self.table_widget.setRowCount(len(self.station_timings))
+
+        # Precompute data arrays for vectorized operations
+        top_data = np.array(self.top_data, dtype=object) if self.top_data else None
+        bottom_data = np.array(self.bottom_data, dtype=object) if self.bottom_data else None
+
+        for row, station in enumerate(self.station_timings):
+            # Basic station info
+            self.table_widget.setItem(row, 0, QTableWidgetItem(station['station']))
+            self.table_widget.setItem(row, 1, QTableWidgetItem(str(station.get('depth', 'N/A'))))
+            self.table_widget.setItem(row, 2, QTableWidgetItem(station['start'].strftime("%H:%M:%S")))
+            self.table_widget.setItem(row, 3, QTableWidgetItem(station['end'].strftime("%H:%M:%S")))
+            self.table_widget.setItem(row, 4, QTableWidgetItem(str(station['duration'])))
+
+            # TVD data
+            ahd = self.tvd_data.get('ahd_values', [])
+            tvd = self.tvd_data.get('tvd_values', [])
+            self.table_widget.setItem(row, 5, QTableWidgetItem(f"{ahd[row]:.2f}" if row < len(ahd) else "N/A"))
+            self.table_widget.setItem(row, 6, QTableWidgetItem(f"{tvd[row]:.2f}" if row < len(tvd) else "N/A"))
+
+            # Process gauge statistics
+            for col_offset, data, gauge_name in [
+                (7, top_data, 'top'),
+                (13, bottom_data, 'bottom')
+            ]:
+                if data is None:
+                    continue
+
+                times = data[:, 0].astype('datetime64[us]')
+                pressures = data[:, 1].astype(float)
+                temps = data[:, 2].astype(float)
+
+                start_dt = np.datetime64(station['start'])
+                end_dt = np.datetime64(station['end'])
+
+                mask = (times >= start_dt) & (times <= end_dt)
+                if not np.any(mask):
+                    stats = ["N/A"] * 6
+                else:
+                    p_slice = pressures[mask]
+                    t_slice = temps[mask]
+                    stats = [
+                        np.max(p_slice), np.min(p_slice), np.median(p_slice),
+                        np.max(t_slice), np.min(t_slice), np.median(t_slice)
+                    ]
+
+                for i, stat in enumerate(stats):
+                    item = QTableWidgetItem(f"{stat:.2f}" if isinstance(stat, float) else str(stat))
+                    self.table_widget.setItem(row, col_offset + i, item)
+
+        # Enable UI components
+        for btn in [self.copy_button, self.generate_as2_button, self.copy_graphs_button, self.process_data_button]:
+            btn.setEnabled(True)
+
+        self.table_widget.resizeColumnsToContents()
+
+    def set_button_success_feedback(self, button, success_text, success_icon, original_text, original_icon):
+        """Set button to success state and schedule reset"""
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #28a745;
+                color: white;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }}
+        """)
+        button.setIcon(QIcon(get_icon_path(success_icon)))
+        button.setText(success_text)
+
+        # Set timer to revert button after 3 seconds
+        QTimer.singleShot(3000, lambda: self.reset_button(button, original_text, original_icon))
+
+    def reset_button(self, button, original_text, original_icon):
+        """Revert button to original state"""
+        # Determine the appropriate style based on button type
+        if button == self.copy_button:
+            style = """
+                QPushButton {
+                    background-color: #3498db;
+                    color: white;
+                    border-radius: 5px;
+                    padding: 8px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #2980b9;
+                }
+                QPushButton:disabled {
+                    background-color: #cccccc;
+                    color: #888888;
+                }
+            """
+        elif button == self.copy_graphs_button:
+            style = """
+                QPushButton {
+                    background-color: #9b59b6;
+                    color: white;
+                    border-radius: 5px;
+                    padding: 8px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #8e44ad;
+                }
+                QPushButton:disabled {
+                    background-color: #cccccc;
+                    color: #888888;
+                }
+            """
+        else:
+            style = ""
+
+        button.setStyleSheet(style)
+        button.setIcon(QIcon(get_icon_path(original_icon)))
+        button.setText(original_text)
+
+    # Update the copy_statistics method
+    def copy_statistics(self):
+        """Copy pressure and temperature statistics to clipboard with visual feedback"""
+        clipboard = QApplication.clipboard()
+
+        # Get statistics data
+        stats_data = []
+        for row in range(self.table_widget.rowCount()):
+            row_data = []
+            for col in range(5, 19):  # Columns 5 to 18
+                item = self.table_widget.item(row, col)
+                row_data.append(item.text() if item else "")
+            stats_data.append("\t".join(row_data))
+
+        # Format as tab-separated values
+        text_data = "\n".join(stats_data)
+
+        # Set to clipboard
+        clipboard.setText(text_data)
+
+        # Show visual feedback
+        self.set_button_success_feedback(
+            self.copy_button,
+            "Copied!",
+            'check',
+            "Copy Statistics",
+            'copy'
+        )
+
+    # Update the copy_graphs method
+    def copy_graphs(self):
+        """Copy the current graphs to clipboard as an image"""
+        if not self.current_canvas:  # Check if canvas exists
+            QMessageBox.warning(self, "No Graphs", "No graphs available to copy")
+            return
+
+        try:
+            # Create a buffer to save the image
+            buf = io.BytesIO()
+            self.current_canvas.figure.savefig(buf, format='png', dpi=100)
+            buf.seek(0)
+
+            # Create QImage from buffer
+            image = QImage()
+            image.loadFromData(buf.getvalue(), 'PNG')
+
+            # Copy to clipboard
+            clipboard = QApplication.clipboard()
+            clipboard.setImage(image)
+
+            # Show visual feedback
+            self.set_button_success_feedback(
+                self.copy_graphs_button,
+                "Copied!",
+                'check',
+                "Copy Graphs",
+                'copy'
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to copy graphs:\n{str(e)}")
+
+    def toggle_theme(self):
+        self.current_theme = toggle_theme(
+            widget=self,
+            current_theme=self.current_theme,
+            theme_button=self.theme_button,
+            summary_widget=None
+        )
+
+    # Optimized template download methods
+    def _download_template(self, template_name, dialog_title, silent=False):
+        """Generic template download handler"""
+        try:
+            template_path = get_path(f"assets/resources/{template_name}")
+
+            if silent:
+                temp_path = os.path.join(tempfile.gettempdir(), os.path.basename(template_name))
+                shutil.copy(template_path, temp_path)
+                return temp_path
+
+            file_path, _ = QFileDialog.getSaveFileName(
+                self, dialog_title, os.path.basename(template_name), "Excel Files (*.xlsx)"
+            )
+
+            if file_path:
+                shutil.copy(template_path, file_path)
+                if not silent:
+                    MessageBoxWindow.message_simple(self, "Template Downloaded",f"Template saved to:\n{file_path}")
+                return file_path
+            return None
+
+        except Exception as e:
+            if not silent:
+                MessageBoxWindow.message_simple(self, "Error", f"Failed to download template:\n{str(e)}")
+            return None
+
+    def download_md_tvd_template(self):
+        """Download the MD-to-TVD template Excel file"""
+        return self._download_template(
+            "MD_TVD_Template.xlsx",
+            "Save MD-to-TVD Template"
+        )
+
+    def download_interpretation_template(self, silent=False):
+        """Download interpretation template, optionally return path without dialog"""
+        return self._download_template(
+            "Interpretation_Template.xlsx",
+            "Save Interpretation Template",
+            silent
+        )
+
+    def _get_template_path(self):
+        """Helper for template path handling"""
+        self.template_path = self.download_interpretation_template(silent=False)
+        return bool(self.template_path)
+
+    # Optimized data processing pipeline
+    def process_data(self):
+        """Streamlined data processing pipeline"""
+        try:
+            self._get_template_path()
+            self.copy_statistics()
+            self.paste_to_template(self.template_path)
+            self.generate_as2_files()
+
+            MessageBoxWindow.message_simple(self, "Processing Complete",
+                "Data processed successfully!\n\n"
+                f"Template saved as: {os.path.basename(self.template_path)}\n"
+                "AS2 files generated for both gauges")
+        except Exception as e:
+            QMessageBox.critical(self, "Processing Error", f"Failed to process data:\n{str(e)}")
+
+    # Optimized template pasting
+    def paste_to_template(self, template_path):
+        """Paste clipboard data to template starting at C13"""
+        try:
+            wb = openpyxl.load_workbook(template_path)
+            sheet = wb.active
+            clipboard = QApplication.clipboard()
+            rows = clipboard.text().split('\n')
+
+            for row_idx, row in enumerate(rows):
+                if not row.strip():
+                    continue
+
+                cells = row.split('\t')[:14]  # Only process first 14 columns
+                for col_idx, cell_value in enumerate(cells):
+                    try:
+                        value = float(cell_value)
+                    except ValueError:
+                        value = cell_value
+
+                    sheet.cell(
+                        row=13 + row_idx,
+                        column=3 + col_idx,
+                        value=value
+                    )
+
+            sheet.cell(row=3, column=3, value=f": {self.location}")
+            sheet.cell(row=4, column=3, value=f": {self.well}")
+            sheet.cell(row=4, column=18, value=self.sea_level)
+            sheet.cell(row=5, column=18, value=self.bdf)
+
+            wb.save(template_path)
+            return True
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Paste Error",
+                f"Failed to paste to template:\n{str(e)}"
+            )
+            return False
+
+    def add_event(self):
+        """Add a new event to the events list and table"""
+        time_val = self.event_time_edit.time()
+        time_str = time_val.toString("HH:mm:ss")
+        desc = self.event_desc_edit.text().strip()
+
+        if not desc:
+            QMessageBox.warning(self, "Missing Description", "Please enter an event description")
+            return
+
+        # Get last time from data
+        last_time = None
+        if self.top_data:
+            last_time = self.top_data[-1][0].time()
+        elif self.bottom_data:
+            last_time = self.bottom_data[-1][0].time()
+
+        # Validate time
+        if last_time and time_val > last_time:
+            QMessageBox.warning(
+                self,
+                "Invalid Time",
+                f"Event time exceeds last data point time ({last_time.toString('HH:mm:ss')})"
+            )
+            return
+
+        # Add to events list
+        self.events.append((time_str, desc))
+
+        # Add to table
+        row = self.event_table.rowCount()
+        self.event_table.insertRow(row)
+        self.event_table.setItem(row, 0, QTableWidgetItem(time_str))
+        self.event_table.setItem(row, 1, QTableWidgetItem(desc))
+
+        # Clear input fields
+        self.event_desc_edit.clear()
+
+        # Enable remove button
+        self.remove_event_btn.setEnabled(True)
+
+    def remove_event(self):
+        """Remove selected event from the events list and table"""
+        selected_row = self.event_table.currentRow()
+        if selected_row >= 0:
+            self.event_table.removeRow(selected_row)
+            del self.events[selected_row]
+
+            # Disable remove button if no events left
+            if not self.events:
+                self.remove_event_btn.setEnabled(False)
+
+    # Optimized file dialog handling
+    def open_file_dialog(self, file_type):
+        """Unified file dialog opener"""
+        file_types = {
+            'tvd': ("Open TVD Calculation File", "Excel Files (*.xls *.xlsx)"),
+            'top': ("Open Top Gauge Data File", "Text Files (*.txt)"),
+            'bottom': ("Open Bottom Gauge Data File", "Text Files (*.txt)"),
+            'timesheet': ("Open Survey Timesheet", "Excel Files (*.xls *.xlsx)")
+        }
+
+        title, file_filter = file_types.get(file_type, ("Open File", "All Files (*)"))
+        file_path, _ = QFileDialog.getOpenFileName(self, title, "", file_filter)
+
+        if file_path and hasattr(self.drag_drop_widget, 'set_file'):
+            self.drag_drop_widget.set_file(file_type, file_path)
+        return file_path
+
+    def save_file(self):
+        MessageBoxWindow.message_simple(self, "Save", "Save functionality will be implemented here")
+
+    def init_zoom_toolbar(self):
+        """Initialize zoom toolbar with reset button"""
+        # Create toolbar widget
+        self.toolbar_widget = QWidget()
+        toolbar_layout = QHBoxLayout(self.toolbar_widget)
+        toolbar_layout.setContentsMargins(0, 5, 0, 5)
+
+        # Reset zoom button
+        self.reset_zoom_btn = QPushButton("Reset Zoom")
+        self.reset_zoom_btn.setStyleSheet("""
+            QPushButton {
+                background-color: red;
+                border: 1px solid #aaa;
+                border-radius: 5px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: pink;
+            }
+        """)
+        self.reset_zoom_btn.setFixedHeight(30)
+        self.reset_zoom_btn.clicked.connect(self.reset_graph_zoom)
+        self.reset_zoom_btn.setEnabled(False)
+
+        # Add copy graphs button next to reset zoom
+        self.copy_graphs_button = QPushButton("Copy Graphs")
+        self.copy_graphs_button.setIcon(QIcon(get_icon_path('copy')))
+        self.copy_graphs_button.setStyleSheet("""
+            QPushButton {
+                background-color: #9b59b6;
+                color: white;
+                border-radius: 4px;
+                padding: 5px 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #8e44ad;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #888888;
+            }
+        """)
+        self.copy_graphs_button.clicked.connect(self.copy_graphs)
+        self.copy_graphs_button.setEnabled(False)  # Disabled until data is loaded
+
+        # Add to layout
+        toolbar_layout.addWidget(self.reset_zoom_btn)
+        toolbar_layout.addWidget(self.copy_graphs_button)
+        # toolbar_layout.addStretch()
+
+    # Add this method to SGSTXTApp
+    def reset_graph_zoom(self):
+        """Reset graph zoom to original view"""
+        if self.initial_x_lim:
+            ax_top = self.current_canvas.figure.axes[0]
+            ax_bottom = self.current_canvas.figure.axes[1]
+
+            ax_top.set_xlim(self.initial_x_lim)
+            ax_bottom.set_xlim(self.initial_x_lim)
+            self.current_canvas.draw_idle()
+            self.reset_zoom_btn.setEnabled(False)
+
+    # Add this method to SGSTXTApp
+    def on_horizontal_select(self, xmin, xmax):
+        """Handle horizontal zoom selection"""
+        ax_top = self.current_canvas.figure.axes[0]
+        ax_bottom = self.current_canvas.figure.axes[1]
+
+        ax_top.set_xlim(xmin, xmax)
+        ax_bottom.set_xlim(xmin, xmax)
+        self.current_canvas.draw_idle()
+        self.reset_zoom_btn.setEnabled(True)
+
+    def process_all_files(self, top_file_path, bottom_file_path, timesheet_file_path, tvd_file_path):
+        try:
+            self.top_file_path = top_file_path
+            self.bottom_file_path = bottom_file_path
+            self.timesheet_file_path = timesheet_file_path
+            self.tvd_file_path = tvd_file_path
+
+            # Process TVD file first
+            self.tvd_data = self.process_tvd_file(tvd_file_path)
+
+            # Process timesheet to get station timings
+            self.station_timings = self.process_excel_timesheet(timesheet_file_path)
+
+            # Process both gauge data files
+            self.top_data = self.process_sgs_txt_file(top_file_path)
+            self.bottom_data = self.process_sgs_txt_file(bottom_file_path)
+
+            # Reset events when processing new files
+            self.events = []
+            self.event_table.setRowCount(0)
+            self.remove_event_btn.setEnabled(False)
+
+            if self.top_data and self.bottom_data and self.station_timings and self.tvd_data:
+                # Show results screen
+                self.content_stack.setCurrentIndex(1)
+
+                # Create stacked graphs
+                self.show_stacked_graphs(top_file_path, bottom_file_path)
+
+                # Populate table with station timings and gauge data
+                self.populate_station_table()
+            else:
+                QMessageBox.critical(self, "Error", "Failed to process one or more files")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to process files:\n{str(e)}")
+
+    def process_tvd_file(self, file_path):
+        """Optimized TVD file processing with better validation"""
+        try:
+            lower_path = file_path.lower()
+            if lower_path.endswith('.xlsx'):
+                wb = openpyxl.load_workbook(file_path, data_only=True)
+                sheet = wb[wb.sheetnames[0]]
+            elif lower_path.endswith('.xls'):
+                wb = xlrd.open_workbook(file_path)
+                sheet = wb.sheet_by_index(0)
+            else:
+                QMessageBox.critical(self, "Error", "Unsupported TVD file format")
+                return {}
+
+            tvd_data = {
+                'ahd_values': [],
+                'tvd_values': []
+            }
+            self.bdf = self.get_cell_value(sheet, 1, 3)
+            self.sea_level = self.get_cell_value(sheet, 2, 3)
+            self.location = self.get_cell_value(sheet, 2, 8)
+            self.well = self.get_cell_value(sheet, 3, 8)
+
+            # Process rows more efficiently
+            for row in range(8, sheet.max_row if hasattr(sheet, 'max_row') else sheet.nrows):
+                ahd_val = self.parse_numeric_cell(self.get_cell_value(sheet, row, 2))
+                tvd_val = self.parse_numeric_cell(self.get_cell_value(sheet, row, 8))
+
+                if ahd_val is None and tvd_val is None:
+                    break
+
+                if ahd_val is not None:
+                    tvd_data['ahd_values'].append(ahd_val)
+                if tvd_val is not None:
+                    tvd_data['tvd_values'].append(tvd_val)
+
+            return tvd_data
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"TVD Processing Error:\n{str(e)}")
+            return {}
+
+    def get_cell_value(self, sheet, row, col):
+        """Unified cell value getter for different Excel formats"""
+        try:
+            if isinstance(sheet, openpyxl.worksheet.worksheet.Worksheet):
+                return sheet.cell(row=row+1, column=col+1).value
+            elif isinstance(sheet, xlrd.sheet.Sheet):
+                return sheet.cell_value(row, col)
+        except (IndexError, AttributeError):
+            return None
+
+    def parse_numeric_cell(self, value):
+        """Parse numeric cell value with error handling"""
+        if value is None:
+            return None
+        try:
+            if isinstance(value, str):
+                value = value.replace(',', '')
+            return float(value)
+        except (ValueError, TypeError):
+            return None
+
+    def generate_as2_files(self):
+        """Generate AS2 files for both top and bottom gauges"""
+        if not self.top_data or not self.bottom_data:
+            QMessageBox.warning(self, "No Data", "No gauge data available to generate AS2 files")
+            return
+
+        try:
+            top_as2_path = self.generate_as2_file(self.top_file_path, self.top_data)
+            bottom_as2_path = self.generate_as2_file(self.bottom_file_path, self.bottom_data)
+
+            if top_as2_path and bottom_as2_path:
+                QMessageBox.information(
+                    self,
+                    "Files Created",
+                    f"Successfully created AS2 files:\n\n"
+                    f"Top Gauge: {top_as2_path.split('/')[-1]}\n"
+                    f"Bottom Gauge: {bottom_as2_path.split('/')[-1]}",
+                    QMessageBox.StandardButton.Ok
+                )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to create AS2 files:\n{str(e)}")
+
+    def generate_as2_file(self, input_file_path, data):
+        """Generate AS2 formatted file from processed data with right-aligned columns"""
+        # Determine output file path
+        if input_file_path.endswith('.txt'):
+            output_file_path = input_file_path.replace('.txt', '.AS2')
+        else:
+            output_file_path = input_file_path + '.AS2'
+
+        if not data:
+            # Create empty file if no data
+            with open(output_file_path, 'w'):
+                pass
+            return output_file_path
+
+        # Create event lookup dictionary
+        event_dict = {time: desc for time, desc in self.events}
+
+        # Calculate column widths
+        max_pressure_width = max(len(f"{p:.2f}") for _, p, _ in data) if data else 0
+        max_temp_width = max(len(f"{t:.3f}") for _, _, t in data) if data else 0
+
+        with open(output_file_path, 'w') as f:
+            for dt, pressure, temperature in data:
+                date_str = dt.strftime("%d/%m/%Y")
+                time_str = dt.strftime("%H:%M:%S")
+
+                # Format numbers with fixed decimals and right-align
+                temp_str = f"{temperature:.2f}".rjust(max_temp_width)
+                pressure_str = f"{pressure:.3f}".rjust(max_pressure_width)
+
+                # Check if there's an event at this time
+                event_desc = event_dict.get(time_str, "")
+
+                # Format line with event if exists
+                line = f"{date_str}  {time_str}    {temp_str}     {pressure_str}  {event_desc}\n"
+                f.write(line)
+
+        return output_file_path
+
     def on_mouse_move(self, event):
         """Handle mouse movement over the graph"""
         if event.inaxes is None:
@@ -1389,183 +1736,3 @@ class SGSTXTApp(QWidget):
 
         # Redraw canvas
         self.cursor_vline_top.figure.canvas.draw_idle()
-
-    def populate_station_table(self):
-        self.table_widget.setRowCount(len(self.station_timings))
-
-        # Precompute station boundaries as datetimes
-        station_starts = [station['start'] for station in self.station_timings]
-        station_ends = [station['end'] for station in self.station_timings]
-
-        # Precompute data arrays
-        top_times = np.array([item[0] for item in self.top_data], dtype='datetime64[us]')
-        top_pressures = np.array([item[1] for item in self.top_data])
-        top_temps = np.array([item[2] for item in self.top_data])
-
-        bottom_times = np.array([item[0] for item in self.bottom_data], dtype='datetime64[us]')
-        bottom_pressures = np.array([item[1] for item in self.bottom_data])
-        bottom_temps = np.array([item[2] for item in self.bottom_data])
-
-        # Precompute TVD data
-        ahd_values = self.tvd_data.get('ahd_values', [])
-        tvd_values = self.tvd_data.get('tvd_values', [])
-
-        # Process each station
-        for row, station in enumerate(self.station_timings):
-            # Station info columns
-            station_item = QTableWidgetItem(station['station'])
-            self.table_widget.setItem(row, 0, station_item)
-
-            depth_item = QTableWidgetItem(str(station['depth']) if not pd.isna(station['depth']) else "N/A")
-            self.table_widget.setItem(row, 1, depth_item)
-
-            start_item = QTableWidgetItem(station['start'].strftime("%H:%M:%S"))
-            self.table_widget.setItem(row, 2, start_item)
-
-            end_item = QTableWidgetItem(station['end'].strftime("%H:%M:%S"))
-            self.table_widget.setItem(row, 3, end_item)
-
-            duration_item = QTableWidgetItem(str(station['duration']))
-            self.table_widget.setItem(row, 4, duration_item)
-
-            # Get AHD and TVD values if available
-            ahd_value = ahd_values[row] if row < len(ahd_values) else "N/A"
-            tvd_value = tvd_values[row] if row < len(tvd_values) else "N/A"
-
-            # Add to table
-            self.table_widget.setItem(row, 5, QTableWidgetItem(
-                f"{ahd_value:.2f}" if isinstance(ahd_value, float) else str(ahd_value)))
-            self.table_widget.setItem(row, 6, QTableWidgetItem(
-                f"{tvd_value:.2f}" if isinstance(tvd_value, float) else str(tvd_value)))
-
-            # Top gauge statistics - efficient time filtering
-            start_dt = np.datetime64(station['start'])
-            end_dt = np.datetime64(station['end'])
-
-            # Find indices using bisect
-            start_idx = bisect.bisect_left(top_times, start_dt)
-            end_idx = bisect.bisect_right(top_times, end_dt)
-
-            if start_idx < end_idx:
-                top_p_slice = top_pressures[start_idx:end_idx]
-                top_t_slice = top_temps[start_idx:end_idx]
-
-                # Vectorized calculations
-                high_p_top = np.max(top_p_slice)
-                low_p_top = np.min(top_p_slice)
-                med_p_top = np.median(top_p_slice)
-
-                high_t_top = np.max(top_t_slice)
-                low_t_top = np.min(top_t_slice)
-                med_t_top = np.median(top_t_slice)
-            else:
-                high_p_top = low_p_top = med_p_top = high_t_top = low_t_top = med_t_top = "N/A"
-
-            # Add to table
-            self.table_widget.setItem(row, 7, QTableWidgetItem(
-                f"{high_p_top:.2f}" if isinstance(high_p_top, float) else high_p_top))
-            self.table_widget.setItem(row, 8, QTableWidgetItem(
-                f"{low_p_top:.2f}" if isinstance(low_p_top, float) else low_p_top))
-            self.table_widget.setItem(row, 9, QTableWidgetItem(
-                f"{med_p_top:.2f}" if isinstance(med_p_top, float) else med_p_top))
-            self.table_widget.setItem(row, 10, QTableWidgetItem(
-                f"{high_t_top:.2f}" if isinstance(high_t_top, float) else high_t_top))
-            self.table_widget.setItem(row, 11, QTableWidgetItem(
-                f"{low_t_top:.2f}" if isinstance(low_t_top, float) else low_t_top))
-            self.table_widget.setItem(row, 12, QTableWidgetItem(
-                f"{med_t_top:.2f}" if isinstance(med_t_top, float) else med_t_top))
-
-            # Bottom gauge statistics - same efficient approach
-            start_idx = bisect.bisect_left(bottom_times, start_dt)
-            end_idx = bisect.bisect_right(bottom_times, end_dt)
-
-            if start_idx < end_idx:
-                bottom_p_slice = bottom_pressures[start_idx:end_idx]
-                bottom_t_slice = bottom_temps[start_idx:end_idx]
-
-                high_p_bottom = np.max(bottom_p_slice)
-                low_p_bottom = np.min(bottom_p_slice)
-                med_p_bottom = np.median(bottom_p_slice)
-
-                high_t_bottom = np.max(bottom_t_slice)
-                low_t_bottom = np.min(bottom_t_slice)
-                med_t_bottom = np.median(bottom_t_slice)
-            else:
-                high_p_bottom = low_p_bottom = med_p_bottom = high_t_bottom = low_t_bottom = med_t_bottom = "N/A"
-
-            # Add to table
-            self.table_widget.setItem(row, 13, QTableWidgetItem(
-                f"{high_p_bottom:.2f}" if isinstance(high_p_bottom, float) else high_p_bottom))
-            self.table_widget.setItem(row, 14, QTableWidgetItem(
-                f"{low_p_bottom:.2f}" if isinstance(low_p_bottom, float) else low_p_bottom))
-            self.table_widget.setItem(row, 15, QTableWidgetItem(
-                f"{med_p_bottom:.2f}" if isinstance(med_p_bottom, float) else med_p_bottom))
-            self.table_widget.setItem(row, 16, QTableWidgetItem(
-                f"{high_t_bottom:.2f}" if isinstance(high_t_bottom, float) else high_t_bottom))
-            self.table_widget.setItem(row, 17, QTableWidgetItem(
-                f"{low_t_bottom:.2f}" if isinstance(low_t_bottom, float) else low_t_bottom))
-            self.table_widget.setItem(row, 18, QTableWidgetItem(
-                f"{med_t_bottom:.2f}" if isinstance(med_t_bottom, float) else med_t_bottom))
-
-        # Enable buttons now that we have data
-        self.copy_button.setEnabled(True)
-        self.generate_as2_button.setEnabled(True)
-        self.copy_graphs_button.setEnabled(True)
-        self.table_widget.resizeColumnsToContents()
-
-    def copy_statistics(self):
-        """Copy pressure and temperature statistics to clipboard"""
-        clipboard = QApplication.clipboard()
-
-        # Get statistics data (columns 5-16)
-        stats_data = []
-        for row in range(self.table_widget.rowCount()):
-            row_data = []
-            for col in range(5, 19):  # Columns 5 to 16
-                item = self.table_widget.item(row, col)
-                row_data.append(item.text() if item else "")
-            stats_data.append("\t".join(row_data))
-
-        # Format as tab-separated values
-        text_data = "\n".join(stats_data)
-
-        # Set to clipboard
-        clipboard.setText(text_data)
-
-        # Show confirmation
-        QMessageBox.information(
-            self,
-            "Copied",
-            "All gauge statistics copied to clipboard!",
-            QMessageBox.StandardButton.Ok
-        )
-
-    def copy_graphs(self):
-        """Copy the current graphs to clipboard as an image"""
-        if not self.current_canvas:  # Check if canvas exists
-            QMessageBox.warning(self, "No Graphs", "No graphs available to copy")
-            return
-
-        try:
-            # Create a buffer to save the image
-            buf = io.BytesIO()
-            self.current_canvas.figure.savefig(buf, format='png', dpi=100)
-            buf.seek(0)
-
-            # Create QImage from buffer
-            image = QImage()
-            image.loadFromData(buf.getvalue(), 'PNG')
-
-            # Copy to clipboard
-            clipboard = QApplication.clipboard()
-            clipboard.setImage(image)
-
-            # Show confirmation
-            QMessageBox.information(
-                self,
-                "Copied",
-                "Graphs copied to clipboard!",
-                QMessageBox.StandardButton.Ok
-            )
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to copy graphs:\n{str(e)}")
