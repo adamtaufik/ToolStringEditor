@@ -1,3 +1,4 @@
+import bisect
 import datetime
 import io
 
@@ -18,11 +19,12 @@ from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 from utils.path_finder import get_icon_path
+from utils.styles import GROUPBOX_STYLE
 from utils.theme_manager import apply_theme, toggle_theme
 import re
 import matplotlib.dates as mdates
 from matplotlib.widgets import SpanSelector
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+
 
 class QuadrupleDragDropWidget(QWidget):
     def __init__(self, callback, parent=None):
@@ -61,6 +63,33 @@ class QuadrupleDragDropWidget(QWidget):
         layout.addWidget(
             self.create_group_box("TVD CALCULATION", self.tvd_drop, self.tvd_label, self.tvd_buttons), 1, 1)
 
+        # Process button and Clear All button
+        button_container = QWidget()
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Add Clear All button
+        self.clear_all_btn = QPushButton("Clear All")
+        self.clear_all_btn.setMinimumHeight(40)
+        self.clear_all_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                font-weight: bold;
+                border-radius: 5px;
+                padding: 8px;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #888888;
+            }
+        """)
+        self.clear_all_btn.clicked.connect(self.clear_all_files)
+        button_layout.addWidget(self.clear_all_btn)
+
         # Process button
         self.process_btn = QPushButton("Process Files")
         self.process_btn.setEnabled(False)
@@ -79,7 +108,9 @@ class QuadrupleDragDropWidget(QWidget):
             }
         """)
         self.process_btn.clicked.connect(self.process_files)
-        layout.addWidget(self.process_btn, 2, 0, 1, 2)
+        button_layout.addWidget(self.process_btn)
+
+        layout.addWidget(button_container, 2, 0, 1, 2)  # Replace the existing process_btn addWidget
 
         # Store file paths
         self.top_file_path = None
@@ -93,11 +124,13 @@ class QuadrupleDragDropWidget(QWidget):
         group_layout.addWidget(label)
         group_layout.addWidget(widget)
         group_layout.addLayout(buttons)
+        group.setStyleSheet(GROUPBOX_STYLE)
         return group
 
     def create_file_buttons(self, file_type):
         button_layout = QHBoxLayout()
 
+        # In create_file_buttons() method
         browse_btn = QPushButton("Browse")
         browse_btn.setStyleSheet("""
             QPushButton {
@@ -105,6 +138,7 @@ class QuadrupleDragDropWidget(QWidget):
                 border: 1px solid #aaa;
                 border-radius: 3px;
                 padding: 3px;
+                color: black;  /* Add this line to make font color black */
             }
             QPushButton:hover {
                 background-color: #e0e0e0;
@@ -154,6 +188,22 @@ class QuadrupleDragDropWidget(QWidget):
             self.tvd_clear_btn = clear_btn
 
         return button_layout
+
+    def clear_all_files(self):
+        """Clear all uploaded files and reset UI"""
+        self.clear_file("top")
+        self.clear_file("bottom")
+        self.clear_file("timesheet")
+        self.clear_file("tvd")
+
+        # Also reset any stored file paths
+        self.top_file_path = None
+        self.bottom_file_path = None
+        self.timesheet_file_path = None
+        self.tvd_file_path = None
+
+        # Disable process button
+        self.process_btn.setEnabled(False)
 
     def create_drop_area(self, text):
         drop_area = QLabel(text)
@@ -373,6 +423,7 @@ class QuadrupleDragDropWidget(QWidget):
                 self.tvd_file_path
             )
 
+
 class SGSTXTApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -480,6 +531,7 @@ class SGSTXTApp(QWidget):
 
         # Create group box for the table
         table_group = QGroupBox("Station Data")
+        table_group.setStyleSheet(GROUPBOX_STYLE)
         table_group_layout = QVBoxLayout(table_group)
 
         self.table_widget = QTableWidget()
@@ -515,6 +567,7 @@ class SGSTXTApp(QWidget):
 
         # Create event section
         event_group = QGroupBox("Events")
+        event_group.setStyleSheet(GROUPBOX_STYLE)
         event_layout = QGridLayout(event_group)
 
         # Event input fields
@@ -854,7 +907,7 @@ class SGSTXTApp(QWidget):
         try:
             # Use data_only=True to get computed values instead of formulas
             wb = openpyxl.load_workbook(file_path, data_only=True)
-            sheet = wb['Autofill']  # Use the 'Autofill' sheet
+            sheet = wb[wb.sheetnames[0]]
 
             # Extract metadata
             tvd_data = {
@@ -1048,6 +1101,7 @@ class SGSTXTApp(QWidget):
                 duration = df.iloc[i, 5]
                 start_time = df.iloc[i, 6]
                 end_time = df.iloc[i, 8]
+                print(start_time, '\t', end_time)
 
                 # Skip if any critical value is missing
                 if pd.isna(start_time) or pd.isna(end_time):
@@ -1065,6 +1119,7 @@ class SGSTXTApp(QWidget):
                 else:
                     end_time = str(end_time).strip().replace(':', '')[:4]
 
+                print(start_time, '\t\t', end_time)
                 # Create datetime objects
                 try:
                     start_dt = datetime.datetime.combine(
@@ -1338,6 +1393,24 @@ class SGSTXTApp(QWidget):
     def populate_station_table(self):
         self.table_widget.setRowCount(len(self.station_timings))
 
+        # Precompute station boundaries as datetimes
+        station_starts = [station['start'] for station in self.station_timings]
+        station_ends = [station['end'] for station in self.station_timings]
+
+        # Precompute data arrays
+        top_times = np.array([item[0] for item in self.top_data], dtype='datetime64[us]')
+        top_pressures = np.array([item[1] for item in self.top_data])
+        top_temps = np.array([item[2] for item in self.top_data])
+
+        bottom_times = np.array([item[0] for item in self.bottom_data], dtype='datetime64[us]')
+        bottom_pressures = np.array([item[1] for item in self.bottom_data])
+        bottom_temps = np.array([item[2] for item in self.bottom_data])
+
+        # Precompute TVD data
+        ahd_values = self.tvd_data.get('ahd_values', [])
+        tvd_values = self.tvd_data.get('tvd_values', [])
+
+        # Process each station
         for row, station in enumerate(self.station_timings):
             # Station info columns
             station_item = QTableWidgetItem(station['station'])
@@ -1355,87 +1428,90 @@ class SGSTXTApp(QWidget):
             duration_item = QTableWidgetItem(str(station['duration']))
             self.table_widget.setItem(row, 4, duration_item)
 
-            # Top gauge statistics
-            top_station_data = [
-                point for point in self.top_data
-                if station['start'] <= point[0] <= station['end']
-            ]
+            # Get AHD and TVD values if available
+            ahd_value = ahd_values[row] if row < len(ahd_values) else "N/A"
+            tvd_value = tvd_values[row] if row < len(tvd_values) else "N/A"
 
-            if top_station_data:
-                top_pressures = [item[1] for item in top_station_data]
-                top_temps = [item[2] for item in top_station_data]
+            # Add to table
+            self.table_widget.setItem(row, 5, QTableWidgetItem(
+                f"{ahd_value:.2f}" if isinstance(ahd_value, float) else str(ahd_value)))
+            self.table_widget.setItem(row, 6, QTableWidgetItem(
+                f"{tvd_value:.2f}" if isinstance(tvd_value, float) else str(tvd_value)))
 
-                # Pressure stats
-                high_p_top = max(top_pressures)
-                low_p_top = min(top_pressures)
-                med_p_top = np.median(top_pressures)
+            # Top gauge statistics - efficient time filtering
+            start_dt = np.datetime64(station['start'])
+            end_dt = np.datetime64(station['end'])
 
-                # Temperature stats
-                high_t_top = max(top_temps)
-                low_t_top = min(top_temps)
-                med_t_top = np.median(top_temps)
+            # Find indices using bisect
+            start_idx = bisect.bisect_left(top_times, start_dt)
+            end_idx = bisect.bisect_right(top_times, end_dt)
 
-                # Get AHD and TVD values if available
-                if row < len(self.tvd_data['ahd_values']):
-                    ahd_value = float(self.tvd_data['ahd_values'][row])
-                    tvd_value = float(self.tvd_data['tvd_values'][row])
-                else:
-                    ahd_value = "N/A"
-                    tvd_value = "N/A"
+            if start_idx < end_idx:
+                top_p_slice = top_pressures[start_idx:end_idx]
+                top_t_slice = top_temps[start_idx:end_idx]
 
-                # Add to table (columns 5 and 6)
-                self.table_widget.setItem(row, 5, QTableWidgetItem(f"{ahd_value:.2f}"))
-                self.table_widget.setItem(row, 6, QTableWidgetItem(f"{tvd_value:.2f}"))
+                # Vectorized calculations
+                high_p_top = np.max(top_p_slice)
+                low_p_top = np.min(top_p_slice)
+                med_p_top = np.median(top_p_slice)
 
-                # Add to table
-                self.table_widget.setItem(row, 7, QTableWidgetItem(f"{high_p_top:.2f}"))
-                self.table_widget.setItem(row, 8, QTableWidgetItem(f"{low_p_top:.2f}"))
-                self.table_widget.setItem(row, 9, QTableWidgetItem(f"{med_p_top:.2f}"))
-                self.table_widget.setItem(row, 10, QTableWidgetItem(f"{high_t_top:.2f}"))
-                self.table_widget.setItem(row, 11, QTableWidgetItem(f"{low_t_top:.2f}"))
-                self.table_widget.setItem(row, 12, QTableWidgetItem(f"{med_t_top:.2f}"))
+                high_t_top = np.max(top_t_slice)
+                low_t_top = np.min(top_t_slice)
+                med_t_top = np.median(top_t_slice)
             else:
-                for col in range(7, 13):
-                    self.table_widget.setItem(row, col, QTableWidgetItem("N/A"))
+                high_p_top = low_p_top = med_p_top = high_t_top = low_t_top = med_t_top = "N/A"
 
-            # Bottom gauge statistics
-            bottom_station_data = [
-                point for point in self.bottom_data
-                if station['start'] <= point[0] <= station['end']
-            ]
+            # Add to table
+            self.table_widget.setItem(row, 7, QTableWidgetItem(
+                f"{high_p_top:.2f}" if isinstance(high_p_top, float) else high_p_top))
+            self.table_widget.setItem(row, 8, QTableWidgetItem(
+                f"{low_p_top:.2f}" if isinstance(low_p_top, float) else low_p_top))
+            self.table_widget.setItem(row, 9, QTableWidgetItem(
+                f"{med_p_top:.2f}" if isinstance(med_p_top, float) else med_p_top))
+            self.table_widget.setItem(row, 10, QTableWidgetItem(
+                f"{high_t_top:.2f}" if isinstance(high_t_top, float) else high_t_top))
+            self.table_widget.setItem(row, 11, QTableWidgetItem(
+                f"{low_t_top:.2f}" if isinstance(low_t_top, float) else low_t_top))
+            self.table_widget.setItem(row, 12, QTableWidgetItem(
+                f"{med_t_top:.2f}" if isinstance(med_t_top, float) else med_t_top))
 
-            if bottom_station_data:
-                bottom_pressures = [item[1] for item in bottom_station_data]
-                bottom_temps = [item[2] for item in bottom_station_data]
+            # Bottom gauge statistics - same efficient approach
+            start_idx = bisect.bisect_left(bottom_times, start_dt)
+            end_idx = bisect.bisect_right(bottom_times, end_dt)
 
-                # Pressure stats
-                high_p_bottom = max(bottom_pressures)
-                low_p_bottom = min(bottom_pressures)
-                med_p_bottom = np.median(bottom_pressures)
+            if start_idx < end_idx:
+                bottom_p_slice = bottom_pressures[start_idx:end_idx]
+                bottom_t_slice = bottom_temps[start_idx:end_idx]
 
-                # Temperature stats
-                high_t_bottom = max(bottom_temps)
-                low_t_bottom = min(bottom_temps)
-                med_t_bottom = np.median(bottom_temps)
+                high_p_bottom = np.max(bottom_p_slice)
+                low_p_bottom = np.min(bottom_p_slice)
+                med_p_bottom = np.median(bottom_p_slice)
 
-                # Add to table
-                self.table_widget.setItem(row, 13, QTableWidgetItem(f"{high_p_bottom:.2f}"))
-                self.table_widget.setItem(row, 14, QTableWidgetItem(f"{low_p_bottom:.2f}"))
-                self.table_widget.setItem(row, 15, QTableWidgetItem(f"{med_p_bottom:.2f}"))
-                self.table_widget.setItem(row, 16, QTableWidgetItem(f"{high_t_bottom:.2f}"))
-                self.table_widget.setItem(row, 17, QTableWidgetItem(f"{low_t_bottom:.2f}"))
-                self.table_widget.setItem(row, 18, QTableWidgetItem(f"{med_t_bottom:.2f}"))
+                high_t_bottom = np.max(bottom_t_slice)
+                low_t_bottom = np.min(bottom_t_slice)
+                med_t_bottom = np.median(bottom_t_slice)
             else:
-                for col in range(13, 19):
-                    self.table_widget.setItem(row, col, QTableWidgetItem("N/A"))
+                high_p_bottom = low_p_bottom = med_p_bottom = high_t_bottom = low_t_bottom = med_t_bottom = "N/A"
+
+            # Add to table
+            self.table_widget.setItem(row, 13, QTableWidgetItem(
+                f"{high_p_bottom:.2f}" if isinstance(high_p_bottom, float) else high_p_bottom))
+            self.table_widget.setItem(row, 14, QTableWidgetItem(
+                f"{low_p_bottom:.2f}" if isinstance(low_p_bottom, float) else low_p_bottom))
+            self.table_widget.setItem(row, 15, QTableWidgetItem(
+                f"{med_p_bottom:.2f}" if isinstance(med_p_bottom, float) else med_p_bottom))
+            self.table_widget.setItem(row, 16, QTableWidgetItem(
+                f"{high_t_bottom:.2f}" if isinstance(high_t_bottom, float) else high_t_bottom))
+            self.table_widget.setItem(row, 17, QTableWidgetItem(
+                f"{low_t_bottom:.2f}" if isinstance(low_t_bottom, float) else low_t_bottom))
+            self.table_widget.setItem(row, 18, QTableWidgetItem(
+                f"{med_t_bottom:.2f}" if isinstance(med_t_bottom, float) else med_t_bottom))
 
         # Enable buttons now that we have data
         self.copy_button.setEnabled(True)
         self.generate_as2_button.setEnabled(True)
-        self.table_widget.resizeColumnsToContents()
-        # Enable the new button
         self.copy_graphs_button.setEnabled(True)
-
+        self.table_widget.resizeColumnsToContents()
 
     def copy_statistics(self):
         """Copy pressure and temperature statistics to clipboard"""
