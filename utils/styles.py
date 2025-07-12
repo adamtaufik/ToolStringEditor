@@ -95,22 +95,27 @@ DARK_STYLE = """
         color: #f0f0f0;
     }
 """
-
 DELEUM_STYLE = """
     QMainWindow, SGSFGSApp, SGSTXTApp, HydrostaticPressureApp, WirelineCalculatorApp, WirelineSimulatorApp {
-        background: #3d000f;
+        background: qlineargradient(
+            x1: 0, y1: 0,
+            x2: 1, y2: 1,
+            stop: 0 #4a0012,
+            stop: 1 #2b0008
+        );
     }
-    
+
     CustomTitleBar {
-    background-color: rgba(93, 0, 20, 0.3); /* Deep wine tint */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        background-color: rgba(93, 0, 20, 0.3); /* Deep wine tint */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
-            
+
     QTabWidget::pane {
         border: 1px solid #76797C;
         background: rgba(45, 45, 45, 230);
         border-radius: 4px;
     }
+
     QTabBar::tab {
         background: rgba(65, 65, 65, 230);
         color: white;
@@ -120,10 +125,12 @@ DELEUM_STYLE = """
         border-top-left-radius: 4px;
         border-top-right-radius: 4px;
     }
+
     QTabBar::tab:selected {
         background: rgba(85, 85, 85, 230);
         border-color: #76797C;
     }
+
     QTabBar::tab:!selected {
         margin-top: 2px;
     }
@@ -142,6 +149,7 @@ DELEUM_STYLE = """
         padding: 5px;
         font-weight: bold;
     }
+
     QToolButton:hover {
         background-color: #750024;
         color: white;
@@ -187,7 +195,6 @@ DELEUM_STYLE = """
     QLabel {
         color: white; 
     }
-
 """
 
 MESSAGEBOX_STYLE = """
@@ -369,6 +376,67 @@ GROUPBOX_STYLE = """
                 padding: 0 3px;
             }
             """
+MODERN_GROUPBOX_STYLE = """
+QGroupBox {{
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: {text_color};
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    margin-top: 5px;
+    padding: 25px 0px 0px 0px; /* Top padding added to make space for title */
+}}
+
+QGroupBox::title {{
+    background-color: transparent;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 0px;
+    margin: 10px;
+}}
+
+QGroupBox::frame {{
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 rgba(255, 255, 255, 0.2),
+        stop: 1 rgba(255, 255, 255, 0.05)
+    );
+    border-radius: 10px;
+}}
+"""
+
+TEMPLATE_BUTTON = """
+            QPushButton {
+                background-color: #17a2b8;
+                color: white;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #138496;
+            }
+        """
+
+ACTION_BUTTON = """
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #888888;
+            }
+"""
 
 CHECKBOX_STYLE = """
             QCheckBox {
