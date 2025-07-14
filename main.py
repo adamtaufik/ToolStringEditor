@@ -1,9 +1,10 @@
 import os
 import sys
 import time
+from datetime import datetime
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QSplashScreen
+from PyQt6.QtWidgets import QApplication, QSplashScreen, QMessageBox
 from PyQt6.QtGui import QFont, QPixmap, QIcon
 
 from ui.windows.ui_start_window import StartWindow
@@ -24,6 +25,7 @@ class InitializationManager:
         self.total_tasks = len(self.tasks)
         self.timer = QTimer()
         self.timer.timeout.connect(self.process_tasks)
+
 
     def start_initialization(self):
         self.timer.start(50)  # Update every 50ms
@@ -67,12 +69,30 @@ if __name__ == "__main__":
     splash_font = QFont("Roboto", 12)
     splash.setFont(splash_font)
 
-    # Initialize and start loading process
+    # Trial expiration check (done before creating StartWindow)
+    expiration_date = datetime(2025, 7, 31)
+    today = datetime.today()
+    days_left = (expiration_date - today).days
+
+    if days_left >= 0:
+        QMessageBox.information(
+            splash,
+            "Free Trial",
+            f"This free trial is valid until {expiration_date.strftime('%d %B %Y')}.\n"
+            f"Days remaining: {days_left} day(s)."
+        )
+    else:
+        QMessageBox.critical(
+            splash,
+            "Trial Expired",
+            "The free trial period has ended.\nPlease contact support (Adam) to continue using the app."
+        )
+        sys.exit(0)
+
+    # Set font and begin initialization
+    app.setFont(QFont("Roboto", 10))
     init_manager = InitializationManager(splash)
     init_manager.start_initialization()
-
-    # Set application font while loading
-    app.setFont(QFont("Roboto", 10))
 
     # Create main window
     window = StartWindow(app_icon=app_icon)
@@ -81,7 +101,6 @@ if __name__ == "__main__":
     while init_manager.timer.isActive():
         app.processEvents()
 
-    # Show main window and clean up
     splash.finish(window)
     window.show()
 

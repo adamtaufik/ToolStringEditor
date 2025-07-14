@@ -13,11 +13,11 @@ import xlrd
 import matplotlib.dates as mdates
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.widgets import SpanSelector
-from PyQt6.QtCore import Qt, QTimer, QSize
+from PyQt6.QtCore import Qt, QTimer, QSize, QObject, QEvent, QDate
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QImage, QIcon
 from PyQt6.QtWidgets import (
-    QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog,QTableWidget, QTableWidgetItem, QHBoxLayout, QApplication,
-    QSplitter, QGridLayout, QGroupBox, QStackedWidget, QTimeEdit, QLineEdit, QToolButton, QFrame
+    QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QTableWidgetItem, QHBoxLayout, QApplication,
+    QSplitter, QGridLayout, QGroupBox, QStackedWidget, QTimeEdit, QLineEdit, QToolButton, QFrame, QDateEdit
 )
 
 # Local imports
@@ -26,7 +26,7 @@ from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 from utils.path_finder import get_icon_path, get_path
-from utils.styles import GROUPBOX_STYLE, MODERN_GROUPBOX_STYLE, TEMPLATE_BUTTON, ACTION_BUTTON
+from utils.styles import GROUPBOX_STYLE, MODERN_GROUPBOX_STYLE, TEMPLATE_BUTTON, ACTION_BUTTON, DELETE_BUTTON
 from utils.theme_manager import apply_theme, toggle_theme
 
 
@@ -320,6 +320,15 @@ class QuadrupleDragDropWidget(QWidget):
                 self.file_types["tvd"]["file_path"]
             )
 
+class HoverCursorFilter(QObject):
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.Enter:
+            QApplication.setOverrideCursor(Qt.CursorShape.PointingHandCursor)
+            return True
+        elif event.type() == QEvent.Type.Leave:
+            QApplication.restoreOverrideCursor()
+            return True
+        return super().eventFilter(obj, event)
 
 class SGSTXTApp(QWidget):
     def __init__(self):
@@ -400,7 +409,6 @@ class SGSTXTApp(QWidget):
         # Group Box: Template Downloads
         template_group = QGroupBox("Download Blank Templates")
         template_layout = QVBoxLayout(template_group)
-        template_group.setFixedWidth(200)
         template_layout.setSpacing(8)
 
         download_template_button = QPushButton("Interpretation")
@@ -413,12 +421,46 @@ class SGSTXTApp(QWidget):
         download_md_tvd_button.setStyleSheet(TEMPLATE_BUTTON)
         download_md_tvd_button.clicked.connect(self.download_md_tvd_template)
 
+        download_timesheet_button = QPushButton("Timesheet")
+        download_timesheet_button.setIcon(QIcon(get_icon_path('download')))
+        download_timesheet_button.setStyleSheet(TEMPLATE_BUTTON)
+        download_timesheet_button.clicked.connect(self.download_timesheet_template)
+
         template_layout.addWidget(download_template_button)
         template_layout.addWidget(download_md_tvd_button)
+        template_layout.addWidget(download_timesheet_button)
+
+        instruction_group = QGroupBox("Quick Guide")
+        instruction_layout = QVBoxLayout(instruction_group)
+
+        # Define your steps
+        instruction_steps = [
+            ("Step 1:", "Open PPS SmartView and convert raw (.rec) files into .txt files"),
+            ("Step 2:", "Download and fill in the TVD Calculation template"),
+            ("Step 3:", "Drag and drop Top Gauge and Bottom Gauge .txt files"),
+            ("Step 4:", "Drag and drop filled TVD Calculation file"),
+            ("Step 5:", "Drag and drop Time Sheet"),
+            ("Step 6:", "Click 'Process Files'")
+        ]
+
+        # Hanging indent CSS
+        style = """
+        <div style='margin-left: 0px; text-indent: -45px; margin-left: 45px; font-family: "Segoe UI", sans-serif; font-size: 14px; line-height: 1.5; color: white;'>
+            <i>{step}</i> {desc}
+        </div>
+        """
+
+        for step, desc in instruction_steps:
+            label = QLabel()
+            label.setTextFormat(Qt.TextFormat.RichText)
+            label.setText(style.format(step=step, desc=desc))
+            label.setWordWrap(True)
+            instruction_layout.addWidget(label)
 
         # Add group box to layout
-        templates_layout.addStretch()
+        # templates_layout.addStretch()
         templates_layout.addWidget(template_group)
+        templates_layout.addWidget(instruction_group)
         templates_layout.addStretch()
 
         # Add templates section to file upload layout
@@ -433,6 +475,7 @@ class SGSTXTApp(QWidget):
             accent_color=current_style["accent_color"]
         )
         template_group.setStyleSheet(style)
+        instruction_group.setStyleSheet(style)
 
         # Footer
         self.footer = FooterWidget(self, theme_callback=self.toggle_theme)
@@ -614,10 +657,17 @@ class SGSTXTApp(QWidget):
         self.event_time_edit = QTimeEdit()
         self.event_time_edit.setDisplayFormat("HH:mm:ss")
 
+        # Event date input
+        self.event_date_edit = QDateEdit()
+        self.event_date_edit.setCalendarPopup(True)
+        self.event_date_edit.setDisplayFormat("dd/MM/yyyy")
+        self.event_date_edit.setDate(QDate.currentDate())
+
         self.event_desc_edit = QLineEdit()
         self.event_desc_edit.setPlaceholderText("Enter event description")
 
         self.add_event_btn = QPushButton("Add Event")
+        self.add_event_btn.setIcon(QIcon(get_icon_path('add')))
         self.add_event_btn.clicked.connect(self.add_event)
         self.add_event_btn.setStyleSheet("""
             QPushButton {
@@ -632,21 +682,9 @@ class SGSTXTApp(QWidget):
         """)
 
         self.remove_event_btn = QPushButton("Remove Selected")
+        self.remove_event_btn.setIcon(QIcon(get_icon_path('remove')))
         self.remove_event_btn.clicked.connect(self.remove_event)
-        self.remove_event_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #d9534f;
-                color: white;
-                border-radius: 4px;
-                padding: 5px;
-            }
-            QPushButton:hover {
-                background-color: #c9302c;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
+        self.remove_event_btn.setStyleSheet(DELETE_BUTTON)
 
         # Event table
         self.event_table = QTableWidget(0, 2)
@@ -655,11 +693,15 @@ class SGSTXTApp(QWidget):
         self.event_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
 
         # Add widgets to layout
-        event_layout.addWidget(QLabel("Time:"), 0, 0)
-        event_layout.addWidget(self.event_time_edit, 0, 1)
+        event_layout.addWidget(QLabel("Date:"), 0, 0)
+        event_layout.addWidget(self.event_date_edit, 0, 1)
+
+        event_layout.addWidget(QLabel("Time:"), 0, 2)
+        event_layout.addWidget(self.event_time_edit, 0, 3)
+        event_layout.addWidget(self.add_event_btn, 0, 5)
+
         event_layout.addWidget(QLabel("Description:"), 1, 0)
         event_layout.addWidget(self.event_desc_edit, 1, 1, 1, 4)
-        event_layout.addWidget(self.add_event_btn, 0, 5)
         event_layout.addWidget(self.remove_event_btn, 1, 5)
         event_layout.addWidget(self.event_table, 2, 0, 2, 6)
 
@@ -735,59 +777,137 @@ class SGSTXTApp(QWidget):
         action_group.setStyleSheet(style)
         event_group.setStyleSheet(style)
 
+        # Create toolbar widget for graphs
+        self.toolbar_widget = QWidget()
+        toolbar_layout = QHBoxLayout(self.toolbar_widget)
+        toolbar_layout.setContentsMargins(0, 5, 0, 5)
+
+        # Reset zoom button
+        self.reset_zoom_btn = QPushButton("Reset Zoom")
+        self.reset_zoom_btn.setIcon(QIcon(get_icon_path('unzoom')))
+        self.reset_zoom_btn.setStyleSheet(DELETE_BUTTON)
+        self.reset_zoom_btn.setFixedHeight(30)
+        self.reset_zoom_btn.clicked.connect(self.reset_graph_zoom)
+        self.reset_zoom_btn.setEnabled(False)
+
+        # Copy graphs button
+        self.copy_graphs_button = QPushButton("Copy Graphs")
+        self.copy_graphs_button.setIcon(QIcon(get_icon_path('copy')))
+        self.copy_graphs_button.setStyleSheet("""
+            QPushButton {
+                background-color: #9b59b6;
+                color: white;
+                border-radius: 4px;
+                padding: 5px 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #8e44ad;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #888888;
+            }
+        """)
+        self.copy_graphs_button.clicked.connect(self.copy_graphs)
+        self.copy_graphs_button.setEnabled(False)
+
+        # Add to layout
+        toolbar_layout.addWidget(self.reset_zoom_btn)
+        toolbar_layout.addWidget(self.copy_graphs_button)
+
         # Apply theme after UI is set up
         apply_theme(self, self.current_theme)
 
-    def _download_template(self, template_name, dialog_title, silent=False):
-        """Generic template download handler with TVD directory as default"""
+        # Create cursor filter
+        self.cursor_filter = HoverCursorFilter()
+
+        # Apply to all buttons
+        for widget in self.findChildren(QPushButton) + self.findChildren(QToolButton):
+            widget.installEventFilter(self.cursor_filter)
+
+    def add_event(self):
         try:
-            template_path = get_path(f"assets/resources/{template_name}")
+            desc = self.event_desc_edit.text().strip()
+            if not desc:
+                MessageBoxWindow.message_simple(self, "Missing Description", "Please enter an event description",
+                                                "warning")
+                return
 
-            if silent:
-                temp_path = os.path.join(tempfile.gettempdir(), os.path.basename(template_name))
-                shutil.copy(template_path, temp_path)
-                return temp_path
+            base_date = self.event_date_edit.date().toPyDate()
+            time_val = self.event_time_edit.time().toPyTime()
+            event_datetime = datetime.datetime.combine(base_date, time_val)
 
-            # Set default directory to TVD file location if available
-            default_dir = ""
-            if hasattr(self, 'tvd_file_path') and self.tvd_file_path:
-                default_dir = os.path.dirname(self.tvd_file_path)
-            else:
-                default_dir = os.getcwd()
+            self.events.append((event_datetime, desc))
 
-            file_path, _ = QFileDialog.getSaveFileName(
-                self,
-                dialog_title,
-                os.path.join(default_dir, os.path.basename(template_name)),
-                "Excel Files (*.xlsx)"
-            )
+            row = self.event_table.rowCount()
+            self.event_table.insertRow(row)
+            self.event_table.setItem(row, 0, QTableWidgetItem(event_datetime.strftime("%Y-%m-%d %H:%M:%S")))
+            self.event_table.setItem(row, 1, QTableWidgetItem(desc))
 
-            if file_path:
-                shutil.copy(template_path, file_path)
-                if not silent:
-                    MessageBoxWindow.message_simple(self, "Template Downloaded", f"Template saved to:\n{file_path}")
-                return file_path
-            return None
-
+            self.event_desc_edit.clear()
+            self.remove_event_btn.setEnabled(True)
         except Exception as e:
-            if not silent:
-                MessageBoxWindow.message_simple(self, "Error", f"Failed to download template:\n{str(e)}")
-            return None
+            print(e)
 
-    def download_md_tvd_template(self):
-        """Download the MD-to-TVD template Excel file"""
-        return self._download_template(
-            "MD_TVD_Template.xlsx",
-            "Save MD-to-TVD Template"
-        )
+    def generate_as2_files(self):
+        """Generate AS2 files for both top and bottom gauges"""
+        if not self.top_data or not self.bottom_data:
+            MessageBoxWindow.message_simple(self, "No Data", "No gauge data available to generate AS2 files", "warning")
+            return
 
-    def download_interpretation_template(self, silent=False):
-        """Download interpretation template, optionally return path without dialog"""
-        return self._download_template(
-            "Interpretation_Template.xlsx",
-            "Save Interpretation Template",
-            silent
-        )
+        try:
+            top_as2_path = self.generate_as2_file(self.top_file_path, self.top_data)
+            bottom_as2_path = self.generate_as2_file(self.bottom_file_path, self.bottom_data)
+
+            if top_as2_path and bottom_as2_path:
+                MessageBoxWindow.message_simple(
+                    self,
+                    "Files Created",
+                    f"Successfully created AS2 files:\n\n"
+                    f"Top Gauge: {top_as2_path.split('/')[-1]}\n"
+                    f"Bottom Gauge: {bottom_as2_path.split('/')[-1]}",
+                    "check_green")
+        except Exception as e:
+            MessageBoxWindow.message_simple(self, "Error", f"Failed to create AS2 files:\n{str(e)}", "warning")
+
+    def generate_as2_file(self, input_file_path, data):
+        """Generate AS2 formatted file from processed data with right-aligned columns"""
+        # Determine output file path
+        if input_file_path.endswith('.txt'):
+            output_file_path = input_file_path.replace('.txt', '.AS2')
+        else:
+            output_file_path = input_file_path + '.AS2'
+
+        if not data:
+            # Create empty file if no data
+            with open(output_file_path, 'w'):
+                pass
+            return output_file_path
+
+        # Create event lookup dictionary
+        event_dict = {dt.strftime("%Y-%m-%d %H:%M:%S"): desc for dt, desc in self.events}
+
+
+        # Calculate column widths
+        max_pressure_width = max(len(f"{p:.2f}") for _, p, _ in data) if data else 0
+        max_temp_width = max(len(f"{t:.3f}") for _, _, t in data) if data else 0
+
+        with open(output_file_path, 'w') as f:
+            for dt, pressure, temperature in data:
+                date_str = dt.strftime("%d/%m/%Y")
+                time_str = dt.strftime("%H:%M:%S")
+                datetime_str = dt.strftime("%Y-%m-%d %H:%M:%S")
+
+                temp_str = f"{temperature:.2f}".rjust(max_temp_width)
+                pressure_str = f"{pressure:.3f}".rjust(max_pressure_width)
+
+                event_desc = event_dict.get(datetime_str, "")
+                line = f"{date_str}  {time_str}    {temp_str}     {pressure_str}  {event_desc}\n"
+                f.write(line)
+
+        return output_file_path
+
 
     def show_stacked_graphs(self, top_file_path, bottom_file_path):
         # Clear previous graph
@@ -922,9 +1042,6 @@ class SGSTXTApp(QWidget):
         # Initialize span selectors for both graphs
         self.init_span_selectors(ax_top, ax_bottom)
 
-        # Initialize zoom toolbar
-        self.init_zoom_toolbar()
-
         # Add canvas and toolbar to layout
         canvas = FigureCanvas(fig)
         canvas.setStyleSheet("background-color: transparent;")
@@ -950,6 +1067,66 @@ class SGSTXTApp(QWidget):
 
         self.current_canvas = canvas
         canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
+
+
+    def _download_template(self, template_name, dialog_title, silent=False):
+        """Generic template download handler with TVD directory as default"""
+        try:
+            template_path = get_path(f"assets/resources/{template_name}")
+
+            if silent:
+                temp_path = os.path.join(tempfile.gettempdir(), os.path.basename(template_name))
+                shutil.copy(template_path, temp_path)
+                return temp_path
+
+            # Set default directory to TVD file location if available
+            default_dir = ""
+            if hasattr(self, 'tvd_file_path') and self.tvd_file_path:
+                default_dir = os.path.dirname(self.tvd_file_path)
+            else:
+                default_dir = os.getcwd()
+
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                dialog_title,
+                os.path.join(default_dir, os.path.basename(template_name)),
+                "Excel Files (*.xlsx)"
+            )
+
+            if file_path:
+                shutil.copy(template_path, file_path)
+                if not silent:
+                    MessageBoxWindow.message_simple(self, "Template Downloaded", f"Template saved to:\n{file_path}")
+                return file_path
+            return None
+
+        except Exception as e:
+            if not silent:
+                MessageBoxWindow.message_simple(self, "Error", f"Failed to download template:\n{str(e)}")
+            return None
+
+    def download_md_tvd_template(self):
+        """Download the MD-to-TVD template Excel file"""
+        return self._download_template(
+            "MD_TVD_Template.xlsx",
+            "Save MD-to-TVD Template"
+        )
+
+
+    def download_timesheet_template(self):
+        """Download the MD-to-TVD template Excel file"""
+        return self._download_template(
+            "Timesheet_Template.xlsx",
+            "Save Timesheet Template"
+        )
+
+    def download_interpretation_template(self, silent=False):
+        """Download interpretation template, optionally return path without dialog"""
+        return self._download_template(
+            "Interpretation_Template.xlsx",
+            "Save Interpretation Template",
+            silent
+        )
 
     def _get_template_path(self):
         """Helper for template path handling"""
@@ -1080,59 +1257,6 @@ class SGSTXTApp(QWidget):
             MessageBoxWindow.message_simple(self, "Paste Error", f"Failed to paste to template:\n{str(e)}", "warning")
             return False
 
-    def init_zoom_toolbar(self):
-        """Initialize zoom toolbar with reset button"""
-        # Create toolbar widget
-        self.toolbar_widget = QWidget()
-        toolbar_layout = QHBoxLayout(self.toolbar_widget)
-        toolbar_layout.setContentsMargins(0, 5, 0, 5)
-
-        # Reset zoom button
-        self.reset_zoom_btn = QPushButton("Reset Zoom")
-        self.reset_zoom_btn.setIcon(QIcon(get_icon_path('unzoom')))
-        self.reset_zoom_btn.setStyleSheet("""
-            QPushButton {
-                background-color: red;
-                color: white;
-                border-radius: 4px;
-                padding: 5px 10px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: pink;
-            }
-        """)
-        self.reset_zoom_btn.setFixedHeight(30)
-        self.reset_zoom_btn.clicked.connect(self.reset_graph_zoom)
-        self.reset_zoom_btn.setEnabled(False)
-
-        # Add copy graphs button next to reset zoom
-        self.copy_graphs_button = QPushButton("Copy Graphs")
-        self.copy_graphs_button.setIcon(QIcon(get_icon_path('copy')))
-        self.copy_graphs_button.setStyleSheet("""
-            QPushButton {
-                background-color: #9b59b6;
-                color: white;
-                border-radius: 4px;
-                padding: 5px 10px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #8e44ad;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-                color: #888888;
-            }
-        """)
-        self.copy_graphs_button.clicked.connect(self.copy_graphs)
-        self.copy_graphs_button.setEnabled(False)  # Disabled until data is loaded
-
-        # Add to layout
-        toolbar_layout.addWidget(self.reset_zoom_btn)
-        toolbar_layout.addWidget(self.copy_graphs_button)
-
-
     # Add this helper method to the class
     def set_button_success_feedback(self, button, success_text, success_icon, original_text, original_icon):
         """Set button to success state and schedule reset"""
@@ -1235,43 +1359,6 @@ class SGSTXTApp(QWidget):
             theme_button=self.theme_button,
             summary_widget=None
         )
-
-    def add_event(self):
-        """Add a new event to the events list and table"""
-        time_val = self.event_time_edit.time()
-        time_str = time_val.toString("HH:mm:ss")
-        desc = self.event_desc_edit.text().strip()
-
-        if not desc:
-            MessageBoxWindow.message_simple(self, "Missing Description", "Please enter an event description", "warning")
-            return
-
-        # Get last time from data
-        last_time = None
-        if self.top_data:
-            last_time = self.top_data[-1][0].time()
-        elif self.bottom_data:
-            last_time = self.bottom_data[-1][0].time()
-
-        # Validate time
-        if last_time and time_val > last_time:
-            MessageBoxWindow.message_simple(self,"Invalid Time",f"Event time exceeds last data point time ({last_time.toString('HH:mm:ss')})", "warning")
-            return
-
-        # Add to events list
-        self.events.append((time_str, desc))
-
-        # Add to table
-        row = self.event_table.rowCount()
-        self.event_table.insertRow(row)
-        self.event_table.setItem(row, 0, QTableWidgetItem(time_str))
-        self.event_table.setItem(row, 1, QTableWidgetItem(desc))
-
-        # Clear input fields
-        self.event_desc_edit.clear()
-
-        # Enable remove button
-        self.remove_event_btn.setEnabled(True)
 
     def remove_event(self):
         """Remove selected event from the events list and table"""
@@ -1394,6 +1481,9 @@ class SGSTXTApp(QWidget):
             self.sea_level_label.setText("Sea Level\t: " + str(self.sea_level) + " ft")
             self.date_label.setText("Date of Survey\t: " + self.date.strftime("%d/%m/%Y"))
 
+            if hasattr(self, 'event_date_edit'):  # If UI is already created
+                self.event_date_edit.setDate(QDate(self.date))
+
             for row in range(8, sheet.max_row if hasattr(sheet, 'max_row') else sheet.nrows):
                 ahd_val = self.parse_numeric_cell(self.get_cell_value(sheet, row, 2))
                 tvd_val = self.parse_numeric_cell(self.get_cell_value(sheet, row, 8))
@@ -1432,66 +1522,6 @@ class SGSTXTApp(QWidget):
             return float(value)
         except (ValueError, TypeError):
             return None
-
-    def generate_as2_files(self):
-        """Generate AS2 files for both top and bottom gauges"""
-        if not self.top_data or not self.bottom_data:
-            MessageBoxWindow.message_simple(self, "No Data", "No gauge data available to generate AS2 files", "warning")
-            return
-
-        try:
-            top_as2_path = self.generate_as2_file(self.top_file_path, self.top_data)
-            bottom_as2_path = self.generate_as2_file(self.bottom_file_path, self.bottom_data)
-
-            if top_as2_path and bottom_as2_path:
-                MessageBoxWindow.message_simple(
-                    self,
-                    "Files Created",
-                    f"Successfully created AS2 files:\n\n"
-                    f"Top Gauge: {top_as2_path.split('/')[-1]}\n"
-                    f"Bottom Gauge: {bottom_as2_path.split('/')[-1]}",
-                    "check_green")
-        except Exception as e:
-            MessageBoxWindow.message_simple(self, "Error", f"Failed to create AS2 files:\n{str(e)}", "warning")
-
-    def generate_as2_file(self, input_file_path, data):
-        """Generate AS2 formatted file from processed data with right-aligned columns"""
-        # Determine output file path
-        if input_file_path.endswith('.txt'):
-            output_file_path = input_file_path.replace('.txt', '.AS2')
-        else:
-            output_file_path = input_file_path + '.AS2'
-
-        if not data:
-            # Create empty file if no data
-            with open(output_file_path, 'w'):
-                pass
-            return output_file_path
-
-        # Create event lookup dictionary
-        event_dict = {time: desc for time, desc in self.events}
-
-        # Calculate column widths
-        max_pressure_width = max(len(f"{p:.2f}") for _, p, _ in data) if data else 0
-        max_temp_width = max(len(f"{t:.3f}") for _, _, t in data) if data else 0
-
-        with open(output_file_path, 'w') as f:
-            for dt, pressure, temperature in data:
-                date_str = dt.strftime("%d/%m/%Y")
-                time_str = dt.strftime("%H:%M:%S")
-
-                # Format numbers with fixed decimals and right-align
-                temp_str = f"{temperature:.2f}".rjust(max_temp_width)
-                pressure_str = f"{pressure:.3f}".rjust(max_pressure_width)
-
-                # Check if there's an event at this time
-                event_desc = event_dict.get(time_str, "")
-
-                # Format line with event if exists
-                line = f"{date_str}  {time_str}    {temp_str}     {pressure_str}  {event_desc}\n"
-                f.write(line)
-
-        return output_file_path
 
     def process_sgs_txt_file(self, file_path):
         try:
@@ -1647,8 +1677,23 @@ class SGSTXTApp(QWidget):
 
                 # Create datetime objects
                 try:
-                    start_dt = datetime.datetime.combine(date_value, start_time_obj)
-                    end_dt = datetime.datetime.combine(date_value, end_time_obj)
+                    # Track date rollover
+                    if 'current_date' not in locals():
+                        current_date = date_value
+                        previous_time = start_time_obj
+                    else:
+                        # If the current start time is earlier than previous, it's likely past midnight
+                        if start_time_obj < previous_time:
+                            current_date += datetime.timedelta(days=1)
+                        previous_time = start_time_obj
+
+                    start_dt = datetime.datetime.combine(current_date, start_time_obj)
+                    end_dt = datetime.datetime.combine(current_date, end_time_obj)
+
+                    # If end time is earlier than start time, it rolled past midnight too
+                    if end_dt < start_dt:
+                        end_dt += datetime.timedelta(days=1)
+
                 except Exception as e:
                     print(f"Error creating datetime: {e}")
                     i += 1

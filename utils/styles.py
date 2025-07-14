@@ -438,6 +438,21 @@ ACTION_BUTTON = """
             }
 """
 
+DELETE_BUTTON = """
+            QPushButton {
+                background-color: #d9534f;
+                color: white;
+                border-radius: 4px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #c9302c;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+            }
+        """
+
 CHECKBOX_STYLE = """
             QCheckBox {
                 color: white;

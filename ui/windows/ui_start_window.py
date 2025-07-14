@@ -1,4 +1,6 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from datetime import datetime
+
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QMessageBox
 from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import Qt, QTimer
 
@@ -67,6 +69,8 @@ class StartWindow(QWidget):
         self.menu_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.button_widgets = []
+
+
         for text, callback in self.buttons:
             btn = QPushButton(text)
             btn.setFixedSize(250, 40)
@@ -100,6 +104,7 @@ class StartWindow(QWidget):
 
         main_layout.addStretch()
         main_layout.addLayout(footer_layout)
+
 
     def open_toolstring_editor_app(self):
         self.editor_window = ToolStringEditor()
