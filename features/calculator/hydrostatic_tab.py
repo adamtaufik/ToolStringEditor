@@ -6,6 +6,10 @@ from PyQt6.QtGui import QFont, QPainter, QPen, QColor
 
 
 class HydrostaticTab(QWidget):
+    PSI_TO_KPA = 6.894757
+    KPA_TO_PSI = 1 / 6.894757
+    PSI_FT_TO_KPA_M = 2.3066587
+
     def __init__(self):
         super().__init__()
         self.init_ui()
@@ -26,7 +30,7 @@ class HydrostaticTab(QWidget):
         # Input section
         input_widget = QWidget()
         input_widget.setLayout(self.create_input_section())
-        left_layout.addWidget(input_widget, stretch=2)
+        left_layout.addWidget(input_widget, stretch=1)
 
         # Illustration
         self.well_illustration = FluidIllustration()
@@ -41,7 +45,7 @@ class HydrostaticTab(QWidget):
         splitter.addWidget(formula_widget)
 
         # Set initial sizes
-        splitter.setSizes([500, 400])
+        splitter.setSizes([520, 400])
 
         # Add splitter to main layout
         main_layout.addWidget(splitter)
@@ -64,11 +68,13 @@ class HydrostaticTab(QWidget):
             "Seawater - 0.445 psi/ft",
             "Mud (10 ppg) - 0.52 psi/ft",
             "Oil (Light) - 0.35 psi/ft",
-            "Brine - 0.48 psi/ft"
+            "Brine - 0.48 psi/ft",
+            "Gas - 0.06 psi/ft"
         ])
         self.fluid_list.setStyleSheet("""
             QListWidget {
                 background-color: #f8f8f8;
+                color: black;
                 border: 1px solid #ccc;
                 padding: 5px;
             }
@@ -79,6 +85,7 @@ class HydrostaticTab(QWidget):
         self.fluid_list.setCursor(Qt.CursorShape.PointingHandCursor)
         fluid_layout.addWidget(self.fluid_list)
         input_layout.addWidget(fluid_group)
+        self.fluid_list.setFixedHeight(118)
 
         # Calculator section
         calculator_group = QWidget()
@@ -104,64 +111,147 @@ class HydrostaticTab(QWidget):
         self.calculate_btn = self.create_calculate_button()
         calculator_layout.addWidget(self.calculate_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Result label
-        self.result_label = QLabel("Hydrostatic Pressure: — psi")
+        # Result labels
+        self.result_label = QLabel("Hydrostatic Pressure (incl. CITHP): — psi (— kPa)")
         self.result_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.result_label.setStyleSheet("font-size: 12pt; margin-top: 10px")
         calculator_layout.addWidget(self.result_label)
+
+        self.diff_label = QLabel("")  # shows only when RP/PB provided
+        self.diff_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.diff_label.setStyleSheet("font-size: 12pt; color: #0D47A1;")
+        calculator_layout.addWidget(self.diff_label)
 
         input_layout.addWidget(calculator_group)
         return input_layout
 
     def create_input_grid(self):
-        input_grid = QGridLayout()
-        input_grid.setHorizontalSpacing(20)
-        input_grid.setVerticalSpacing(10)
+        # We'll still create the same QLineEdits, but arrange them vertically per parameter.
+        container = QVBoxLayout()
+        container.setSpacing(12)
 
-        # Input fields
-        self.gradient_psi_ft = QLineEdit()
-        self.gradient_psi_ft.setFixedWidth(120)
+        def make_param_block(title, imp_widget, imp_unit, met_widget, met_unit):
+            block = QVBoxLayout()
+            block.setSpacing(4)
+
+            # Title label (parameter)
+            lbl = QLabel(title)
+            lbl.setStyleSheet("font-weight: 600;")
+            block.addWidget(lbl)
+
+            # Inputs line (imperial + metric)
+            line = QHBoxLayout()
+            line.setSpacing(10)
+
+            # Imperial
+            imp_box = QHBoxLayout()
+            imp_box.setSpacing(5)
+            imp_box.addWidget(imp_widget)
+            imp_box.addWidget(QLabel(imp_unit))
+            line.addLayout(imp_box)
+
+            # Spacer between the two systems (optional)
+            line.addSpacing(12)
+
+            # Metric
+            met_box = QHBoxLayout()
+            met_box.setSpacing(5)
+            met_box.addWidget(met_widget)
+            met_box.addWidget(QLabel(met_unit))
+            line.addLayout(met_box)
+
+            block.addLayout(line)
+            return block
+
+        # Core inputs (reuse existing widgets, just positioning changes)
+        self.gradient_psi_ft = QLineEdit();
+        self.gradient_psi_ft.setFixedWidth(120);
         self.gradient_psi_ft.setPlaceholderText("e.g. 0.433")
-
-        self.fluid_level_ft = QLineEdit()
-        self.fluid_level_ft.setFixedWidth(120)
+        self.fluid_level_ft = QLineEdit();
+        self.fluid_level_ft.setFixedWidth(120);
         self.fluid_level_ft.setPlaceholderText("e.g. 500")
-
-        self.target_depth_ft = QLineEdit()
-        self.target_depth_ft.setFixedWidth(120)
+        self.target_depth_ft = QLineEdit();
+        self.target_depth_ft.setFixedWidth(120);
         self.target_depth_ft.setPlaceholderText("e.g. 1000")
 
-        self.gradient_kpa_m = QLineEdit()
+        self.gradient_kpa_m = QLineEdit();
         self.gradient_kpa_m.setFixedWidth(120)
-
-        self.fluid_level_m = QLineEdit()
+        self.fluid_level_m = QLineEdit();
         self.fluid_level_m.setFixedWidth(120)
-
-        self.target_depth_m = QLineEdit()
+        self.target_depth_m = QLineEdit();
         self.target_depth_m.setFixedWidth(120)
 
-        # Add to grid
-        input_grid.addWidget(QLabel("Pressure Gradient/Density"), 0, 0)
-        input_grid.addWidget(QLabel("Fluid Level (TVD)"), 1, 0)
-        input_grid.addWidget(QLabel("Target Depth (TVD)"), 2, 0)
+        # CITHP / RP (psi & kPa)
+        self.cithp_psi = QLineEdit();
+        self.cithp_psi.setFixedWidth(120);
+        self.cithp_psi.setPlaceholderText("optional")
+        self.cithp_kpa = QLineEdit();
+        self.cithp_kpa.setFixedWidth(120);
+        self.cithp_kpa.setPlaceholderText("optional")
 
-        # Imperial units column
-        input_grid.addWidget(self.gradient_psi_ft, 0, 1)
-        input_grid.addWidget(self.fluid_level_ft, 1, 1)
-        input_grid.addWidget(self.target_depth_ft, 2, 1)
-        input_grid.addWidget(QLabel("psi/ft"), 0, 2)
-        input_grid.addWidget(QLabel("ft"), 1, 2)
-        input_grid.addWidget(QLabel("ft"), 2, 2)
+        self.rp_psi = QLineEdit();
+        self.rp_psi.setFixedWidth(120);
+        self.rp_psi.setPlaceholderText("optional")
+        self.rp_kpa = QLineEdit();
+        self.rp_kpa.setFixedWidth(120);
+        self.rp_kpa.setPlaceholderText("optional")
 
-        # Metric units column
-        input_grid.addWidget(self.gradient_kpa_m, 0, 3)
-        input_grid.addWidget(self.fluid_level_m, 1, 3)
-        input_grid.addWidget(self.target_depth_m, 2, 3)
-        input_grid.addWidget(QLabel("kPa/m"), 0, 4)
-        input_grid.addWidget(QLabel("m"), 1, 4)
-        input_grid.addWidget(QLabel("m"), 2, 4)
+        # ---- Tooltips ----
+        # Gradient
+        tip_grad_imp = ("Pressure gradient / density.\n"
+                        "Example: Fresh water ≈ 0.433 psi/ft, seawater ≈ 0.445 psi/ft.")
+        tip_grad_met = ("Pressure gradient / density.\n"
+                        "Example: Fresh water ≈ 10.0 kPa/m, seawater ≈ 10.3 kPa/m.\n"
+                        "Auto-syncs with psi/ft.")
+        self.gradient_psi_ft.setToolTip(tip_grad_imp)
+        self.gradient_kpa_m.setToolTip(tip_grad_met)
 
-        return input_grid
+        # Fluid level (TVD)
+        tip_fl = ("True Vertical Depth (TVD) of fluid level/top of column.\n"
+                  "Usually measured from surface reference; smaller number = shallower.")
+        self.fluid_level_ft.setToolTip(tip_fl + "\nUnits: feet")
+        self.fluid_level_m.setToolTip(tip_fl + "\nUnits: metres")
+
+        # Target depth (TVD)
+        tip_td = ("True Vertical Depth (TVD) at which you want the pressure.\n"
+                  "Hydrostatic head uses (Target − Fluid Level).")
+        self.target_depth_ft.setToolTip(tip_td + "\nUnits: feet")
+        self.target_depth_m.setToolTip(tip_td + "\nUnits: metres")
+
+        # CITHP
+        tip_cithp = ("Closed-In Tubing Head Pressure (at surface).\n"
+                     "Added to hydrostatic component. Leave blank if unknown (treated as 0).")
+        self.cithp_psi.setToolTip(tip_cithp + "\nUnits: psi")
+        self.cithp_kpa.setToolTip(tip_cithp + "\nUnits: kPa")
+
+        # Reservoir Pressure / Pressure Below (RP/PB)
+        tip_rp = ("Reservoir Pressure / Pressure below the target depth.\n"
+                  "Optional; if provided, Differential Pressure = RP/PB − HP.")
+        self.rp_psi.setToolTip(tip_rp + "\nUnits: psi")
+        self.rp_kpa.setToolTip(tip_rp + "\nUnits: kPa")
+
+        # Build stacked blocks
+        container.addLayout(make_param_block("Pressure Gradient/Density",
+                                             self.gradient_psi_ft, "psi/ft",
+                                             self.gradient_kpa_m, "kPa/m"))
+
+        container.addLayout(make_param_block("Fluid Level (TVD)",
+                                             self.fluid_level_ft, "ft",
+                                             self.fluid_level_m, "m"))
+
+        container.addLayout(make_param_block("Target Depth (TVD)",
+                                             self.target_depth_ft, "ft",
+                                             self.target_depth_m, "m"))
+
+        container.addLayout(make_param_block("CITHP (at surface)",
+                                             self.cithp_psi, "psi",
+                                             self.cithp_kpa, "kPa"))
+
+        container.addLayout(make_param_block("Reservoir Pressure / Pressure Below",
+                                             self.rp_psi, "psi",
+                                             self.rp_kpa, "kPa"))
+
+        return container
 
     def create_calculate_button(self):
         btn = QPushButton("Calculate")
@@ -210,14 +300,24 @@ class HydrostaticTab(QWidget):
 
     def setup_connections(self):
         """Connect all signals and slots"""
+        # Gradient conversions
         self.gradient_psi_ft.textChanged.connect(self.update_gradient_metric)
         self.gradient_kpa_m.textChanged.connect(self.update_gradient_api)
 
+        # Depth conversions
         self.fluid_level_ft.textChanged.connect(self.update_fluid_level_metric)
         self.fluid_level_m.textChanged.connect(self.update_fluid_level_api)
 
         self.target_depth_ft.textChanged.connect(self.update_target_depth_metric)
         self.target_depth_m.textChanged.connect(self.update_target_depth_api)
+
+        # New: CITHP conversions
+        self.cithp_psi.textChanged.connect(self.update_cithp_metric)
+        self.cithp_kpa.textChanged.connect(self.update_cithp_api)
+
+        # New: Reservoir Pressure conversions
+        self.rp_psi.textChanged.connect(self.update_rp_metric)
+        self.rp_kpa.textChanged.connect(self.update_rp_api)
 
         self.fluid_list.itemClicked.connect(self.set_common_fluid)
         self.calculate_btn.clicked.connect(self.calculate_hydrostatic_pressure)
@@ -227,7 +327,7 @@ class HydrostaticTab(QWidget):
         try:
             psi_ft = float(self.gradient_psi_ft.text())
             self.gradient_kpa_m.blockSignals(True)
-            self.gradient_kpa_m.setText(f"{psi_ft * 2.3066587:.3f}")
+            self.gradient_kpa_m.setText(f"{psi_ft * self.PSI_FT_TO_KPA_M:.3f}")
             self.gradient_kpa_m.blockSignals(False)
         except ValueError:
             pass
@@ -236,7 +336,7 @@ class HydrostaticTab(QWidget):
         try:
             kpa_m = float(self.gradient_kpa_m.text())
             self.gradient_psi_ft.blockSignals(True)
-            self.gradient_psi_ft.setText(f"{kpa_m / 2.3066587:.3f}")
+            self.gradient_psi_ft.setText(f"{kpa_m / self.PSI_FT_TO_KPA_M:.3f}")
             self.gradient_psi_ft.blockSignals(False)
         except ValueError:
             pass
@@ -277,6 +377,55 @@ class HydrostaticTab(QWidget):
         except ValueError:
             pass
 
+    def update_cithp_metric(self):
+        try:
+            psi = float(self.cithp_psi.text())
+            self.cithp_kpa.blockSignals(True)
+            self.cithp_kpa.setText(f"{psi * self.PSI_TO_KPA:.2f}")
+            self.cithp_kpa.blockSignals(False)
+        except ValueError:
+            # allow blank or invalid until correction
+            if self.cithp_psi.text().strip() == "":
+                self.cithp_kpa.blockSignals(True)
+                self.cithp_kpa.clear()
+                self.cithp_kpa.blockSignals(False)
+
+    def update_cithp_api(self):
+        try:
+            kpa = float(self.cithp_kpa.text())
+            self.cithp_psi.blockSignals(True)
+            self.cithp_psi.setText(f"{kpa * self.KPA_TO_PSI:.2f}")
+            self.cithp_psi.blockSignals(False)
+        except ValueError:
+            if self.cithp_kpa.text().strip() == "":
+                self.cithp_psi.blockSignals(True)
+                self.cithp_psi.clear()
+                self.cithp_psi.blockSignals(False)
+
+    def update_rp_metric(self):
+        try:
+            psi = float(self.rp_psi.text())
+            self.rp_kpa.blockSignals(True)
+            self.rp_kpa.setText(f"{psi * self.PSI_TO_KPA:.2f}")
+            self.rp_kpa.blockSignals(False)
+        except ValueError:
+            if self.rp_psi.text().strip() == "":
+                self.rp_kpa.blockSignals(True)
+                self.rp_kpa.clear()
+                self.rp_kpa.blockSignals(False)
+
+    def update_rp_api(self):
+        try:
+            kpa = float(self.rp_kpa.text())
+            self.rp_psi.blockSignals(True)
+            self.rp_psi.setText(f"{kpa * self.KPA_TO_PSI:.2f}")
+            self.rp_psi.blockSignals(False)
+        except ValueError:
+            if self.rp_kpa.text().strip() == "":
+                self.rp_psi.blockSignals(True)
+                self.rp_psi.clear()
+                self.rp_psi.blockSignals(False)
+
     def set_common_fluid(self, item):
         text = item.text()
         if "-" in text:
@@ -289,38 +438,77 @@ class HydrostaticTab(QWidget):
             fluid_level = float(self.fluid_level_ft.text())
             target_depth = float(self.target_depth_ft.text())
 
+            # Optional inputs
+            cithp_psi = 0.0
+            if self.cithp_psi.text().strip():
+                cithp_psi = float(self.cithp_psi.text())
+
+            rp_psi = None
+            if self.rp_psi.text().strip():
+                rp_psi = float(self.rp_psi.text())
+
             # Calculate the height of fluid column
-            fluid_column_height = max(0, target_depth - fluid_level)
+            fluid_column_height = max(0.0, target_depth - fluid_level)
 
-            # Calculate hydrostatic pressure
-            psi = psi_ft * fluid_column_height
+            # Base hydrostatic (from gradient) + CITHP
+            hydrostatic_from_gradient = psi_ft * fluid_column_height
+            hp_total_psi = hydrostatic_from_gradient + cithp_psi  # include CITHP
 
-            self.result_label.setText(f"Hydrostatic Pressure: {psi:,.2f} psi")
+            # Update results
+            hp_total_kpa = hp_total_psi * self.PSI_TO_KPA
+            self.result_label.setText(
+                f"Hydrostatic Pressure (incl. CITHP): {hp_total_psi:,.2f} psi ({hp_total_kpa:,.2f} kPa)"
+            )
+
+            # Differential pressure if RP is provided
+            if rp_psi is not None:
+                diff_psi = rp_psi - hp_total_psi
+                diff_kpa = diff_psi * self.PSI_TO_KPA
+                self.diff_label.setText(
+                    f"Differential Pressure: {diff_psi:,.2f} psi ({diff_kpa:,.2f} kPa)"
+                )
+            else:
+                self.diff_label.setText("")
 
             # Update formula display
             self.formula_display.setHtml(self.generate_formula_html(
-                psi_ft, fluid_level, target_depth, fluid_column_height, psi
+                psi_ft, fluid_level, target_depth, fluid_column_height,
+                hydrostatic_from_gradient, cithp_psi, hp_total_psi, rp_psi
             ))
 
-            # Update well illustration
-            self.well_illustration.update_illustration(fluid_level, target_depth, psi)
+            # Update well illustration with annotations
+            self.well_illustration.update_illustration(
+                fluid_level=fluid_level,
+                target_depth=target_depth,
+                pressure=hp_total_psi,
+                cithp=cithp_psi,
+                reservoir_pressure=rp_psi
+            )
 
         except ValueError:
             QMessageBox.warning(self, "Input Error",
-                                "Please enter valid numeric values for all fields.")
+                                "Please enter valid numeric values for all required fields.")
             self.formula_display.setHtml(
-                "<div style='color: red;'>Please enter valid numeric values for all fields.</div>"
+                "<div style='color: red;'>Please enter valid numeric values for all required fields.</div>"
             )
 
+    def generate_formula_html(self, gradient, fluid_level, target_depth, column_height,
+                              hydrostatic_from_gradient, cithp, hp_total, rp):
+        rp_lines = ""
+        diff_lines = ""
+        if rp is not None:
+            diff = rp - hp_total
+            rp_lines = f"""
+                <div class="result">Reservoir Pressure / Pressure Below</div>
+                <div class="formula"><i>RP</i> = {rp:.2f} psi</div>
+            """
+            diff_lines = f"""
+                <div class="result">Differential Pressure</div>
+                <div class="formula"><i>ΔP</i> = <i>RP</i> − <i>HP</i></div>
+                <div class="formula"><span class="overline">   </span> = {rp:.2f} − {hp_total:.2f}</div>
+                <div class="formula"><span class="overline">   </span> = {diff:.2f} psi</div>
+            """
 
-        except ValueError:
-            QMessageBox.warning(self, "Input Error",
-                                "Please enter valid numeric values for all fields.")
-            self.formula_display.setHtml(
-                "<div style='color: red;'>Please enter valid numeric values for all fields.</div>"
-            )
-
-    def generate_formula_html(self, gradient, fluid_level, target_depth, column_height, pressure):
         return f"""
             <style>
                 .formula {{ 
@@ -345,16 +533,26 @@ class HydrostaticTab(QWidget):
             <div class="formula">Fluid Level = {fluid_level:.1f} ft (TVD)</div>
             <div class="formula">Target Depth = {target_depth:.1f} ft (TVD)</div>
 
-            <div class="formula">Fluid Column Height = Target Depth - Fluid Level</div>
-            <div class="formula"><span class="overline">   </span> = {target_depth:.1f} - {fluid_level:.1f}</div>
+            <div class="formula">Fluid Column Height = Target Depth − Fluid Level</div>
+            <div class="formula"><span class="overline">   </span> = {target_depth:.1f} − {fluid_level:.1f}</div>
             <div class="formula"><span class="overline">   </span> = {column_height:.1f} ft</div>
 
-            <div class="result">Hydrostatic Pressure</div>
-            <div class="formula"><i>P</i> = <i>G</i> × Height</div>
+            <div class="result">Hydrostatic (from gradient)</div>
+            <div class="formula"><i>P</i><sub>grad</sub> = <i>G</i> × Height</div>
             <div class="formula"><span class="overline">   </span> = {gradient:.3f} × {column_height:.1f}</div>
-            <div class="formula"><span class="overline">   </span> = {pressure:.2f} psi</div>
-        """
+            <div class="formula"><span class="overline">   </span> = {hydrostatic_from_gradient:.2f} psi</div>
 
+            <div class="result">CITHP (at surface)</div>
+            <div class="formula"><i>P</i><sub>CITHP</sub> = {cithp:.2f} psi</div>
+
+            <div class="result">Hydrostatic Pressure (incl. CITHP)</div>
+            <div class="formula"><i>HP</i> = <i>P</i><sub>grad</sub> + <i>P</i><sub>CITHP</sub></div>
+            <div class="formula"><span class="overline">   </span> = {hydrostatic_from_gradient:.2f} + {cithp:.2f}</div>
+            <div class="formula"><span class="overline">   </span> = {hp_total:.2f} psi</div>
+
+            {rp_lines}
+            {diff_lines}
+        """
 
     def copy_formula(self):
         clipboard = QApplication.clipboard()
@@ -374,12 +572,16 @@ class FluidIllustration(QGraphicsView):
         self.fluid_level = 0
         self.target_depth = 1000
         self.pressure = 0
+        self.cithp = 0
+        self.reservoir_pressure = None
         self.max_depth = 1500  # Default max depth for scaling
 
-    def update_illustration(self, fluid_level, target_depth, pressure):
+    def update_illustration(self, fluid_level, target_depth, pressure, cithp=0.0, reservoir_pressure=None):
         self.fluid_level = fluid_level
         self.target_depth = target_depth
         self.pressure = pressure
+        self.cithp = cithp
+        self.reservoir_pressure = reservoir_pressure
         self.max_depth = max(target_depth * 1.2, 1500)  # Auto-scale with 20% margin
         self.draw_well()
 
@@ -413,25 +615,38 @@ class FluidIllustration(QGraphicsView):
             fluid.setBrush(QColor(30, 144, 255, 150))  # Semi-transparent blue
             self.scene.addItem(fluid)
 
-            # Add fluid level label
+            # Fluid level label
             fluid_label = self.scene.addText(f"Fluid Level: {self.fluid_level} ft")
             fluid_label.setPos(well_width + 70, fluid_y)
 
-        # Draw target depth line
+        # Target depth line
         target_y = self.target_depth * scale_factor
-        target_line = self.scene.addLine(0, target_y, well_width, target_y, QPen(Qt.GlobalColor.red, 2))
+        self.scene.addLine(0, target_y, well_width, target_y, QPen(Qt.GlobalColor.red, 2))
 
-        # Add target depth label
+        # Target depth label
         target_label = self.scene.addText(f"Target Depth: {self.target_depth} ft")
         target_label.setPos(well_width + 70, target_y - 15)
 
-        # Add pressure label
+        # Pressure at target depth label (HP incl. CITHP)
         if self.pressure > 0:
             pressure_label = self.scene.addText(f"{self.pressure:.1f} psi")
             pressure_label.setPos(well_width / 2 - 30, target_y - 30)
             pressure_label.setDefaultTextColor(Qt.GlobalColor.darkRed)
 
-        # Draw depth markers
+        # CITHP label at surface
+        cithp_label = self.scene.addText(f"CITHP: {self.cithp:.1f} psi")
+        cithp_label.setDefaultTextColor(QColor(0, 100, 0))  # dark green
+        cithp_label.setPos(well_width + 15, 0)  # just above the surface line
+
+        # RP/PB label below target depth (if provided)
+        if self.reservoir_pressure is not None:
+            rp_label = self.scene.addText(f"Pressure Below: {self.reservoir_pressure:.1f} psi")
+            rp_label.setDefaultTextColor(QColor(128, 0, 128))  # purple
+            rp_label.setPos(well_width + 15, target_y + 15)
+            # small indicator line below target depth
+            self.scene.addLine(0, target_y + 12, well_width, target_y + 12, QPen(QColor(128, 0, 128), 1, Qt.PenStyle.DashLine))
+
+        # Depth markers
         for depth_mark in range(0, int(self.max_depth) + 1, 1000):
             y_pos = depth_mark * scale_factor
             self.scene.addLine(well_width, y_pos, well_width + 10, y_pos, QPen(Qt.GlobalColor.black, 1))

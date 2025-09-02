@@ -11,6 +11,7 @@ from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
 from utils.path_finder import get_icon_path
+from utils.screen_info import get_height
 from utils.theme_manager import apply_theme, toggle_theme
 
 # Wirefall Data Table
@@ -31,7 +32,7 @@ class WirelineCalculatorApp(QWidget):
         super().__init__()
         self.setWindowTitle("Wireline Calculator")
         self.setMinimumWidth(1300)
-        self.setMinimumHeight(500)
+        self.setMinimumHeight(get_height() - 10)  # ✅ Set minimum resizable height
 
         # Top-level vertical layout (entire window)
         root_layout = QVBoxLayout(self)

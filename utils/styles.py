@@ -259,6 +259,47 @@ COMBO_STYLE = f"""
             }}
             """
 
+COMBO_STYLE_BLACK = f"""
+            QComboBox {{
+                border: 1px solid #aaa;
+                border-radius: 6px;
+                padding: 5px 10px;
+                background-color: #f9f9f9;
+                color: black;
+                font-size: 10pt;
+            }}
+
+            QComboBox:hover {{
+                border: 1px solid #555;
+            }}
+
+            QComboBox::drop-down {{
+                border: none;
+                background-color: transparent;
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 20px;
+            }}
+
+            QComboBox::down-arrow {{
+                image: url("{get_icon_path('down_arrow').replace("\\", "/")}");
+                width: 12px;
+                height: 12px;
+            }}
+
+            QComboBox::down-arrow:on {{
+                image: url("{get_icon_path('up_arrow').replace("\\", "/")}");
+            }}
+
+            QComboBox QAbstractItemView {{
+                border: 1px solid #aaa;
+                border-radius: 6px;
+                selection-background-color: #87CEFA;
+                selection-color: black;
+                background-color: #fff;
+                font-size: 10pt;
+            }}
+            """
 
 SIDEBAR_STYLE = """
             #sidebar {

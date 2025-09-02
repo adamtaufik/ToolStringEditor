@@ -4,7 +4,7 @@ from PyQt6.QtGui import QPixmap, QCursor, QColor
 from database.logic_database import get_tool_data
 from features.ts_editor.logic_image_processing import expand_and_center_images
 from utils.path_finder import get_image_path  # ✅ Import helper function
-from utils.styles import COMBO_STYLE
+from utils.styles import COMBO_STYLE, COMBO_STYLE_BLACK
 
 
 class ToolWidget(QWidget):
@@ -75,8 +75,7 @@ class ToolWidget(QWidget):
         for size in self.tool_data.get("Nominal Sizes", []):
             nominal_sizes.append(str(size))
         self.nominal_size_selector.addItems(nominal_sizes)
-        self.nominal_size_selector.setStyleSheet(COMBO_STYLE)
-        # self.nominal_size_selector.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
+        self.nominal_size_selector.setStyleSheet(COMBO_STYLE_BLACK)
         self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
         self.nominal_size_selector.currentTextChanged.connect(self.summary_widget.update_summary)
         self.layout.addWidget(self.nominal_size_selector)
@@ -113,7 +112,7 @@ class ToolWidget(QWidget):
         self.lower_connection_label = QComboBox()
         self.lower_connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.lower_connection_label.setFixedWidth(130)
-        self.lower_connection_label.setStyleSheet(COMBO_STYLE)
+        self.lower_connection_label.setStyleSheet(COMBO_STYLE_BLACK)
         # self.lower_connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
         self.layout.addWidget(self.lower_connection_label)
 
@@ -213,7 +212,10 @@ class ToolWidget(QWidget):
                 self.top_connection_label.setText(mod_top_conns[0] if mod_top_conns else "N/A")
         else:
             self.lower_connection_label.addItem("-")
-            self.top_connection_label.setText("-")
+            mod_top_conns = [self._modify_connection(conn, side="top") for conn in top_conns]
+            self.top_connection_label.setText(mod_top_conns[0] if mod_top_conns else "-"
+                                                                                     "")
+            # self.top_connection_label.setText("-")
 
     def sync_top_connection(self):
         """Synchronizes top connection label with the selected lower connection."""

@@ -283,11 +283,11 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     wb.save(excel_path)
     print(f"✅ Excel export successful: {excel_path}")
 
-    # ✅ **Wait 2 seconds before opening with Win32 to prevent file access issues**
-    time.sleep(2)
-
-    # ✅ **Convert Excel to PDF**
-    export_to_pdf(excel_path, pdf_path)
+    # # ✅ **Wait 2 seconds before opening with Win32 to prevent file access issues**
+    # time.sleep(2)
+    #
+    # # ✅ **Convert Excel to PDF**
+    # export_to_pdf(excel_path, pdf_path)
 
 def export_to_pdf(excel_path, pdf_path):
     """Converts an Excel file to PDF and ensures Excel closes properly."""
