@@ -5,7 +5,7 @@ from datetime import datetime
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QSplashScreen, QMessageBox
-from PyQt6.QtGui import QFont, QPixmap, QIcon
+from PyQt6.QtGui import QFont, QPixmap, QIcon, QGuiApplication
 
 from ui.windows.ui_start_window import StartWindow
 from utils.path_finder import get_path
@@ -52,7 +52,10 @@ class InitializationManager:
 
 
 if __name__ == "__main__":
-    app = QApplication([])
+    QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
+    app = QApplication(sys.argv)
 
     # Set application icon
     icon_path = get_path(os.path.join("assets", "icons", "logo_full_qTd_icon.ico"))

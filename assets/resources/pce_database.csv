@@ -1,0 +1,19 @@
+Category,Tool Name,Nominal Size,OD (Inches),Top Connection,Lower Connection,Length (ft),Weight (lbs),Picture,Verified by,Description
+NOV,Stuffing Box,"3.5""",6.5,,"Otis 5-3/4""- 4 ACME",3,3.3,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 8ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,107,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 8ft + NPT Port,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,137,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 6ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,89,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 4ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,70,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 3ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,63,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 2ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,48,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 8ft,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,274,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 8ft + NPT Port,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,335,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 6ft,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,223,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 4ft,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,173,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 3ft,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,148,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 8ft,"7.5""",,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 8ft + NPT Port,"7.5""",,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 4ft,"7.5""",,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,301,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,Lubricator 3ft,"7.5""",,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,263,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+NOV,BOP,"3.5""",1.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",0.7,3.3,Yes,,Seals around wire
+NOV,X-Over,"2.875""",1.25,"Otis 5-3/4""- 4 ACME","2-7/8"" EUE 8RD",0.7,3.3,Yes,,Allows assembly of PCE with different connections

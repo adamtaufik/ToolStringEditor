@@ -93,15 +93,21 @@ Standard Service Tools,Gauge Cutter,"1.860""",1.86,"15/16"" SR",,1,10,Yes,,Drift
 Standard Service Tools,Gauge Cutter,"5.85""",5.85,"1-1/16"" SR",,1,15,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Standard Service Tools,Gauge Cutter,"5.61""",5.61,"1-1/16"" SR",,1,14,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Standard Service Tools,Gauge Cutter,"3.1""",3.1,"1-1/16"" SR",,1,12,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
-Basic Tools,2' Roller Stem,"1-7/8""",2.74,"1-1/16"" SR, 1-7/8"" QLS","1-1/16"" SR, 1-7/8"" QLS",2,18.8,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
-Basic Tools,2' Roller Stem,"1-1/2""",2.29,"15/16"" SR, 1-1/2"" QLS","15/16"" SR, 1-1/2"" QLS",2,12,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
-Basic Tools,2' Roller Stem,"1-1/4""",1.8,"15/16"" SR, 1-1/4"" QLS","15/16"" SR, 1-1/4"" QLS",2,8.3,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
-Basic Tools,3' Roller Stem,"1-7/8""",2.74,"1-1/16"" SR, 1-7/8"" QLS","1-1/16"" SR, 1-7/8"" QLS",3,28.1,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
-Basic Tools,3' Roller Stem,"1-1/2""",2.29,"15/16"" SR, 1-1/2"" QLS","15/16"" SR, 1-1/2"" QLS",3,18,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
-Basic Tools,3' Roller Stem,"1-1/4""",1.8,"15/16"" SR, 1-1/4"" QLS","15/16"" SR, 1-1/4"" QLS",3,12.5,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
-Basic Tools,5' Roller Stem,"1-7/8""",2.74,"1-1/16"" SR, 1-7/8"" QLS","1-1/16"" SR, 1-7/8"" QLS",5,46.9,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
-Basic Tools,5' Roller Stem,"1-1/2""",2.29,"15/16"" SR, 1-1/2"" QLS","15/16"" SR, 1-1/2"" QLS",5,30,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
-Basic Tools,5' Roller Stem,"1-1/4""",1.8,"15/16"" SR, 1-1/4"" QLS","15/16"" SR, 1-1/4"" QLS",5,20.8,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,2' Roller Stem,"1-7/8""",2.5,"1-1/16"" SR, 1-7/8"" QLS","1-1/16"" SR, 1-7/8"" QLS",2,18.8,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,2' Roller Stem,"1-1/2""",1.8,"15/16"" SR, 1-1/2"" QLS","15/16"" SR, 1-1/2"" QLS",2,12,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,2' Roller Stem,"1-1/4""",1.626,"15/16"" SR, 1-1/4"" QLS","15/16"" SR, 1-1/4"" QLS",2,8.3,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,2' Roller Stem,"2-1/2""",2.876,"2-1/2"" QLS, 1-9/16"" SR, 2-1/2"" HDQRJ","2-1/2"" QLS, 1-9/16"" SR, 2-1/2"" HDQRJ",2,33,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,2' Roller Stem,"2-1/8""",2.759,"1-7/8"" QLS, 1-1/16"" SR, 1-7/8"" HDQRJ","1-7/8"" QLS, 1-1/16"" SR, 1-7/8"" HDQRJ",2,24,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,3' Roller Stem,"1-7/8""",2.5,"1-1/16"" SR, 1-7/8"" QLS","1-1/16"" SR, 1-7/8"" QLS",3,28.1,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,3' Roller Stem,"1-1/2""",1.8,"15/16"" SR, 1-1/2"" QLS","15/16"" SR, 1-1/2"" QLS",3,18,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,3' Roller Stem,"1-1/4""",1.626,"15/16"" SR, 1-1/4"" QLS","15/16"" SR, 1-1/4"" QLS",3,12.5,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,3' Roller Stem,"2-1/2""",2.876,"2-1/2"" QLS, 1-9/16"" SR, 2-1/2"" HDQRJ","2-1/2"" QLS, 1-9/16"" SR, 2-1/2"" HDQRJ",3,50,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,3' Roller Stem,"2-1/8""",2.759,"1-7/8"" QLS, 1-1/16"" SR, 1-7/8"" HDQRJ","1-7/8"" QLS, 1-1/16"" SR, 1-7/8"" HDQRJ",3,36,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,5' Roller Stem,"1-7/8""",2.5,"1-1/16"" SR, 1-7/8"" QLS","1-1/16"" SR, 1-7/8"" QLS",5,46.9,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,5' Roller Stem,"1-1/2""",1.8,"15/16"" SR, 1-1/2"" QLS","15/16"" SR, 1-1/2"" QLS",5,30,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,5' Roller Stem,"1-1/4""",1.626,"15/16"" SR, 1-1/4"" QLS","15/16"" SR, 1-1/4"" QLS",5,20.8,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,5' Roller Stem,"2-1/2""",2.876,"2-1/2"" QLS, 1-9/16"" SR, 2-1/2"" HDQRJ","2-1/2"" QLS, 1-9/16"" SR, 2-1/2"" HDQRJ",5,83,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
+Basic Tools,5' Roller Stem,"2-1/8""",2.759,"1-7/8"" QLS, 1-1/16"" SR, 1-7/8"" HDQRJ","1-7/8"" QLS, 1-1/16"" SR, 1-7/8"" HDQRJ",5,60,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
 Basic Tools,Roller Bogie,"1.60""",1.6,"15/16"" SR, 1-1/4"" QLS","15/16"" SR, 1-1/4"" QLS",1.7,7,Yes,,Provides rollers to handle high deviations. Contains a swivel for rotational flexibility.
 Basic Tools,Roller Bogie,"2.125""",2.125,"15/16"" SR, 1-1/2"" QLS","15/16"" SR, 1-1/2"" QLS",1.6,10,Yes,,Provides rollers to handle high deviations. Contains a swivel for rotational flexibility.
 Basic Tools,Roller Bogie,"2.40""",2.4,"1-1/16"" SR, 1-7/8"" HDQRJ","1-1/16"" SR, 1-7/8"" HDQRJ",1.8,11,Yes,,Provides rollers to handle high deviations. Contains a swivel for rotational flexibility.
@@ -188,14 +194,14 @@ Running and Pulling Tools,Uni Pulling Tool,"2-1/2""",2.18,"15/16"" SR",,2,11,No,
 Running and Pulling Tools,Uni Pulling Tool,"3""",2.72,"1-1/16"" SR",,2,19.8,No,,Shear release latching tool with keys/dogs that engage internal fishing necks to pull subsurface devices.
 Running and Pulling Tools,Uni Pulling Tool,"3-1/2""",3.115,"1-1/16"" SR",,2,26.4,No,,Shear release latching tool with keys/dogs that engage internal fishing necks to pull subsurface devices.
 Running and Pulling Tools,Uni Pulling Tool,"4""",3.61,"1-1/16"" SR",,2,28.6,No,,Shear release latching tool with keys/dogs that engage internal fishing necks to pull subsurface devices.
-Standard Service Tools,42BO,"2.813""",2.718,"1-1/16"" SR","1-1/16"" SR",1,12.6,Yes,,Used in jar up motion to close SSDs.
-Standard Service Tools,42BO,"2.750""",2.718,"1-1/16"" SR","1-1/16"" SR",1,12.6,Yes,,Used in jar up motion to close SSDs.
-Standard Service Tools,42BO,"2.313""",2.156,"15/16"" SR","15/16"" SR",1,12.6,Yes,,Used in jar up motion to close SSDs.
-Standard Service Tools,42BO,"1.875""",1.84,"15/16"" SR","15/16"" SR",1,12.6,Yes,,Used in jar up motion to close SSDs.
-Standard Service Tools,142BO,"2.813""",2.78,"1-1/16"" SR","1-1/16"" SR",1.5,12.6,Yes,,Used in jar down motion to open SSDs.
-Standard Service Tools,142BO,"2.750""",2.72,"1-1/16"" SR","1-1/16"" SR",1.5,12.6,Yes,,Used in jar down motion to open SSDs.
-Standard Service Tools,142BO,"2.313""",2.28,"15/16"" SR","15/16"" SR",1.5,12.6,Yes,,Used in jar down motion to open SSDs.
-Standard Service Tools,142BO,"1.875""",1.843,"15/16"" SR","15/16"" SR",1.5,12.6,Yes,,Used in jar down motion to open SSDs.
+Standard Service Tools,42BO,"2.813""",2.718,"1-1/16"" SR","1-1/16"" SR",1,12.6,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,42BO,"2.750""",2.718,"1-1/16"" SR","1-1/16"" SR",1,12.6,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,42BO,"2.313""",2.156,"15/16"" SR","15/16"" SR",1,12.6,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,42BO,"1.875""",1.84,"15/16"" SR","15/16"" SR",1,12.6,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,142BO,"2.813""",2.78,"1-1/16"" SR","1-1/16"" SR",1.5,12.6,Yes,,A shifting tool used in jar down motion to open SSDs.
+Standard Service Tools,142BO,"2.750""",2.72,"1-1/16"" SR","1-1/16"" SR",1.5,12.6,Yes,,A shifting tool used in jar down motion to open SSDs.
+Standard Service Tools,142BO,"2.313""",2.28,"15/16"" SR","15/16"" SR",1.5,12.6,Yes,,A shifting tool used in jar down motion to open SSDs.
+Standard Service Tools,142BO,"1.875""",1.843,"15/16"" SR","15/16"" SR",1.5,12.6,Yes,,A shifting tool used in jar down motion to open SSDs.
 Standard Service Tools,Tubing End Locator,"2"" - 3""",1.71,"1.0"" NPT","1.0"" NPT",2,10,Yes,,Used to locate end of tubing.
 Standard Service Tools,Tubing End Locator,"3"" - 5""",2.31,"1.062""-10","1.062""-10",2,15,Yes,,Used to locate end of tubing.
 Standard Service Tools,X-Check Set Tool,"1.875""",1.75,"15/16"" SR",,1.2,5,No,,Used to verify lock mandrel fully set.
@@ -216,7 +222,7 @@ Standard Service Tools,QLS,"1-1/2"" Male Pin",1.5,"1-1/2"" QLS","15/16"" SR",0.5
 Standard Service Tools,QLS,"1-1/4"" Female Box",1.25,"15/16"" SR","1-1/4"" QLS",0.5,3,Yes,,To translate between QLS and Sucker Rod connections.
 Standard Service Tools,QLS,"1-1/4"" Male Pin",1.25,"1-1/4"" QLS","15/16"" SR",0.5,3,Yes,,To translate between QLS and Sucker Rod connections.
 Standard Service Tools,QLS,"2-1/2"" Female Box",2.5,"1-9/16"" SR","2-1/2"" QLS",0.5,8.3,Yes,,To translate between QLS and Sucker Rod connections.
-Standard Service Tools,QLS,"2-1/2"" Male Pin",2.5,"2-1/2"" QLS","1-9/16"" SR",0.5,8.3,Yes,,To translate between QLS and Sucker Rod connections.
+Standard Service Tools,QLS,"2-1/2"" Male Pin",2.5,"2-1/2"" QLS","1-9/16"" SR, 1-1/16"" SR, 15/16"" SR",0.5,8.3,Yes,,To translate between QLS and Sucker Rod connections.
 Running and Pulling Tools,X-Line,"2.813""",2.687,Prong,Prong,2.6,20,Yes,,Used to run devices with X/XN Lock Mandrels.
 Running and Pulling Tools,X-Line,"2.750""",2.687,Prong,Prong,2.6,20,Yes,,Used to run devices with X/XN Lock Mandrels.
 Running and Pulling Tools,X-Line,"2.313""",2.171,Prong,Prong,2.5,18,Yes,,Used to run devices with X/XN Lock Mandrels.
@@ -225,8 +231,16 @@ Running and Pulling Tools,JK-1,"1.00""",1.33,GLV,GLV,0.5,1,Yes,,Used to set BK-2
 Running and Pulling Tools,GA-2,"1.00""",1.187,GLV,GLV,0.4,1,Yes,,Used to set integral (Bottom) latch gas lift valves.
 Running and Pulling Tools,D1T Running Tool,"3""",,Prong,Prong,,,Yes,,"Latching device used to run and set subsurface devices with internal fishing necks (e.g., locks, plugs, GLVs); releases by jarring as per tool type."
 Running and Pulling Tools,SO Running Tool,TBC,,Prong,Prong,,,No,,"Latching device used to run and set subsurface devices with internal fishing necks (e.g., locks, plugs, GLVs); releases by jarring as per tool type."
-Running and Pulling Tools,OK-6 Kickover Tool,"2.5""",2.5,"15/16"" SR","15/16"" SR",5.8,35.2,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
-Running and Pulling Tools,Merla Kickover Tool,"3""",2.72,"15/16"" SR","15/16"" SR",3.2,26.4,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,OK-6 Kickover Tool,"3""",2.5,"15/16"" SR","15/16"" SR",5.8,35.2,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,OK-6 Kickover Tool,"2.5""",2.362,"15/16"" SR","15/16"" SR",5.8,30,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,OK-6 Kickover Tool,"2""",1.75,"15/16"" SR","15/16"" SR",5.8,25,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,OK-5 Kickover Tool,"3""",2.5,"15/16"" SR","15/16"" SR",5.8,35.2,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,OK-5 Kickover Tool,"2.5""",2.062,"15/16"" SR","15/16"" SR",5.8,30,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,OK-5 Kickover Tool,"2""",1.75,"15/16"" SR","15/16"" SR",5.8,25,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,Merla Kickover Tool,"3""",2.73,"1-1/16"" SR","1-1/16"" SR",3.3,26.4,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,Merla Kickover Tool,"2.5""",2.28,"15/16"" SR","15/16"" SR",3.2,23,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,Merla Kickover Tool,"2""",1.855,"15/16"" SR","15/16"" SR",3.2,20,Yes,,"Side pocket kickover tool used to install/retrieve 1"" OD devices in mandrels with an orienting sleeve."
+Running and Pulling Tools,Merla Kickover Tool,"4.5""",3.125,"1-1/16"" SR","1-1/16"" SR",3.6,35,Yes,,
 Fishing Tools,Wire Finder,"2-3/8"" Tbg.",1.75,"15/16"" SR",,1,33,Yes,,"Conical locator used to find the top of a parted wireline (and possibly ""ball-up"" wire) prior to engaging it with a wire grab or spear."
 Fishing Tools,Wire Finder,"2-7/8"" Tbg.",2.195,"15/16"" SR",,1,33,Yes,,"Conical locator used to find the top of a parted wireline (and possibly ""ball-up"" wire) prior to engaging it with a wire grab or spear."
 Fishing Tools,Wire Finder,"3-1/2"" Tbg.",2.72,"1-1/16"" SR",,1,33,Yes,,"Conical locator used to find the top of a parted wireline (and possibly ""ball-up"" wire) prior to engaging it with a wire grab or spear."
@@ -234,7 +248,14 @@ Fishing Tools,Wire Finder,"4-1/2"" Tbg.",3.6,"1-1/16"" SR",,1,33,Yes,,"Conical l
 Fishing Tools,Wire Finder,"5"" Tbg.",3.8,"1-9/16"" SR",,1,33,Yes,,"Conical locator used to find the top of a parted wireline (and possibly ""ball-up"" wire) prior to engaging it with a wire grab or spear."
 Fishing Tools,Wire Finder,"5-1/2"" Tbg.",4.53,"1-9/16"" SR",,1,35,Yes,,"Conical locator used to find the top of a parted wireline (and possibly ""ball-up"" wire) prior to engaging it with a wire grab or spear."
 Fishing Tools,Wire Finder,"6"" Tbg.",6,"1-9/16"" SR",,1,40,Yes,,"Conical locator used to find the top of a parted wireline (and possibly ""ball-up"" wire) prior to engaging it with a wire grab or spear."
-Standard Service Tools,Wire Scratcher,3.5,3.5,"15/16"" SR",,1,32.7,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
+Standard Service Tools,Wire Scratcher,"3""",1.75,"1-1/16"" SR",,2,20,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
+Standard Service Tools,Wire Scratcher,"2.5""",1.375,"15/16"" SR",,2,15,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
+Standard Service Tools,Wire Scratcher,"2""",1.187,"15/16"" SR",,2,10,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
+Standard Service Tools,Wire Scratcher,"3.5"" OD",3.5,"1-1/16"" SR",,2,32.7,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
+Standard Service Tools,Wire Spiral,"3""",1.75,"1-1/16"" SR",,2,20,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
+Standard Service Tools,Wire Spiral,"2.5""",1.375,"15/16"" SR",,2,15,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
+Standard Service Tools,Wire Spiral,"2""",1.187,"15/16"" SR",,2,10,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
+Standard Service Tools,Wire Spiral,"3.5"" OD",3.5,"1-1/16"" SR",,2,32.7,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
 Standard Service Tools,Lead Impression Block,"2.00""",2,"15/16"" SR",,0.5,2.5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"2.30""",2.3,"15/16"" SR",,0.5,3.5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"2.52""",2.52,"1-1/16"" SR",,0.6,4.5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
@@ -252,8 +273,8 @@ Standard Service Tools,Lead Impression Block,"5.50""",5.5,"1-1/16"" SR",,0.6,15,
 Standard Service Tools,Long Lead Impression Block,"1.00""",1,"15/16"" SR",,1,1.5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Sand Pump Bailer,"2""",2,"1-1/16"" SR",,12.3,17,Yes,,To collect sand or sample downhole.
 Standard Service Tools,Sand Pump Bailer,"2-1/4""",2.25,"1-1/16"" SR",,12.3,21,Yes,,To collect sand or sample downhole.
-Standard Service Tools,Hydrostatic Bailer,"2""",2,,,6.7,33,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
-Standard Service Tools,Hydrostatic Bailer,"2-1/4""",2.25,,,6.7,46.2,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
+Standard Service Tools,Hydrostatic Bailer,"2""",2,"15/16"" SR",,6.7,33,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
+Standard Service Tools,Hydrostatic Bailer,"2-1/4""",2.25,"15/16"" SR",,6.7,46.2,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
 Fishing Tools,Blind Box,"2.00""",2,"15/16"" SR",,0.5,2,Yes,,Used to base down tools or box-off wire from rope socket.
 Fishing Tools,Blind Box,"2.30""",2.3,"15/16"" SR",,0.5,2.5,Yes,,Used to base down tools or box-off wire from rope socket.
 Fishing Tools,Blind Box,"2.62""",2.62,"1-1/16"" SR",,0.5,3.5,Yes,,Used to base down tools or box-off wire from rope socket.
@@ -272,10 +293,9 @@ Fishing Tools,Heavy Duty Releasable Overshot,"4""",3.7,"1-1/16"" SR",,2,9.9,Yes,
 Fishing Tools,Overshot,"3""",2.72,"1-1/16"" SR",,1.8,22,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Overshot,"2-1/2""",2.25,"1-1/16"" SR",,1.7,15.4,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Overshot,"2""",1.75,"1-1/16"" SR",,1.7,9.9,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
-Fishing Tools,Fishing Magnet,2.75,2.75,,,1,20.2,No,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
-Fishing Tools,Fishing Magnet,2.25,2.25,,,1,13.5,No,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
-Standard Service Tools,Bottom Sub,"3""",2.72,,,3,13.5,No,,Slickline tool used in Standard Service Tools operations; function requires specific procedure reference.
-Standard Service Tools,GLV Catcher (with X Lock Mandrel),TBC,,,,,,No,,Slickline tool used in Standard Service Tools operations; function requires specific procedure reference.
+Fishing Tools,Fishing Magnet,2.75,2.75,"15/16"" SR",,1,20.2,No,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Fishing Magnet,2.25,2.25,"15/16"" SR",,1,13.5,No,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Standard Service Tools,GLV Catcher (with X Lock Mandrel),TBC,,X-Lock,,,,No,,Slickline tool used in Standard Service Tools operations; function requires specific procedure reference.
 Standard Service Tools,Junk Catcher,TBC,,,,,,No,,Slickline tool used in Standard Service Tools operations; function requires specific procedure reference.
 Standard Service Tools,A-Stop,"3""",2.719,Internal Fish Neck,,2,15,Yes,,Slickline tool used in Standard Service Tools operations; function requires specific procedure reference.
 Standard Service Tools,A-Stop,"2-1/2""",2.188,Internal Fish Neck,,2,15,Yes,,Slickline tool used in Standard Service Tools operations; function requires specific procedure reference.
@@ -338,36 +358,36 @@ Paradigm Tools,X-Over (PPU to Sondex),"1-11/16""",1.688,ParaComm Box,Sondex,1,7.
 Paradigm Tools,X-Over (PPU to GO-A Pin),"1-11/16""",1.688,ParaComm Box,GO 'A',1,7.6,Yes,,Crossover sub used to adapt between different connection types/sizes in the toolstring. (Manufacturer: Paradigm).
 Paradigm Tools,X-Over (PPU to SR Box),"1-11/16""",1.688,ParaComm Box,"15/16"" SR",0.5,3.8,Yes,,Crossover sub used to adapt between different connection types/sizes in the toolstring. (Manufacturer: Paradigm).
 Paradigm Tools,X-Over (PPU to Trigger Probe),"1-11/16""",1.688,ParaComm Box,Trigger Probe,1,7.6,Yes,,Crossover sub used to adapt between different connection types/sizes in the toolstring. (Manufacturer: Paradigm).
-Sondex Tools,MBH025,"1-11/16""",1.688,"15/16"" SR",Sondex,2.3,9.7,Yes,,"Sondex memory logging module (MBH025): part of a PLT/well integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
-Sondex Tools,MBH030,"1-11/16""",1.688,"15/16"" SR",Sondex,1.5,6.2,Yes,,"Sondex memory logging module (MBH025): part of a PLT/well integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
-Sondex Tools,PGR032,"1-11/16""",1.688,Sondex,Sondex,1.9,9.4,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,PGR021,"1-3/8""",1.375,Sondex,Sondex,1.6,5.1,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,PGR020,"1-11/16""",1.688,Sondex,Sondex,1.9,9.4,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,PRC001,"1-11/16""",1.688,Sondex,Sondex,1.9,7,Yes,,"Sondex memory‑logging module (PRC001): part of a PLT/well‑integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
-Sondex Tools,PRC034,"1-11/16""",1.688,Sondex,Sondex,2.77,13,Yes,,"Sondex memory‑logging module (PRC034): part of a PLT/well‑integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
+Sondex Tools,MBH025,"1-11/16""",1.688,"15/16"" SR",Sondex,2.3,9.7,Yes,,Houses battery packs that power Sondex memory logging tools.
+Sondex Tools,MBH030,"1-11/16""",1.688,"15/16"" SR",Sondex,1.5,6.2,Yes,,Houses battery packs that power Sondex memory logging tools.
+Sondex Tools,PGR032,"1-11/16""",1.688,Sondex,Sondex,1.9,9.4,Yes,,Measures the naturally occurring radiation emitted by formations for depth correlation and more.
+Sondex Tools,PGR021,"1-3/8""",1.375,Sondex,Sondex,1.6,5.1,Yes,,Measures the naturally occurring radiation emitted by formations for depth correlation and more.
+Sondex Tools,PGR020,"1-11/16""",1.688,Sondex,Sondex,1.9,9.4,Yes,,Measures the naturally occurring radiation emitted by formations for depth correlation and more.
+Sondex Tools,PRC001,"1-11/16""",1.688,Sondex,Sondex,1.9,7,Yes,,"Provides centralisation of logging tools in vertical, deviated or horizontal wells."
+Sondex Tools,PRC034,"1-11/16""",1.688,Sondex,Sondex,2.77,13,Yes,,"Provides centralisation of logging tools in vertical, deviated or horizontal wells."
 Sondex Tools,HAC001,"1-11/16""",1.688,Sondex,Sondex,2.53,13.4,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,MIT 24F (Standard),"1-11/16""",1.688,Sondex,Sondex,5.4,20.7,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,MIT 24F (Extended),"1-11/16""",1.688,Sondex,Sondex,5.4,20.7,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,MIT 40F (Standard),"2-3/4""",2.75,Sondex,Sondex,5.5,70,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,MIT 40F (Extended),"2-3/4""",2.75,Sondex,Sondex,5.5,70,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,UMT003,"1-11/16""",1.688,Sondex,Sondex,2.1,10.6,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,UMT007,"1-11/16""",1.688,Sondex,Sondex,1,5.9,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,QPC201,"1-11/16""",1.688,Sondex,Sondex,1.6,8.8,Yes,,"Sondex memory‑logging module (QPC201): part of a PLT/well‑integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
-Sondex Tools,QPC004,"1-3/8""",1.375,Sondex,Sondex,1.5,5.2,Yes,,"Sondex memory‑logging module (QPC004): part of a PLT/well‑integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
-Sondex Tools,QPC003,"1-11/16""",1.688,Sondex,Sondex,1.6,8.8,Yes,,"Sondex memory‑logging module (QPC003): part of a PLT/well‑integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
-Sondex Tools,PKJ013,"1-11/16""",1.688,Sondex,Sondex,0.6,3.5,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,ILS021,"1-11/16""",1.688,Sondex,Sondex,1.4,6.5,Yes,,"Sondex memory‑logging module (ILS021): part of a PLT/well‑integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
-Sondex Tools,ILS022,"2-1/8""",2.125,Sondex,Sondex,1.4,6.8,Yes,,"Sondex memory‑logging module (ILS022): part of a PLT/well‑integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
-Sondex Tools,SAT005,"2-1/8""",2.125,Sondex,Sondex,3.8,14.3,No,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,FDR020,"1-11/16""",1.688,Sondex,Sondex,1.9,9.6,No,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,CTF004,"1-11/16""",1.688,Sondex,To CFJM,1.5,5.4,No,,"Sondex memory‑logging module (CTF004): part of a PLT/well‑integrity string (power, sensors or combiners). (Manufacturer: Baker Hughes (Sondex))."
+Sondex Tools,MIT 24F (Standard),"1-11/16""",1.688,Sondex,Sondex,5.4,20.7,Yes,,To measure tubing integrity by detecting changes to the internal surface condition of tubing.
+Sondex Tools,MIT 24F (Extended),"1-11/16""",1.688,Sondex,Sondex,5.4,20.7,Yes,,To measure tubing integrity by detecting changes to the internal surface condition of tubing.
+Sondex Tools,MIT 40F (Standard),"2-3/4""",2.75,Sondex,Sondex,5.5,70,Yes,,To measure tubing integrity by detecting changes to the internal surface condition of tubing.
+Sondex Tools,MIT 40F (Extended),"2-3/4""",2.75,Sondex,Sondex,5.5,70,Yes,,To measure tubing integrity by detecting changes to the internal surface condition of tubing.
+Sondex Tools,UMT003,"1-11/16""",1.688,Sondex,Sondex,2.1,10.6,Yes,,Acquires and stores data from logging sensors.
+Sondex Tools,UMT007,"1-11/16""",1.688,Sondex,Sondex,1,5.9,Yes,,Acquires and stores data from logging sensors.
+Sondex Tools,QPC201,"1-11/16""",1.688,Sondex,Sondex,1.6,8.8,Yes,,The Quartz Pressure and Casing Collar Locator (QPC) tool provides a continuous log of borehole fluid pressure and also responds to changes in metal volume.
+Sondex Tools,QPC004,"1-3/8""",1.375,Sondex,Sondex,1.5,5.2,Yes,,The Quartz Pressure and Casing Collar Locator (QPC) tool provides a continuous log of borehole fluid pressure and also responds to changes in metal volume.
+Sondex Tools,QPC003,"1-11/16""",1.688,Sondex,Sondex,1.6,8.8,Yes,,The Quartz Pressure and Casing Collar Locator (QPC) tool provides a continuous log of borehole fluid pressure and also responds to changes in metal volume.
+Sondex Tools,PKJ013,"1-11/16""",1.688,Sondex,Sondex,0.6,3.5,Yes,,Allows a maximum of 10 degrees deflection in any direction and has an electrical connection.
+Sondex Tools,ILS021,"1-11/16""",1.688,Sondex,Sondex,1.4,6.5,Yes,,The In-Line Spinner (ILS) Flowmeter allows for production profiling in tubing and casing within one logging run
+Sondex Tools,ILS022,"2-1/8""",2.125,Sondex,Sondex,1.4,6.8,Yes,,The In-Line Spinner (ILS) Flowmeter allows for production profiling in tubing and casing within one logging run
+Sondex Tools,SAT005,"2-1/8""",2.125,Sondex,Sondex,3.8,14.3,No,,"The Spinner Array tool (SAT) features six miniature turbines deployed on bowspring arms, enabling discrete local fluid velocities to be measured around the wellbore."
+Sondex Tools,FDR020,"1-11/16""",1.688,Sondex,Sondex,1.9,9.6,No,,The Fluid Density Radioactive (FDR) tool uses low energy gamma rays to determine the downhole fluid density during a production log.
+Sondex Tools,CTF004,"1-11/16""",1.688,Sondex,To CFJM,1.5,5.4,No,,The Capacitance Temperature Flow (CTF) tool measures the borehole fluid temperature
 Sondex Tools,CFJM08,"1-11/16""",1.688,Sondex,,0.8,2.2,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
 Sondex Tools,CFSM,"1-11/16""",1.688,Sondex,,0.7,1.7,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
 Sondex Tools,CFBM (6-Arm),"1-11/16""",1.688,Sondex,,2,10,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
 Sondex Tools,BUL006,"1-11/16""",1.688,Sondex,,0.1,1,Yes,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
 Sondex Tools,ASB004,"1-11/16""",1.688,Sondex,"15/16"" SR",0.1,1,No,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
 Sondex Tools,Rotational Alignment Sub,"1-11/16""",1.688,Sondex,Sondex,0.3,1.6,No,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
-Sondex Tools,RAT001,"1-11/16""",1.688,Sondex,Sondex,4.3,16.2,No,,Slickline tool used in Sondex Tools operations; function requires specific procedure reference. (Manufacturer: Baker Hughes (Sondex)).
+Sondex Tools,RAT001,"1-11/16""",1.688,Sondex,Sondex,4.3,16.2,No,,The Resistance Array tool (RAT) has 12 micro-resistance sensors deployed on bowstrings to determine the water holdup profile across the wellbore.
 Kaseum Tools,K-Set Tool,"2-1/8""",2.125,GO 'A',GO 'A',4.2,34,Yes,,Slickline tool used in Kaseum Tools operations; function requires specific procedure reference. (Manufacturer: Kaseum).
 Kaseum Tools,Setting Adapter,"2-1/2""",2.5,to bridge plug,to bridge plug,0.8,2,No,,Slickline tool used in Kaseum Tools operations; function requires specific procedure reference. (Manufacturer: Kaseum).
 Kaseum Tools,Setting Adapter,"2.16""",2.16,to bridge plug,to bridge plug,0.8,2.8,No,,Slickline tool used in Kaseum Tools operations; function requires specific procedure reference. (Manufacturer: Kaseum).
@@ -407,7 +427,7 @@ GOWell Tools,Magnetic Thickness Detector MTD43C-E,"1-11/16""",1.688,GO 'A',,3.7,
 GOWell Tools,ALFA,"1.15""",1.15,GO 'A',,2.8,3.3,No,,Slickline tool used in GOWell Tools operations; function requires specific procedure reference. (Manufacturer: GOWell).
 GDT Tools,RBT (GDT),"1-11/16""",1.688,GO 'A',,9.5,105.8,No,,Slickline tool used in GDT Tools operations; function requires specific procedure reference. (Manufacturer: GDT).
 GDT Tools,RBT (GDT),"3-1/8""",3.125,GO 'A',,8.9,105.8,No,,Slickline tool used in GDT Tools operations; function requires specific procedure reference. (Manufacturer: GDT).
-Interwell,HEX Bridge Plug,563-763,5.63,,,11,617,Yes,,Downhole tool; function to be confirmed from OEM datasheet.
-Interwell,HPHT Bridge Plug,563-763,5.63,,,11,617,Yes,,Downhole tool; function to be confirmed from OEM datasheet.
+Interwell,HEX Bridge Plug,563-763,5.63,,,11,617,Yes,,Can be used as a temporary or permanent barrier where there is a need for extreme expansion.
+Interwell,HPHT Bridge Plug,563-763,5.63,,,11,617,Yes,,Can be used as a temporary or permanent barrier.
 Interwell,EST Setting Tool + Setting Adapter Kit,"3.50""",3.5,"1-1/16"" SR",,8,242,Yes,,Downhole tool; function to be confirmed from OEM datasheet.
-Interwell,GS - DU,"6""",5.51,"1-9/16"" SR",,2,105.6,Yes,,Downhole tool; function to be confirmed from OEM datasheet.
+Interwell,GS - DU,"6""",5.51,"1-9/16"" SR",,2,105.6,Yes,,To engage and retrieve subsurface devices with internal fishing necks while allowing continuous downward jarring without risk of prematurely shearing the jar-down-to-release pin.

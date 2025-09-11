@@ -118,14 +118,21 @@ class SidebarWidget(QFrame):
         self.version_window.show()
 
     def go_to_main_menu(self):
-        from ui.windows.ui_start_window import StartWindow
+        try:
+            from ui.windows.ui_start_window import StartWindow
 
-        parent_window = self.window()
+            parent_window = self.window()
 
-        start_window = StartWindow()
-        start_window.setWindowIcon(parent_window.windowIcon())
-        start_window.show()
-        parent_window.close()
+            # KEEP A REFERENCE so it doesn’t get GC’d
+            self._start_window = StartWindow(app_icon=parent_window.windowIcon())
+            self._start_window.show()
+
+            # Either hide (safe) or close after the new one is alive
+            parent_window.hide()
+            # parent_window.close()  # <- ok too, but hide() avoids edge cases
+
+        except Exception as e:
+            print("go_to_main_menu error:", e)
 
     def exit(self):
 

@@ -218,6 +218,7 @@ class HydrostaticTab(QWidget):
         self.target_depth_ft.setToolTip(tip_td + "\nUnits: feet")
         self.target_depth_m.setToolTip(tip_td + "\nUnits: metres")
 
+
         # CITHP
         tip_cithp = ("Closed-In Tubing Head Pressure (at surface).\n"
                      "Added to hydrostatic component. Leave blank if unknown (treated as 0).")

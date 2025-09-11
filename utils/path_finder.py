@@ -30,3 +30,18 @@ def get_image_path(name):
         return image_path
     else:
         return get_path(os.path.join("assets", "images", "Dummy Image.png"))
+
+def get_pce_image_path(name):
+
+    try:
+        if "X-Over" in name:
+            name = "X-Over"  # Normalize X-Over naming
+        name = name.replace('"','').replace("'","")
+        image_path = get_path(os.path.join("assets", "pce_images", f"{name}.png"))
+
+        if os.path.exists(image_path):
+            return image_path
+        else:
+            return get_path(os.path.join("assets", "images", "Dummy Image.png"))
+    except Exception as e:
+        print(e)
