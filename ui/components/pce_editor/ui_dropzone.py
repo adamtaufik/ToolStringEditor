@@ -29,9 +29,9 @@ class DropZone(QFrame):
         # **Header Row**
         header_layout = QHBoxLayout()
         headers = [
-            ("Diagram", 144), ("Tool", 120), ("Nom. Size", 90),
-            ("Length (ft)", 65), ("Weight (lbs)", 80),
-            ("Top Connection", 92), ("Bottom Connection", 130), ("Move", 80), ("Del", 33)
+            ("Diagram", 144), ("Item", 115), ("Brand", 87), ("Size", 65), ("ID", 45), ("Service", 65),
+            ("WP (psi)", 65), ("Length", 55), ("Weight", 70),
+            ("Top Conn.", 72), ("Bottom Conn", 72), ("Move", 80), ("Del", 33)
         ]
 
         for header_text, width in headers:
@@ -71,16 +71,6 @@ class DropZone(QFrame):
         self.main_layout.setContentsMargins(0, 5, 0, 5)
         self.main_layout.setSpacing(0)
 
-    def clear_tools(self):
-        """Removes all tools from the DropZone."""
-        for tool in self.tool_widgets:
-            tool.setParent(None)
-            tool.deleteLater()
-        self.tool_widgets.clear()
-
-        self.main_window.summary_widget.update_summary()
-        self.update_placeholder()
-
     def dragEnterEvent(self, event):
         """Allow drag if MIME data has text."""
         if event.mimeData().hasText():
@@ -95,17 +85,26 @@ class DropZone(QFrame):
         event.acceptProposedAction()
 
     def add_tool(self, tool_name):
-        """Handle adding the tool when right-clicked from DraggableButton."""
         new_tool = ToolWidget(tool_name, self, self.main_window.summary_widget)
-        if new_tool.tool_data:  # ✅ Check if tool data exists
+        if new_tool.tool_data:
             self.tool_widgets.append(new_tool)
             self.setStyleSheet(DROPZONE_STYLE)
             self.layout.addWidget(new_tool)
-            self.update_placeholder()  # ✅ Ensure placeholder updates
+            self.update_placeholder()
+            self.refresh_dynamic_names()  # ← NEW
             self.main_window.summary_widget.update_summary()
-            expand_and_center_images(self.tool_widgets, self.diagram_width)  # ✅ Resize images
+            expand_and_center_images(self.tool_widgets, self.diagram_width)
         else:
             print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
+
+    def clear_tools(self):
+        for tool in self.tool_widgets:
+            tool.setParent(None)
+            tool.deleteLater()
+        self.tool_widgets.clear()
+        self.main_window.summary_widget.update_summary()
+        self.update_placeholder()
+        self.refresh_dynamic_names()  # ← NEW
 
     def dropEvent(self, event):
         """Handles dropping tools into DropZone."""
@@ -128,3 +127,68 @@ class DropZone(QFrame):
             self.main_layout.insertWidget(2, self.placeholder_label)  # Keep it centered
             self.main_layout.insertItem(3, self.bottom_spacer)  # Push it up
 
+    # inside DropZone class
+
+    def _current_tools_in_visual_order(self):
+        tools = []
+        for i in range(self.layout.count()):
+            w = self.layout.itemAt(i).widget()
+            if isinstance(w, ToolWidget):
+                tools.append(w)
+        return tools
+
+    @staticmethod
+    def _replace_token_case_preserving(text: str, old_token: str, new_token: str) -> str:
+        """Replace first occurrence of old_token, preserving original token’s case style."""
+        lo = text.lower()
+        old_lo = old_token.lower()
+        idx = lo.find(old_lo)
+        if idx == -1:
+            return text
+        token = text[idx:idx + len(old_token)]
+        # preserve case style
+        if token.isupper():
+            repl = new_token.upper()
+        elif token[0].isupper():
+            repl = new_token.capitalize()
+        else:
+            repl = new_token.lower()
+        return text[:idx] + repl + text[idx + len(old_token):]
+
+    def refresh_dynamic_names(self):
+        """
+        Rule:
+          - If a 'lubricator' is BELOW any BOP -> display as 'riser'
+          - If a 'riser' is ABOVE the HIGHEST BOP -> display as 'lubricator'
+        Only affects labels; DB lookups remain on base_name.
+        """
+        tools = self._current_tools_in_visual_order()
+        if not tools:
+            return
+
+        bop_indices = [i for i, w in enumerate(tools) if "bop" in w.base_name.lower()]
+        if not bop_indices:
+            # No BOP present: revert everyone to their base name
+            for w in tools:
+                w.set_display_name(w.base_name)
+            return
+
+        highest_bop = min(bop_indices)
+
+        for i, w in enumerate(tools):
+            base = w.base_name
+            name = base
+
+            lower_base = base.lower()
+            # below any BOP == there exists a BOP above this tool
+            is_below_any_bop = any(bi < i for bi in bop_indices)
+            is_above_highest_bop = i < highest_bop
+
+            if "lubricator" in lower_base and is_below_any_bop:
+                name = self._replace_token_case_preserving(base, "lubricator", "riser")
+            elif "riser" in lower_base and is_above_highest_bop:
+                name = self._replace_token_case_preserving(base, "riser", "lubricator")
+            else:
+                name = base  # unchanged
+
+            w.set_display_name(name)

@@ -84,7 +84,6 @@ def on_export_finished(main_window, final_directory):
             os.startfile(final_directory)  # ✅ Opens the correct folder
         except Exception as e:
             print(f"⚠️ ERROR: Unable to open folder: {e}")
-
 def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_angle, well_type, date, operation_details, comments, drop_zone):
     """Exports tool string configuration to Excel and PDF."""
 
@@ -97,15 +96,12 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     if drop_zone.layout.count() > 18:
         last_row += 2 * (drop_zone.layout.count() - 18) - 1
 
-    png_path = excel_path.replace(".xlsx",".png")
+    png_path = excel_path.replace(".xlsx", ".png")
 
-    # **Define border style**
-    thin_border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin")
-    )
+    thin_side = Side(style="thin")
+    thin_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
 
-    # **Set title**
+    # --- Title ---
     ws["A1"] = "TOOL STRING SCHEMATIC"
     ws["A1"].font = Font(bold=True, size=14)
     ws["A1"].alignment = Alignment(horizontal="center")
@@ -114,12 +110,11 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     ws["A4"].font = Font(bold=True)
     ws["A5"] = operation_details
 
-    # **Client Information Section**
+    # --- Client Info ---
     client_info = [
         ["Client Name", "", "Location", "", "Well No.", "Well Type", "Max Angle", "Date"],
         [client_name, "", location, "", well_no, well_type, max_angle, date]
     ]
-
     for row_idx, row_data in enumerate(client_info, start=2):
         for col_idx, value in enumerate(row_data, start=1):
             cell = ws.cell(row=row_idx, column=col_idx, value=value)
@@ -128,22 +123,16 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
             if row_idx == 2:
                 cell.font = Font(bold=True)
 
-    # **Extract Tool Data**
-    data, tool_images = extract_tool_data(drop_zone)  # ✅ Call helper function
-
-    # ✅ You can now use `tool_images` for image processing
+    data, tool_images = extract_tool_data(drop_zone)
     print("Tool data extracted successfully!")
 
-    # **Table Headers**
-    headers = ["Diagram", "", "Description", "OD (in)", "Top Connection","Bottom Connection", "Length (ft)", "Weight (lbs)"]
-
+    headers = ["Diagram", "", "Description", "OD (in)", "Top Connection", "Bottom Connection", "Length (ft)", "Weight (lbs)"]
     for col_num, header in enumerate(headers, start=1):
         cell = ws.cell(row=6, column=col_num, value=header)
         cell.font = Font(bold=True)
         cell.border = thin_border
         cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    # **Calculate Totals**
     total_length = 0.0
     total_weight = 0.0
     od_list = []
@@ -157,19 +146,39 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
         total_weight += row_data[7]
 
     max_od = max(od_list)
-
     cell_remarks_title = 'C' + str(last_row - 5)
     cell_remarks_content = 'C' + str(last_row - 4)
     ws[cell_remarks_title] = "Remarks"
     ws[cell_remarks_title].font = Font(bold=True)
 
-    # **Apply Borders & Alignment**
+    # --- Apply Borders & Alignment ---
     for row in ws.iter_rows(min_row=1, max_row=last_row, min_col=1, max_col=8):
         for cell in row:
-            cell.border = thin_border
+            row_idx = cell.row
+            col_letter = cell.column_letter
+
+            # --- Apply only vertical borders inside C7:H44 ---
+            if ("C" <= col_letter <= "H") and (7 <= row_idx <= 44):
+                # Determine if cell is on the outer border of the region
+                is_top = (row_idx == 7)
+                is_bottom = (row_idx == 44)
+                is_left = (col_letter == "C")
+                is_right = (col_letter == "H")
+
+                # Only vertical borders inside, full borders on edges
+                cell.border = Border(
+                    left=thin_side if is_left or True else None,
+                    right=thin_side if is_right or True else None,
+                    top=thin_side if is_top else None,
+                    bottom=thin_side if is_bottom else None
+                )
+            else:
+                # Default full border for other areas
+                cell.border = thin_border
+
             cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    # **Auto-adjust Column Widths**
+    # --- Auto column width ---
     for col in ws.iter_cols(min_col=3, max_col=8):
         max_length = 0
         try:
@@ -181,6 +190,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
         except:
             pass
 
+    # --- Summary Rows ---
     for column in ['C', 'D', 'E', 'F', 'G', 'H']:
         cell1 = column + str(last_row - 7)
         cell2 = column + str(last_row - 6)
@@ -191,7 +201,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
             ws[cell2] = "Max OD (mm)"
         elif column == 'D':
             ws[cell1] = max_od
-            ws[cell2] = round(max_od*25.4,1)
+            ws[cell2] = round(max_od * 25.4, 1)
         if column == 'E':
             ws[cell1] = "Total Length (ft) & Weight (lbs)"
             ws[cell2] = "Total Length (m) & Weight (kg)"
@@ -199,16 +209,15 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
             ws.merge_cells(f"{cell2}:F{last_row-6}")
         elif column == 'G':
             ws[cell1] = total_length
-            ws[cell2] = round(total_length*0.3048,1)
+            ws[cell2] = round(total_length * 0.3048, 1)
         elif column == 'H':
             ws[cell1] = total_weight
-            ws[cell2] = round(total_weight*0.453592,1)
+            ws[cell2] = round(total_weight * 0.453592, 1)
 
-    # **Merging Cells**
+    # --- Merging ---
     ws.merge_cells(f"A1:{last_column}1")
     ws.merge_cells("A2:B2")
     ws.merge_cells("A3:B3")
-    ws.merge_cells("A6:B6")
     ws.merge_cells("A6:B6")
     ws.merge_cells("C2:D2")
     ws.merge_cells("C3:D3")
@@ -218,21 +227,16 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
     ws.merge_cells(f"{cell_remarks_title}:{last_column}{last_row - 5}")
     ws.merge_cells(f"{cell_remarks_content}:{last_column}{last_row}")
 
-    ws[cell_remarks_content] = comments.replace("\n", "\n")  # Ensures new lines are preserved
-    # Enable text wrapping and set left alignment
-    ws[cell_remarks_content].alignment = Alignment(
-        wrapText=True,  # ✅ Allows multi-line text
-        horizontal="left",  # ✅ Left-align text
-    )
+    ws[cell_remarks_content] = comments.replace("\n", "\n")
+    ws[cell_remarks_content].alignment = Alignment(wrapText=True, horizontal="left")
 
-    # **Insert Tool String Image**
+    # --- Insert Image ---
     cell = "B8"
     if tool_images:
         centered_images = expand_and_center_images(tool_images, 80, True)
         tool_image = combine_tool_images(centered_images)
         tool_image = remove_white_background(tool_image)
         tool_image.save(png_path)
-
         pil_img = PILImage.open(png_path)
         max_height = 850
         if pil_img.height > max_height:
@@ -240,7 +244,6 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
             new_width = int(pil_img.width * scale_factor)
             pil_img = pil_img.resize((new_width, max_height), PILImage.LANCZOS)
             pil_img.save(png_path)
-
         img = ExcelImage(png_path)
         ws.add_image(img, cell)
 
@@ -249,45 +252,33 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_an
 
     ws.row_dimensions[1].height = 55
     row_1_height = ws.row_dimensions[1].height
-    # Open the logo image
     logo_path = get_icon_path('logo_report')
     logo_img = PILImage.open(logo_path)
-    # Calculate scaling factor to fit within row 1 height
-    max_logo_height = row_1_height * 1.25  # Adjust scaling factor as needed
-    scale_factor = min(1, max_logo_height / logo_img.height)  # Ensures the logo doesn't exceed row height
-    # Resize the logo while maintaining aspect ratio
+    max_logo_height = row_1_height * 1.25
+    scale_factor = min(1, max_logo_height / logo_img.height)
     new_width = int(logo_img.width * scale_factor)
     new_height = int(logo_img.height * scale_factor)
     logo_img = logo_img.resize((new_width, new_height), PILImage.LANCZOS)
-    # ✅ Save resized image to memory instead of disk
     img_bytes = BytesIO()
-    logo_img.save(img_bytes, format="PNG")  # Store image in memory
-    img_bytes.seek(0)  # Reset file pointer
-    # Load resized image into Excel
-    excel_logo = ExcelImage(img_bytes)  # ✅ Use in-memory image instead of file
+    logo_img.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
+    excel_logo = ExcelImage(img_bytes)
     ws.add_image(excel_logo, "A1")
 
     footer_cell = last_column + str(last_row + 2)
     ws[footer_cell] = "This report was computer generated using Deleum Tool String Editor"
     ws[footer_cell].alignment = Alignment(horizontal="right",)
 
-    # **Page Layout Settings**
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
     ws.page_setup.fitToPage = True
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 0
     ws.print_area = f"A1:{last_column}{ws.max_row}"
-    # **Save Excel File**
 
     wb.save(excel_path)
     print(f"✅ Excel export successful: {excel_path}")
 
-    # # ✅ **Wait 2 seconds before opening with Win32 to prevent file access issues**
-    # time.sleep(2)
-    #
-    # # ✅ **Convert Excel to PDF**
-    # export_to_pdf(excel_path, pdf_path)
 
 def export_to_pdf(excel_path, pdf_path):
     """Converts an Excel file to PDF and ensures Excel closes properly."""

@@ -437,7 +437,7 @@ class SGSTXTApp(QWidget):
 
         # Define your steps
         instruction_steps = [
-            ("Step 1:", "Open PPS SmartView and convert raw (.rec) files into .txt files"),
+            ("Step 1:", "Open PPS SmartView/MetroWin and convert raw (.rec/.p3w) files into .txt files"),
             ("Step 2:", "Download and fill in the TVD Calculation template"),
             ("Step 3:", "Drag and drop Top Gauge and Bottom Gauge .txt files"),
             ("Step 4:", "Drag and drop filled TVD Calculation file"),
@@ -1248,12 +1248,25 @@ class SGSTXTApp(QWidget):
                 try:
                     date_str = parts[0].replace("-", "/")
                     time_str = parts[1]
-                    date_time = datetime.datetime.strptime(
-                        f"{date_str} {time_str}", "%d/%m/%Y %H:%M:%S"
-                    )
+
+                    # Try parsing with both 4-digit and 2-digit year
+                    date_time = None
+                    for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%y %H:%M:%S"):
+                        try:
+                            date_time = datetime.datetime.strptime(
+                                f"{date_str} {time_str}", fmt
+                            )
+                            break
+                        except ValueError:
+                            continue
+
+                    if date_time is None:
+                        continue  # Skip invalid line
+
                     pressure = float(parts[2])
                     temperature = float(parts[3])
                     data.append((date_time, pressure, temperature))
+
                 except ValueError:
                     continue
 
@@ -1696,8 +1709,13 @@ class SGSTXTApp(QWidget):
             self.events.append((thp['start'], "Reading THP"))
 
             # Only add POOH if it's not the last THP station
+            first = True
             if idx < len(thp_stations) - 1:
-                self.events.append((thp['end'], "POOH"))
+                if first:
+                    self.events.append((thp['end'], "RIH"))
+                    first = False
+                else:
+                    self.events.append((thp['end'], "POOH"))
 
             # For each non-THP station after this THP
             station_count = 0

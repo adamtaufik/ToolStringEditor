@@ -1,19 +1,116 @@
-Category,Tool Name,Nominal Size,OD (Inches),Top Connection,Lower Connection,Length (ft),Weight (lbs),Picture,Verified by,Description
-NOV,Stuffing Box,"3.5""",6.5,,"Otis 5-3/4""- 4 ACME",3,3.3,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 8ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,107,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 8ft + NPT Port,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,137,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 6ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,89,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 4ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,70,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 3ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,63,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 2ft,"3.5""",6.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,48,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 8ft,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,274,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 8ft + NPT Port,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,335,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 6ft,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,223,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 4ft,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,173,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 3ft,"5.5""",10.12,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,148,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 8ft,"7.5""",,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 8ft + NPT Port,"7.5""",,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 4ft,"7.5""",,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,301,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,Lubricator 3ft,"7.5""",,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,263,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-NOV,BOP,"3.5""",1.5,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",0.7,3.3,Yes,,Seals around wire
-NOV,X-Over,"2.875""",1.25,"Otis 5-3/4""- 4 ACME","2-7/8"" EUE 8RD",0.7,3.3,Yes,,Allows assembly of PCE with different connections
+Category,Brand,Tool Name,Nominal Size,Bore ID,Service,Working Pressure,Top Connection,Lower Connection,Length (ft),Weight (kg),Picture,Verified by,Description
+Stuffing Boxes,NOV,Stuffing Box,"3.5""",,H2S,10K,,"Otis 5-3/4""- 4 ACME",3,67,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 8ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,107,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 8ft + NPT Port,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,137,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 6ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,89,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 4ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,70,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 3ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,63,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 2ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,48,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 8ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,274,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 8ft + NPT Port,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,335,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 6ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,223,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 4ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,173,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 3ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,148,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 8ft,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 8ft + NPT Port,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 4ft,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,301,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+Lubricators,NOV,Lubricator 3ft,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,263,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
+BOP,NOV,Dual Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,300,Yes,,Seals around wire
+BOP,NOV,Dual Ram BOP,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.5,761,Yes,,Seals around wire
+BOP,NOV,Dual Ram BOP,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4.2,1545,Yes,,Seals around wire
+Special,NOV,Quick Test Sub,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.32,85,No,,PCE
+Special,NOV,Quick Test Sub,"5.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.6,204,No,,PCE
+Special,NOV,Quick Test Sub,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.9,362,No,,PCE
+Special,NOV,Pump-in Tee,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.5,73,No,,PCE
+Special,NOV,Pump-in Tee,"5.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.6,184,No,,PCE
+Special,NOV,Pump-in Tee,"7.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,264,No,,PCE
+Special,NOV,TIW,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.6,176,No,,PCE
+Special,NOV,TIW,"5.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.1,306,No,,PCE
+Special,NOV,Chemical Injection Sub,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.8,65,No,,PCE
+Special,NOV,Hydraulic Ball Valve,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,200,No,,PCE
+Stuffing Boxes,RMZ,Stuffing Box,"16"" (5K)",,H2S,5K,,"Otis 5""- 4 ACME",3.03,32,Yes,,Guides the slickline into the top of the lubricator and contains well pressure
+Stuffing Boxes,RMZ,Stuffing Box,"16"" (10K)",,H2S,10K,,"Otis 5""- 4 ACME",3.03,32,Yes,,Guides the slickline into the top of the lubricator and contains well pressure
+Lubricators,RMZ,Lubricator 10ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",10,98,No,,PCE
+Lubricators,RMZ,Lubricator 8ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,53,Yes,,PCE
+Lubricators,RMZ,Lubricator 6ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",6,64,Yes,,PCE
+Lubricators,RMZ,Lubricator 4ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",4,35,Yes,,PCE
+Lubricators,RMZ,Lubricator 3ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,30,Yes,,PCE
+Lubricators,RMZ,Lubricator 8ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",8,189,Yes,,PCE
+Lubricators,RMZ,Lubricator 6ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",6,156,Yes,,PCE
+Lubricators,RMZ,Lubricator 4ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",4,123,Yes,,PCE
+Lubricators,RMZ,Lubricator 3ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",3,106,Yes,,PCE
+Lubricators,RMZ,Lubricator 8ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",12,256,Yes,,PCE
+Lubricators,RMZ,Lubricator 6ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",10,223,Yes,,PCE
+Lubricators,RMZ,Lubricator 4ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",5,140,Yes,,PCE
+Lubricators,RMZ,Lubricator 3ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",2,89,Yes,,PCE
+BOP,RMZ,Dual Ram BOP,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,190,Yes,,PCE
+Lubricators,RMZ,Lubricator 8ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,470,Yes,,PCE
+Lubricators,RMZ,Lubricator 6ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",6,380,Yes,,PCE
+Lubricators,RMZ,Lubricator 5ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",5,335,Yes,,PCE
+Lubricators,RMZ,Lubricator 4ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",4,290,Yes,,PCE
+Lubricators,RMZ,Lubricator 12ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",12,650,Yes,,PCE
+Lubricators,RMZ,Lubricator 10ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",10,560,Yes,,PCE
+Special,RMZ,Quick Test Sub,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",3.56,380,No,,PCE
+Special,RMZ,Hydraulic Ball Valve,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,76,No,,PCE
+Special,RMZ,Hydraulic Ball Valve,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",3.54,553,No,,PCE
+Stuffing Boxes,Parveen,Stuffing Box,"3.5""",,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,58,Yes,,
+Lubricators,Parveen,Lubricator 10ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",10,90,No,,
+Lubricators,Parveen,Lubricator 8ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,76,Yes,,
+Lubricators,Parveen,Lubricator 8ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,76,Yes,,
+Lubricators,Parveen,Lubricator 6ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,53,Yes,,
+Lubricators,Parveen,Lubricator 4ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,40,Yes,,
+BOP,Parveen,Dual Ram BOP,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,232,Yes,,
+Lubricators,Parveen,Lubricator 8ft,"4.5""",4,STD,,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,296,Yes,,
+Lubricators,Parveen,Lubricator 4ft,"4.5""",4,STD,,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,140,Yes,,
+BOP,Parveen,BOP,"4.5""",4,STD,,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,575,Yes,,
+Stuffing Boxes,Parveen,Stuffing Box,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,58,Yes,,
+Lubricators,Parveen,Lubricator 8ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,128,Yes,,
+Lubricators,Parveen,Lubricator 4ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,60,Yes,,
+BOP,Parveen,Dual Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,266,Yes,,
+Stuffing Boxes,Hunting,Stuffing Box,"3.5""",,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,38,Yes,,
+Lubricators,Hunting,Lubricator 10ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",10,56,Yes,,
+Lubricators,Hunting,Lubricator 8ft + NPT Port,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,48,Yes,,
+Lubricators,Hunting,Lubricator 8ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,48,Yes,,
+Lubricators,Hunting,Lubricator 6ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",6,40,Yes,,
+Lubricators,Hunting,Lubricator 4ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",4,32,Yes,,
+Lubricators,Hunting,Lubricator 3ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,28,Yes,,
+BOP,Hunting,Dual Ram BOP,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,293,Yes,,
+Stuffing Boxes,Exwell,Stuffing Box,"16""",,H2S,10K,,"Otis 5-3/4""- 4 ACME",3,42,Yes,,
+Lubricators,Exwell,Lubricator 8ft + NPT Port,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,515,Yes,,
+Lubricators,Exwell,Lubricator 8ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,515,Yes,,
+Lubricators,Exwell,Lubricator 6ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",6,413,Yes,,
+Lubricators,Exwell,Lubricator 4ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",4,313,Yes,,
+Lubricators,Exwell,Lubricator 3ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",3,264,Yes,,
+BOP,Exwell,Dual Ram BOP,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",4.62,1520,Yes,,
+Lubricators,Exwell (Big),Lubricator 8ft + NPT Port,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",8,615,Yes,,
+Lubricators,Exwell (Big),Lubricator 8ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",8,615,Yes,,
+Lubricators,Exwell (Big),Lubricator 6ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",6,460,Yes,,
+Lubricators,Exwell (Big),Lubricator 4ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",4,310,Yes,,
+Lubricators,Exwell (Big),Lubricator 3ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",3,311,Yes,,
+Lubricators,Exwell (Big),Lubricator 10ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",10,615,Yes,,
+BOP,Exwell (Big),Dual Ram BOP,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",4.62,2250,Yes,,
+X-Overs,RMZ,"X-Over (5"" 'O' X 4-3/4"" 'B')",-,3,H2S,5K,"Otis 5""- 4 ACME","Bowen 4-3/4""- 4 ACME",1.5,18,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,RMZ,"X-Over (5"" 'O' X 4-3/4"" Solar Alert)",-,3,H2S,5K,"Otis 5""- 4 ACME","Solar Alert 4-3/4""- 4 ACME",1.5,18,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,RMZ,"X-Over (5"" 'O' X 2-3/8"" MCEvoy)",-,2.1,H2S,5K,"Otis 5""- 4 ACME","2-3/8"" MCEvoy",1.5,12,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,RMZ,"X-Over (5"" 'O' X Cameron)",-,3,H2S,5K,"Otis 5""- 4 ACME","4-21/64""- 4 Cameron",1.5,12,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,RMZ,"X-Over (5-3/4"" 'O' X 8-3/8"" 'O')",-,3.06,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 8-3/8""- 4 ACME",2,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,RMZ,"X-Over (11-1/2"" 'O' X 9-1/2"" 'O')",-,6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 9-1/2""- 4 ACME",1.5,93,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,RMZ,"X-Over (8-3/8"" 'O' X 11-1/2"" 'O')",-,4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 11-1/2""- 4 ACME",1.5,110,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (5-3/4"" 'O' X 13"" 'B')",-,3,H2S,10K,"Otis 5-3/4""- 4 ACME","Bowen 13-1/2""- 4 ACME",1.5,165,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (13"" 'B' X 11-1/2"" 'O')",-,6.625,H2S,10K,"Bowen 13-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",1.5,200,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (13"" 'B' X 9"" 'O')",-,3,H2S,10K,"Bowen 13-1/2""- 4 ACME","Otis 9""- 4 ACME",1.5,200,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (11-1/2"" 'O' X 9-1/2"" 'O') 15in",-,6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 9-1/2""- 4 ACME",2,103,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (11-1/2"" 'O' X 7"" 'B')",-,3,H2S,10K,"Otis 11-1/2""- 4 ACME","Bowen 7""- 5 ACME",1.67,112,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (11-1/2"" 'O' X 9-1/2"" 'O')",-,4,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 9-1/2""- 4 ACME",1.67,139,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (11-1/2"" 'O' X 9"" 'O')",-,5.12,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 9""- 4 ACME",1.67,125,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (11-1/2"" 'O' X 11-1/2"" 'B')",-,6.63,H2S,10K,"Otis 11-1/2""- 4 ACME","Bowen 11-1/2""- 4 ACME (Non Std)",1.67,146,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (11-1/2"" 'O' X 8-1/4"" 'B')",-,4,H2S,10K,"Otis 11-1/2""- 4 ACME","Bowen 8-1/4""- 4x2 ACME",1.67,113,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,RMZ,"X-Over (5"" 'O' X 2-3/8"" MCEvoy)",-,3,H2S,5K,"Otis 5""- 4 ACME","2-3/8"" MCEvoy",1.5,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (5"" 'O' X 3-1/2"" MCEvoy)",-,3,H2S,5K,"Otis 5""- 4 ACME","3-1/2"" MCEvoy",1.5,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,OMS,"X-Over (5"" 'O' X 4-3/4"" 'B')",-,2.5,H2S,5K,"Otis 5""- 4 ACME","Bowen 4-3/4""- 4 ACME",1.56,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (5-3/4"" 'O' X 5"" 'O')",-,3,H2S,5K,"Otis 5-3/4""- 4 ACME","Otis 5""- 4 ACME",1.5,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (5-1/2"" 'B' X 6-1/2"" 'O')",-,3,H2S,5K,"Bowen 5-1/2""- 4x2 ACME","Otis 6-1/2""- 4 ACME",1.5,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (5"" 'O' X 8-1/4"" 'O')",-,3,H2S,5K,"Otis 5""- 4 ACME","Otis 8-1/4""- 4 ACME",1,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,Exwell,"X-Over (5-1/2"" 'B' X 8-3/4"" 'O')",-,3,H2S,5K,"Bowen 5-1/2""- 4x2 ACME","Otis 8-3/4""- 4 ACME",1.5,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,X-Over,-,,H2S,10K,"Otis 5-3/4""- 4 ACME","2-7/8"" EUE 8RD",0.7,3.3,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+Stuffing Boxes,Paradigm,Parasheave + Antenna,-,,H2S,10K,,"Otis 5-3/4""- 4 ACME",8.3,152,Yes,,

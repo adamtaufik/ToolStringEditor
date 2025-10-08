@@ -3,15 +3,15 @@ from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtGui import QCursor, QPixmap, QGuiApplication
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
-    QLabel, QComboBox, QMessageBox, QFrame, QDateEdit
+    QLabel, QComboBox, QMessageBox, QFrame, QDateEdit, QSizePolicy
 )
 
 # Database & Editor logic
-from database.file_io import save_configuration, load_configuration
+from database.file_io_pce import save_configuration, load_configuration
 from features.pce_editor.export_manager import export_configuration
 
 # UI Components
-from ui.components.pce_editor.inputs import AngleInput, LimitedTextEdit
+from ui.components.pce_editor.inputs import LimitedTextEdit
 from ui.components.ui_footer import FooterWidget
 from ui.components.pce_editor.ui_dropzone import DropZone
 from ui.components.ui_sidebar_widget import SidebarWidget
@@ -65,7 +65,7 @@ class PCEEditor(QMainWindow):
             (get_icon_path('clear'), "Clear", self.drop_zone.clear_tools, "Clear all tools"),
             (get_icon_path('export'), "Export", lambda: export_configuration(self), "Export to Excel and PDF"),
             (get_icon_path('help'), "Help", self.show_help_window, "Open help documentation"),
-            (get_icon_path('database'), "Tool Database", self.show_database_window, "Open tool database")
+            (get_icon_path('database'), "PCE Database", self.show_database_window, "Open PCE database")
         ]
 
 
@@ -117,13 +117,13 @@ class PCEEditor(QMainWindow):
 
         # **Drop Zone**
         content_layout.addWidget(self.drop_zone)
-        self.drop_zone.setFixedWidth(870)
+        self.drop_zone.setFixedWidth(1020)
 
         content_layout.addSpacing(5)
 
-        # **Right Sidebar (Well Details & Summary)**
-        input_layout = self.setup_right_sidebar()
-        content_layout.addLayout(input_layout)
+        # -- Right Sidebar (Well Details & Summary)
+        right_panel = self.setup_right_sidebar(width=150)  # ← pick your width (e.g., 260–320)
+        content_layout.addWidget(right_panel)
 
         editor_layout.addLayout(content_layout)
 
@@ -156,10 +156,14 @@ class PCEEditor(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to copy drop zone:\n{str(e)}")
 
-    def setup_right_sidebar(self):
-        """Creates the right sidebar for well details & summary."""
+    def setup_right_sidebar(self, width=300):
+        """Creates the right sidebar for well details & summary as a fixed-width panel."""
+        right_panel = QWidget()
+        right_panel.setObjectName("rightSidebar")
+        right_panel.setFixedWidth(width)
+        right_panel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
 
-        input_layout = QVBoxLayout()
+        input_layout = QVBoxLayout(right_panel)
         input_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         input_layout.setContentsMargins(10, 0, 10, 0)
         input_layout.setSpacing(10)
@@ -171,39 +175,26 @@ class PCEEditor(QMainWindow):
         self.client_name = QLineEdit(placeholderText="Client Name")
         self.location = QLineEdit(placeholderText="Location")
         self.well_no = QLineEdit(placeholderText="Well No.")
-        self.max_angle = AngleInput()
         self.operation_details = QLineEdit(placeholderText="Operation Details")
 
-        # Date Picker for Job Date
+        # Date Picker
         self.job_date = QDateEdit()
         self.job_date.setFixedHeight(30)
         self.job_date.setCalendarPopup(True)
         self.job_date.setDate(QDate.currentDate())
-        self.job_date.setDisplayFormat("dd MMM yyyy")  # e.g., 18 Apr 2025
+        self.job_date.setDisplayFormat("dd MMM yyyy")
         self.job_date.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.job_date.dateChanged.connect(self.update_date_display)
 
         self.well_type = QComboBox()
         self.well_type.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.well_type.addItems([
-            "Oil Producer",
-            "Gas Producer",
-            "Water Injection",
-            "Gas Injection",
-            "Development Well",
-            "Exploration Well",
-            "CCUS Well"])
+            "Oil Producer", "Gas Producer", "Water Injection", "Gas Injection",
+            "Development Well", "Exploration Well", "CCUS Well"
+        ])
         self.well_type.setStyleSheet("""
-            QComboBox {
-                color: white;
-                background-color: transparent;
-                padding: 5px;
-                border-radius: 5px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: white;
-                color: black;
-            }
+            QComboBox { color: white; background-color: transparent; padding: 5px; border-radius: 5px; }
+            QComboBox QAbstractItemView { background-color: white; color: black; }
         """)
 
         input_layout.addWidget(self.client_name)
@@ -212,9 +203,7 @@ class PCEEditor(QMainWindow):
         little_layout = QHBoxLayout()
         little_layout.setContentsMargins(0, 0, 0, 0)
         little_layout.setSpacing(5)
-
         little_layout.addWidget(self.well_no)
-        little_layout.addWidget(self.max_angle)
         input_layout.addLayout(little_layout)
 
         input_layout.addWidget(self.well_type)
@@ -222,7 +211,7 @@ class PCEEditor(QMainWindow):
         date_layout = QHBoxLayout()
         calendar_icon = get_icon_path('calendar')
         icon_label = QLabel()
-        icon_label.setPixmap(QPixmap(calendar_icon).scaled(24,24, Qt.AspectRatioMode.KeepAspectRatio))
+        icon_label.setPixmap(QPixmap(calendar_icon).scaled(24, 24, Qt.AspectRatioMode.KeepAspectRatio))
         icon_label.setFixedWidth(24)
         date_layout.addWidget(icon_label)
         date_layout.addWidget(self.job_date)
@@ -231,11 +220,11 @@ class PCEEditor(QMainWindow):
 
         input_layout.addWidget(self.operation_details)
 
-        # **Separator Line**
+        # Separator
         line1 = QFrame()
         line1.setFrameShape(QFrame.Shape.HLine)
         line1.setFrameShadow(QFrame.Shadow.Sunken)
-        line1.setStyleSheet("background-color: white; height: 1px;")  # Make the line white and thick
+        line1.setStyleSheet("background-color: white; height: 1px;")
         input_layout.addWidget(line1)
 
         self.summary_label = QLabel("Summary")
@@ -245,20 +234,18 @@ class PCEEditor(QMainWindow):
         self.summary_widget = SummaryWidget(self.drop_zone)
         input_layout.addWidget(self.summary_widget)
 
-        # **Separator Line**
         line2 = QFrame()
         line2.setFrameShape(QFrame.Shape.HLine)
         line2.setFrameShadow(QFrame.Shadow.Sunken)
-        line2.setStyleSheet("background-color: white; height: 1px;")  # Make the line white and thick
+        line2.setStyleSheet("background-color: white; height: 1px;")
         input_layout.addWidget(line2)
 
-        # Use this custom widget in your sidebar setup
         self.comments = LimitedTextEdit(max_lines=5)
         input_layout.addWidget(self.comments, alignment=Qt.AlignmentFlag.AlignTop)
 
         input_layout.setContentsMargins(3, 10, 8, 0)
 
-        return input_layout
+        return right_panel
 
     def toggle_theme(self):
         self.current_theme = toggle_theme(
@@ -279,6 +266,6 @@ class PCEEditor(QMainWindow):
     def update_date_display(self):
         """Update the display format of the job date to include day name."""
         date = self.job_date.date()
-        formatted_date = date.toString("d/M/yyyy (dddd)")  # Example: 21/4/2025 (Monday)
-        self.job_date.setDisplayFormat("d/M/yyyy (dddd)")
+        formatted_date = date.toString("d/M/yyyy")  # Example: 21/4/2025 (Monday)
+        self.job_date.setDisplayFormat("d/M/yyyy")
         self.job_date.setToolTip(formatted_date)  # Optional: tooltip shows full date

@@ -73,7 +73,7 @@ if __name__ == "__main__":
     splash.setFont(splash_font)
 
     # Trial expiration check (done before creating StartWindow)
-    expiration_date = datetime(2025, 9, 30)
+    expiration_date = datetime(2025, 10, 31)
     today = datetime.today()
     days_left = (expiration_date - today).days
 

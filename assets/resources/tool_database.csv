@@ -76,12 +76,16 @@ Standard Service Tools,Drift,"2.735""",2.735,"1-1/16"" SR",,1,15,Yes,,Cylindrica
 Standard Service Tools,Drift,"2.72""",2.72,"1-1/16"" SR",,1,15,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Drift,"2.302""",2.302,"15/16"" SR",,1,15,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Drift,"2.27""",2.27,"15/16"" SR",,1,15,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
+Standard Service Tools,Drift,"2.187""",2.187,"15/16"" SR",,1,15,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Drift,"1.860""",1.86,"15/16"" SR",,1,15,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
+Standard Service Tools,Drift,"5.90""",5.9,"1-9/16"" SR",,1,50,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Drift,"5.890""",5.89,"1-9/16"" SR",,1,50,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Drift,"5.850""",5.85,"1-9/16"" SR",,1,45,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Drift,"5.610""",5.61,"1-9/16"" SR",,1,40,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Drift,"4.500""",4.5,"1-9/16"" SR",,1,35,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
+Standard Service Tools,Drift,"4.300""",4.3,"1-9/16"" SR",,1,35,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Drift,"3.800""",3.8,"1-9/16"" SR",,1,30,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
+Standard Service Tools,Drift,"3.62""",3.62,"1-9/16"" SR",,1,28,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Drift,"3.100""",3.1,"1-1/16"" SR",,1,25,Yes,,Cylindrical gauge used to verify internal diameter/clearance through restrictions or across the tubing (Tubing Clearance Check).
 Standard Service Tools,Gauge Cutter,"2.890""",2.89,"1-1/16"" SR",,1,10,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Standard Service Tools,Gauge Cutter,"2.867""",2.867,"1-1/16"" SR",,1,10,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
@@ -89,9 +93,13 @@ Standard Service Tools,Gauge Cutter,"2.800""",2.8,"1-1/16"" SR",,1,10,Yes,,Drift
 Standard Service Tools,Gauge Cutter,"2.735""",2.735,"1-1/16"" SR",,1,10,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Standard Service Tools,Gauge Cutter,"2.72""",2.72,"1-1/16"" SR",,1,10,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Standard Service Tools,Gauge Cutter,"2.302""",2.302,"15/16"" SR",,1,10,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
+Standard Service Tools,Gauge Cutter,"2.187""",2.187,"15/16"" SR",,1,10,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Standard Service Tools,Gauge Cutter,"1.860""",1.86,"15/16"" SR",,1,10,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
+Standard Service Tools,Gauge Cutter,"5.90""",5.9,"1-1/16"" SR",,1,15,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Standard Service Tools,Gauge Cutter,"5.85""",5.85,"1-1/16"" SR",,1,15,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Standard Service Tools,Gauge Cutter,"5.61""",5.61,"1-1/16"" SR",,1,14,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
+Standard Service Tools,Gauge Cutter,"3.80""",3.8,"1-1/16"" SR",,1,12,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
+Standard Service Tools,Gauge Cutter,"3.62""",3.62,"1-1/16"" SR",,1,12,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Standard Service Tools,Gauge Cutter,"3.1""",3.1,"1-1/16"" SR",,1,12,Yes,,Drifts the tubing and removes light scale/paraffin to verify clear ID before running other tools.
 Basic Tools,2' Roller Stem,"1-7/8""",2.5,"1-1/16"" SR, 1-7/8"" QLS","1-1/16"" SR, 1-7/8"" QLS",2,18.8,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
 Basic Tools,2' Roller Stem,"1-1/2""",1.8,"15/16"" SR, 1-1/2"" QLS","15/16"" SR, 1-1/2"" QLS",2,12,Yes,,Adds mass to the toolstring and uses rollers to handle high deviations.
@@ -198,12 +206,22 @@ Standard Service Tools,42BO,"2.813""",2.718,"1-1/16"" SR","1-1/16"" SR",1,12.6,Y
 Standard Service Tools,42BO,"2.750""",2.718,"1-1/16"" SR","1-1/16"" SR",1,12.6,Yes,,A shifting tool used in jar up motion to close SSDs.
 Standard Service Tools,42BO,"2.313""",2.156,"15/16"" SR","15/16"" SR",1,12.6,Yes,,A shifting tool used in jar up motion to close SSDs.
 Standard Service Tools,42BO,"1.875""",1.84,"15/16"" SR","15/16"" SR",1,12.6,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,42BO,"3.813"" (4-1/2"" Tub.)",3.813,"1-1/16"" SR","1-1/16"" SR",1,12.6,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,42BO,"4.562"" (5-1/2"" Tub.)",4.562,"1-1/16"" SR","1-1/16"" SR",1,14,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,42BO,"5.55"" (7"" Tub.)",5.55,"1-1/16"" SR","1-1/16"" SR",1,16,Yes,,A shifting tool used in jar up motion to close SSDs.
 Standard Service Tools,142BO,"2.813""",2.78,"1-1/16"" SR","1-1/16"" SR",1.5,12.6,Yes,,A shifting tool used in jar down motion to open SSDs.
 Standard Service Tools,142BO,"2.750""",2.72,"1-1/16"" SR","1-1/16"" SR",1.5,12.6,Yes,,A shifting tool used in jar down motion to open SSDs.
 Standard Service Tools,142BO,"2.313""",2.28,"15/16"" SR","15/16"" SR",1.5,12.6,Yes,,A shifting tool used in jar down motion to open SSDs.
 Standard Service Tools,142BO,"1.875""",1.843,"15/16"" SR","15/16"" SR",1.5,12.6,Yes,,A shifting tool used in jar down motion to open SSDs.
-Standard Service Tools,Tubing End Locator,"2"" - 3""",1.71,"1.0"" NPT","1.0"" NPT",2,10,Yes,,Used to locate end of tubing.
-Standard Service Tools,Tubing End Locator,"3"" - 5""",2.31,"1.062""-10","1.062""-10",2,15,Yes,,Used to locate end of tubing.
+Standard Service Tools,142BO,"3.813"" (4-1/2"" Tub.)",3.813,"1-1/16"" SR","1-1/16"" SR",1.5,18,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,142BO,"4.562"" (5-1/2"" Tub.)",4.562,"1-1/16"" SR","1-1/16"" SR",1.5,23,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,142BO,"5.55"" (7"" Tub.)",5.55,"1-1/16"" SR","1-1/16"" SR",1.5,25,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,XO Shifting Tool,"3.813"" (4-1/2"" Tub.)",3.813,"1-1/16"" SR","1-1/16"" SR",1.5,18,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,XO Shifting Tool,"4.562"" (5-1/2"" Tub.)",4.562,"1-1/16"" SR","1-1/16"" SR",1.5,23,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,XL Shifting Tool,"3.813"" (4-1/2"" Tub.)",3.813,"1-1/16"" SR","1-1/16"" SR",1.5,18,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,XL Shifting Tool,"4.562"" (5-1/2"" Tub.)",4.562,"1-1/16"" SR","1-1/16"" SR",1.5,23,Yes,,A shifting tool used in jar up motion to close SSDs.
+Standard Service Tools,Tubing End Locator,"2"" - 3""",1.71,"15/16"" SR","1.0"" NPT",2,10,Yes,,Used to locate end of tubing.
+Standard Service Tools,Tubing End Locator,"3"" - 5""",2.31,"1-1/16"" SR","1.062""-10",2,15,Yes,,Used to locate end of tubing.
 Standard Service Tools,X-Check Set Tool,"1.875""",1.75,"15/16"" SR",,1.2,5,No,,Used to verify lock mandrel fully set.
 Standard Service Tools,X-Check Set Tool,"2.313""",2.16,"15/16"" SR",,1.2,8,No,,Used to verify lock mandrel fully set.
 Standard Service Tools,X-Check Set Tool,"2.750""",2.661,"1-1/16"" SR",,1.2,10,No,,Used to verify lock mandrel fully set.
@@ -256,6 +274,7 @@ Standard Service Tools,Wire Spiral,"3""",1.75,"1-1/16"" SR",,2,20,Yes,,Brush/scr
 Standard Service Tools,Wire Spiral,"2.5""",1.375,"15/16"" SR",,2,15,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
 Standard Service Tools,Wire Spiral,"2""",1.187,"15/16"" SR",,2,10,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
 Standard Service Tools,Wire Spiral,"3.5"" OD",3.5,"1-1/16"" SR",,2,32.7,Yes,,Brush/scraper used to loosen paraffin/scale and confirm wire contact when locating broken wire.
+Standard Service Tools,Lead Impression Block,"1.50""",1.5,"15/16"" SR",,0.5,2.5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"2.00""",2,"15/16"" SR",,0.5,2.5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"2.30""",2.3,"15/16"" SR",,0.5,3.5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"2.52""",2.52,"1-1/16"" SR",,0.6,4.5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
@@ -263,22 +282,38 @@ Standard Service Tools,Lead Impression Block,"2.62""",2.62,"1-1/16"" SR",,0.6,5,
 Standard Service Tools,Lead Impression Block,"2.75""",2.75,"1-1/16"" SR",,0.6,5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"2.80""",2.8,"1-1/16"" SR",,0.6,5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"3.00""",3,"1-1/16"" SR",,0.6,6.8,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
+Standard Service Tools,Lead Impression Block,"3.50""",3.5,"1-1/16"" SR",,0.6,9,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"3.60""",3.6,"1-1/16"" SR",,0.6,9,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"3.79""",3.79,"1-1/16"" SR",,0.6,10,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"4.00""",4,"1-1/16"" SR",,0.6,11,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"4.25""",4.25,"1-1/16"" SR",,0.6,12,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"4.40""",4.4,"1-1/16"" SR",,0.6,13,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"4.50""",4.5,"1-1/16"" SR",,0.6,14,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
+Standard Service Tools,Lead Impression Block,"5.00""",5,"1-1/16"" SR",,0.6,15,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Lead Impression Block,"5.50""",5.5,"1-1/16"" SR",,0.6,15,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
+Standard Service Tools,Tar Baby,"2.62""",2.62,"1-1/16"" SR",,0.6,5,Yes,,Soft tool used to capture an impression of the top of a fish to identify profile and plan fishing.
 Standard Service Tools,Long Lead Impression Block,"1.00""",1,"15/16"" SR",,1,1.5,Yes,,Soft lead-faced tool used to capture an impression of the top of a fish to identify profile and plan fishing.
+Standard Service Tools,Sand Pump Bailer,"1-1/4""",2,"1-1/16"" SR",,12.3,17,Yes,,To collect sand or sample downhole.
+Standard Service Tools,Sand Pump Bailer,"1-1/2""",2,"1-1/16"" SR",,12.3,17,Yes,,To collect sand or sample downhole.
+Standard Service Tools,Sand Pump Bailer,"1-3/4""",2,"1-1/16"" SR",,12.3,17,Yes,,To collect sand or sample downhole.
 Standard Service Tools,Sand Pump Bailer,"2""",2,"1-1/16"" SR",,12.3,17,Yes,,To collect sand or sample downhole.
 Standard Service Tools,Sand Pump Bailer,"2-1/4""",2.25,"1-1/16"" SR",,12.3,21,Yes,,To collect sand or sample downhole.
-Standard Service Tools,Hydrostatic Bailer,"2""",2,"15/16"" SR",,6.7,33,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
-Standard Service Tools,Hydrostatic Bailer,"2-1/4""",2.25,"15/16"" SR",,6.7,46.2,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
+Standard Service Tools,Sand Pump Bailer,"2-1/2""",2.5,"1-1/16"" SR",,12.3,21,Yes,,To collect sand or sample downhole.
+Standard Service Tools,Sand Pump Bailer,"3.00""",3,"1-1/16"" SR",,12.3,23,Yes,,To collect sand or sample downhole.
+Standard Service Tools,Hydrostatic Bailer,"1-1/4""",1.25,"15/16"" SR",,6.7,33,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
+Standard Service Tools,Hydrostatic Bailer,"1-1/2""",1.5,"15/16"" SR",,6.7,33,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
+Standard Service Tools,Hydrostatic Bailer,"1-3/4""",1.75,"1-1/16"" SR",,6.7,33,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
+Standard Service Tools,Hydrostatic Bailer,"2""",2,"1-1/16"" SR",,6.7,33,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
+Standard Service Tools,Hydrostatic Bailer,"2-1/4""",2.25,"1-1/16"" SR",,6.7,46.2,Yes,,To collect sand or sample downhole. Used only when there is a solid base present.
+Fishing Tools,Blind Box,"1.50""",1.5,"15/16"" SR",,0.5,2,Yes,,Used to base down tools or box-off wire from rope socket.
+Fishing Tools,Blind Box,"1.75""",1.75,"15/16"" SR",,0.5,2.5,Yes,,Used to base down tools or box-off wire from rope socket.
 Fishing Tools,Blind Box,"2.00""",2,"15/16"" SR",,0.5,2,Yes,,Used to base down tools or box-off wire from rope socket.
+Fishing Tools,Blind Box,"2.25""",2.25,"15/16"" SR",,0.5,2.5,Yes,,Used to base down tools or box-off wire from rope socket.
 Fishing Tools,Blind Box,"2.30""",2.3,"15/16"" SR",,0.5,2.5,Yes,,Used to base down tools or box-off wire from rope socket.
+Fishing Tools,Blind Box,"2.45""",2.45,"1-1/16"" SR",,0.5,3.5,Yes,,Used to base down tools or box-off wire from rope socket.
 Fishing Tools,Blind Box,"2.62""",2.62,"1-1/16"" SR",,0.5,3.5,Yes,,Used to base down tools or box-off wire from rope socket.
 Fishing Tools,Blind Box,"2.72""",2.72,"1-1/16"" SR",,0.5,3.5,Yes,,Used to base down tools or box-off wire from rope socket.
+Fishing Tools,Blind Box,"3.00""",3,"1-1/16"" SR",,0.6,5,Yes,,Used to base down tools or box-off wire from rope socket.
 Fishing Tools,Blind Box,"3.30""",3.3,"1-1/16"" SR",,0.6,6,Yes,,Used to base down tools or box-off wire from rope socket.
 Fishing Tools,Blind Box,"3.50""",3.5,"1-1/16"" SR",,0.6,6,Yes,,Used to base down tools or box-off wire from rope socket.
 Fishing Tools,Blind Box,"3.75""",3.75,"1-1/16"" SR",,0.6,7,Yes,,Used to base down tools or box-off wire from rope socket.
@@ -291,10 +326,12 @@ Fishing Tools,Heavy Duty Releasable Overshot,"2.5""",2.18,"1-1/16"" SR",,2,22,Ye
 Fishing Tools,Heavy Duty Releasable Overshot,"3""",2.6,"1-1/16"" SR",,2,15.4,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Heavy Duty Releasable Overshot,"4""",3.7,"1-1/16"" SR",,2,9.9,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Overshot,"3""",2.72,"1-1/16"" SR",,1.8,22,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
-Fishing Tools,Overshot,"2-1/2""",2.25,"1-1/16"" SR",,1.7,15.4,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
-Fishing Tools,Overshot,"2""",1.75,"1-1/16"" SR",,1.7,9.9,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
-Fishing Tools,Fishing Magnet,2.75,2.75,"15/16"" SR",,1,20.2,No,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
-Fishing Tools,Fishing Magnet,2.25,2.25,"15/16"" SR",,1,13.5,No,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Overshot,"2-1/2""",2.3,"1-1/16"" SR",,1.7,15.4,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Overshot,"2""",1.77,"1-1/16"" SR",,1.7,9.9,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Fishing Magnet,"2.75""",2.75,"15/16"" SR",,1,20.2,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Fishing Magnet,"2.62""",2.62,"15/16"" SR",,1,20.2,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Fishing Magnet,"2.25""",2.25,"15/16"" SR",,1,13.5,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Fishing Magnet,"1.75""",1.75,"15/16"" SR",,1,13.5,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Standard Service Tools,GLV Catcher (with X Lock Mandrel),TBC,,X-Lock,,,,No,,Slickline tool used in Standard Service Tools operations; function requires specific procedure reference.
 Standard Service Tools,Junk Catcher,TBC,,,,,,No,,Slickline tool used in Standard Service Tools operations; function requires specific procedure reference.
 Standard Service Tools,A-Stop,"3""",2.719,Internal Fish Neck,,2,15,Yes,,Slickline tool used in Standard Service Tools operations; function requires specific procedure reference.
@@ -340,16 +377,26 @@ Fishing Tools,Wire Grab,"5"" Tbg.",3.8,"1-9/16"" SR",,2.2,22,Yes,,Serrated fishi
 Fishing Tools,Wire Grab,"5-1/2"" Tbg.",4.53,"1-9/16"" SR",,2.2,22,Yes,,Serrated fishing tool designed to bite and retrieve parted slickline or wireline from the wellbore.
 Fishing Tools,Wire Grab,"6"" Tbg.",6,"1-9/16"" SR",,2.2,22,Yes,,Serrated fishing tool designed to bite and retrieve parted slickline or wireline from the wellbore.
 Fishing Tools,Wire Grab,"5-1/2"" Tbg.",4.5,"1-9/16"" SR",,2.2,22,Yes,,Serrated fishing tool designed to bite and retrieve parted slickline or wireline from the wellbore.
-Fishing Tools,Alligator Grab,TBC,,,,3,0,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
-Fishing Tools,Tubing Broach,TBC,,,,1,0,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Alligator Grab,"2-3/8"" Tbg.",1.85,"15/16"" SR",,2.2,13.2,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Alligator Grab,"2-7/8"" Tbg.",2.31,"15/16"" SR",,2.2,13.2,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Alligator Grab,"3-1/2"" Tbg.",2.85,"1-1/16"" SR",,2.2,13.2,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Tubing Broach,"1.860""",1.86,"15/16"" SR",,1,8,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Tubing Broach,"2.302""",2.302,"15/16"" SR",,1,10,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Tubing Broach,"2.735""",2.735,"1-1/16"" SR",,1,12,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Tubing Broach,"2.8""",2.8,"1-1/16"" SR",,1,14,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Tubing Swage,"1.860""",2.62,"15/16"" SR",,0.8,5,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Tubing Swage,"2.302""",2.72,"15/16"" SR",,0.8,5,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Tubing Swage,"2.62""",2.62,"1-1/16"" SR",,0.8,5,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Tubing Swage,"2.72""",2.72,"1-1/16"" SR",,0.8,5,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Tubing Swage,"2.735""",2.735,"1-1/16"" SR",,0.8,5,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Tubing Swage,"2.78""",2.78,"1-1/16"" SR",,0.8,5,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Fishing Tools,Tubing Swage,"2.8""",2.8,"1-1/16"" SR",,0.8,5,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Tubing Swage,"3.10""",3.1,"1-1/16"" SR",,1,7,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Tubing Swage,"3.75""",3.75,"1-1/16"" SR",,1,11,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Tubing Swage,"4.10""",4.1,"1-1/16"" SR",,1,13,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Tubing Swage,"4.50""",4.5,"1-1/16"" SR",,1,16,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
 Fishing Tools,Go-Devil,TBC,,,,,0,Yes,,Slickline tool used in Fishing Tools operations; function requires specific procedure reference.
+Standard Service Tools,Lock Open Tool,"5.963""",5.963,"1-1/16"" SR",,10,815.71,Yes,,To permanently lock the TRSCSSV in open position.
 PPS,PPS Quartz Memory Gauge,"1.25""",1.25,"15/16"" SR",,4.14,11.2,Yes,,PPS memory gauge module used for recording pressure/temperature during slickline‑deployed surveys. (Manufacturer: Pioneer Petrotech Services (PPS)).
 Paradigm Tools,Cable Head,"1-11/16""",1.688,,Sondex,1,5,Yes,,Connects digital slickline to the toolstring; transmits tensile load and data signals.
 Paradigm Tools,PCH,"1-11/16""",1.688,Sondex,ParaComm Pin,1.8,7.9,Yes,,Transmits data signals between PPU and surface.

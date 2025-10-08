@@ -1,9 +1,10 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCursor
+from PyQt6.QtGui import QCursor, QIcon, QAction
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QScrollArea, QComboBox, QLabel
 from ui.components.toolstring_editor.ui_draggable_button import DraggableButton
 from database.logic_database import get_tool_data, get_full_tool_database
 from utils.styles import DARK_STYLE
+import os
 
 class ToolLibrary(QWidget):
     """Sidebar for listing available tools."""
@@ -21,6 +22,15 @@ class ToolLibrary(QWidget):
         self.search_bar.setPlaceholderText("Search tools...")
         self.search_bar.textChanged.connect(self.update_tool_list)
         self.layout.addWidget(self.search_bar)
+
+        # ✅ Add Clear (❌) button action to search bar
+        self.clear_action = QAction(QIcon.fromTheme("edit-clear"), "Clear", self.search_bar)
+        self.clear_action.triggered.connect(self.clear_search_bar)
+        self.search_bar.addAction(self.clear_action, QLineEdit.ActionPosition.TrailingPosition)
+        self.clear_action.setVisible(False)  # Hide by default
+
+        # Show/hide ❌ depending on input
+        self.search_bar.textChanged.connect(self.toggle_clear_button)
 
         # **Filter Dropdown**
         self.filter_combo = QComboBox()
@@ -48,6 +58,16 @@ class ToolLibrary(QWidget):
         self.layout.addWidget(self.tool_count_label)
 
         self.update_tool_list()
+
+    # ✅ New helper: toggles ❌ visibility
+    def toggle_clear_button(self, text):
+        self.clear_action.setVisible(bool(text.strip()))
+
+    # ✅ New helper: clears text when ❌ clicked
+    def clear_search_bar(self):
+        self.search_bar.clear()
+        self.search_bar.setFocus()
+
 
     def update_tool_list(self):
         """Updates the tool list based on search input and selected category."""

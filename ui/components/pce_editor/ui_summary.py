@@ -19,7 +19,7 @@ class SummaryWidget(QWidget):
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # **Create Summary Items**
-        self.max_od_icon, self.max_od_label, self.max_od_value, self.max_od_metric = self.create_summary_item("Max OD",
+        self.min_id_icon, self.min_id_label, self.min_id_value, self.min_id_metric = self.create_summary_item("Min ID",
                                                                                           "icon_od")
         self.total_length_icon, self.total_length_label, self.total_length_value, self.total_length_metric = self.create_summary_item(
             "Total Length", "icon_length")
@@ -27,13 +27,13 @@ class SummaryWidget(QWidget):
             "Total Weight", "icon_weight")
 
         # **Add Items to Grid Layout (Ensuring Alignment)**
-        self.layout.addWidget(self.max_od_icon, 0, 0)
-        self.max_od_icon.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.layout.addWidget(self.min_id_icon, 0, 0)
+        self.min_id_icon.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.od_layout = QVBoxLayout()
         self.od_layout.setSpacing(0)
-        self.od_layout.addWidget(self.max_od_label)
-        self.od_layout.addWidget(self.max_od_value)
-        self.od_layout.addWidget(self.max_od_metric)
+        self.od_layout.addWidget(self.min_id_label)
+        self.od_layout.addWidget(self.min_id_value)
+        self.od_layout.addWidget(self.min_id_metric)
         self.layout.addLayout(self.od_layout, 0, 1)
 
         self.layout.addWidget(QLabel(""), 1, 0)  # ✅ Empty row for spacing
@@ -89,22 +89,26 @@ class SummaryWidget(QWidget):
 
         tool_widgets = self.dropzone.tool_widgets if self.dropzone else None
 
-        max_od = 0.0
+        min_id = 10.0
         total_length = 0.0
         total_weight = 0.0
 
         if tool_widgets is not None:
             for tool in tool_widgets:
-                # od = float(tool.od_label.text().split()[0]) if tool.od_label.text() != "N/A" else 0.0
+                id = float(tool.id_label.text().split()[0].strip('"')) if tool.id_label.text() != "N/A" else 0.0
                 length = float(tool.length_label.text().split()[0]) if tool.length_label.text() != "N/A" else 0.0
                 weight = float(tool.weight_label.text().split()[0]) if tool.weight_label.text() != "N/A" else 0.0
 
-                # max_od = max(max_od, od)
+                min_id = min(min_id, id)
                 total_length += length
                 total_weight += weight
 
-        self.max_od_value.setText(f"{max_od:.3f} in")
-        self.max_od_metric.setText(f"({max_od*25.4:.1f} mm)")
+        if min_id < 10.0:
+            self.min_id_value.setText(f"{min_id:.3f} in")
+            self.min_id_metric.setText(f"({min_id*25.4:.1f} mm)")
+        else:
+            self.min_id_value.setText(f"-")
+            self.min_id_metric.setText(f"-")
 
         self.total_length_value.setText(f"{total_length:.1f} ft")
         self.total_length_metric.setText(f"({total_length*0.3048:.1f} m)")
