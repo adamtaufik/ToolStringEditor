@@ -1,6 +1,6 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QTimer
 from PyQt6.QtGui import QCursor, QIcon, QAction
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QScrollArea, QComboBox, QLabel
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QScrollArea, QComboBox, QLabel, QGraphicsOpacityEffect
 from ui.components.toolstring_editor.ui_draggable_button import DraggableButton
 from database.logic_database import get_tool_data, get_full_tool_database
 from utils.styles import DARK_STYLE
@@ -23,14 +23,53 @@ class ToolLibrary(QWidget):
         self.search_bar.textChanged.connect(self.update_tool_list)
         self.layout.addWidget(self.search_bar)
 
-        # ✅ Add Clear (❌) button action to search bar
-        self.clear_action = QAction(QIcon.fromTheme("edit-clear"), "Clear", self.search_bar)
-        self.clear_action.triggered.connect(self.clear_search_bar)
-        self.search_bar.addAction(self.clear_action, QLineEdit.ActionPosition.TrailingPosition)
-        self.clear_action.setVisible(False)  # Hide by default
+        from PyQt6.QtWidgets import QPushButton
 
-        # Show/hide ❌ depending on input
-        self.search_bar.textChanged.connect(self.toggle_clear_button)
+        # --- Clear (❌) button setup ---
+        self.clear_button = QPushButton("✕", self.search_bar)
+        self.clear_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.clear_button.setVisible(False)
+        self.clear_button.setStyleSheet("""
+            QPushButton {
+                color: white;
+                font-size: 14px;
+                background-color: transparent;
+                border: none;
+                padding: 0 6px;
+            }
+            QPushButton:hover {
+                color: #dddddd;
+            }
+            QPushButton:pressed {
+                color: #aaaaaa;
+            }
+        """)
+
+        # Connect behavior
+        self.clear_button.clicked.connect(self.clear_search_bar)
+
+        # --- Position it inside QLineEdit ---
+        self.search_bar.setTextMargins(0, 0, 20, 0)  # make room for the button
+        self.clear_button.setFixedSize(20, 20)
+
+        def reposition_clear_button():
+            """Keep the ❌ button aligned at the right edge of QLineEdit."""
+            frame_width = self.search_bar.style().pixelMetric(self.search_bar.style().PixelMetric.PM_DefaultFrameWidth)
+            x = self.search_bar.rect().right() - self.clear_button.width() - frame_width - 2
+            y = (self.search_bar.height() - self.clear_button.height()) // 2
+            self.clear_button.move(x, y)
+
+        self.search_bar.textChanged.connect(lambda text: (
+            self.clear_button.setVisible(bool(text.strip())),
+            reposition_clear_button()
+        ))
+
+        # ✅ safer resize event binding (no tuple return)
+        def resize_event(event):
+            QLineEdit.resizeEvent(self.search_bar, event)
+            reposition_clear_button()
+
+        self.search_bar.resizeEvent = resize_event
 
         # **Filter Dropdown**
         self.filter_combo = QComboBox()
@@ -57,7 +96,8 @@ class ToolLibrary(QWidget):
         self.tool_count_label.setStyleSheet("font-size: 10px; font-style: italic;")
         self.layout.addWidget(self.tool_count_label)
 
-        self.update_tool_list()
+        # # Run initial load with a slight delay to ensure sidebar is visible
+        # QTimer.singleShot(200, self.update_tool_list)
 
     # ✅ New helper: toggles ❌ visibility
     def toggle_clear_button(self, text):
@@ -68,13 +108,11 @@ class ToolLibrary(QWidget):
         self.search_bar.clear()
         self.search_bar.setFocus()
 
-
     def update_tool_list(self):
         """Updates the tool list based on search input and selected category."""
         selected_category = self.filter_combo.currentText()
         search_text = self.search_bar.text().strip().lower()
 
-        # Use full DB so we can see 'Description' if it exists
         full_df = get_full_tool_database().copy()
 
         if selected_category != "All Tools":
@@ -92,42 +130,7 @@ class ToolLibrary(QWidget):
         # Build unique list with description lookup
         tool_count = 0
         seen = set()
-        for _, row in full_df.iterrows():
-            tool_name = str(row["Tool Name"])
-            if tool_name in seen:
-                continue
-            seen.add(tool_name)
-
-            # Prefer row Description; else try a quick heuristic fallback
-            description = None
-            if "Description" in full_df.columns:
-                desc_series = full_df.loc[full_df["Tool Name"] == tool_name, "Description"].dropna()
-                if not desc_series.empty:
-                    description = str(desc_series.iloc[0]).strip()
-
-            if not description:
-                description = self._fallback_description(tool_name, str(row.get("Category", "")))
-
-            btn = DraggableButton(tool_name, dropzone=self.drop_zone, description=description)
-            self.tool_list_layout.addWidget(btn)
-            tool_count += 1
-
-        self.tool_list_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.tool_count_label.setText(f"Showing {tool_count} tools")
-
-    def populate_tool_list(self, category):
-        """Clears and repopulates the tool list based on category."""
-        while self.tool_list_layout.count() > 0:
-            item = self.tool_list_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-
-        full_df = get_full_tool_database().copy()
-        if category != "All Tools":
-            full_df = full_df[full_df["Category"] == category]
-
-        tool_count = 0
-        seen = set()
+        new_buttons = []
         for _, row in full_df.iterrows():
             tool_name = str(row["Tool Name"])
             if tool_name in seen:
@@ -144,11 +147,41 @@ class ToolLibrary(QWidget):
                 description = self._fallback_description(tool_name, str(row.get("Category", "")))
 
             btn = DraggableButton(tool_name, dropzone=self.drop_zone, description=description)
+            btn.setGraphicsEffect(QGraphicsOpacityEffect(btn))
+            btn.graphicsEffect().setOpacity(0)  # Start invisible
+
             self.tool_list_layout.addWidget(btn)
+            new_buttons.append(btn)
             tool_count += 1
 
         self.tool_list_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.tool_count_label.setText(f"Showing {tool_count} tools")
+
+        # Trigger waterfall fade-in
+        self.animate_buttons_fade_in(new_buttons)
+
+    def animate_buttons_fade_in(self, buttons):
+        """Creates a staggered waterfall fade-in animation for new tool buttons."""
+        delay_interval = 80  # milliseconds between each button fade start
+        duration = 300  # fade duration per button
+
+        # Keep reference to prevent garbage collection
+        if not hasattr(self, "_fade_animations"):
+            self._fade_animations = []
+
+        for i, btn in enumerate(buttons):
+            effect = btn.graphicsEffect()
+            anim = QPropertyAnimation(effect, b"opacity", self)
+            anim.setDuration(duration)
+            anim.setStartValue(0)
+            anim.setEndValue(1)
+            anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+            self._fade_animations.append(anim)
+
+            # Start animation after staggered delay
+            QTimer.singleShot(i * delay_interval, anim.start)
+
 
 def _fallback_description(self, tool_name:str, category:str) -> str:
     name = (tool_name or "").lower()

@@ -107,6 +107,10 @@ class SidebarWidget(QFrame):
                 # for btn in self.menu_items:
                 #     btn.setVisible(False)
 
+        parent_editor = self.window()
+        if hasattr(parent_editor, "fade_right_sidebar"):
+            parent_editor.fade_right_sidebar(visible= self.expanded)
+
         animation.finished.connect(on_animation_finished)
         animation.start()
 

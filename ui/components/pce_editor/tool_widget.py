@@ -103,6 +103,9 @@ class ToolWidget(QWidget):
             self.top_connection_label.setWordWrap(True)  # ← enable wrapping
             self.top_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.top_connection_label.setStyleSheet("border:none; color:black;")
+            font = self.top_connection_label.font()
+            font.setPointSize(8)  # Set the desired font size
+            self.top_connection_label.setFont(font)
             self.layout.addWidget(self.top_connection_label)
 
             self.lower_connection_label = QLabel("N/A")  # ← was QComboBox before
@@ -110,6 +113,9 @@ class ToolWidget(QWidget):
             self.lower_connection_label.setWordWrap(True)  # ← enable wrapping
             self.lower_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.lower_connection_label.setStyleSheet("border:none; color:black;")
+            font = self.lower_connection_label.font()
+            font.setPointSize(8)  # Set the desired font size
+            self.lower_connection_label.setFont(font)
             self.layout.addWidget(self.lower_connection_label)
 
             self.layout.addSpacing(7)

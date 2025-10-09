@@ -1,9 +1,9 @@
 # PyQt6 core modules
-from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtCore import Qt, QDate, QPropertyAnimation, QEasingCurve, QTimer
 from PyQt6.QtGui import QCursor, QPixmap, QGuiApplication
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
-    QLabel, QComboBox, QMessageBox, QFrame, QDateEdit, QSizePolicy
+    QLabel, QComboBox, QMessageBox, QFrame, QDateEdit, QSizePolicy, QGraphicsOpacityEffect
 )
 
 # Database & Editor logic
@@ -91,6 +91,7 @@ class PCEEditor(QMainWindow):
         main_body.addLayout(editor_layout)
 
         main_container.addLayout(main_body)
+        QTimer.singleShot(400, lambda: self.fade_right_sidebar(True))
 
     def setup_ui(self, editor_layout):
         """Sets up the main UI layout."""
@@ -122,8 +123,8 @@ class PCEEditor(QMainWindow):
         content_layout.addSpacing(5)
 
         # -- Right Sidebar (Well Details & Summary)
-        right_panel = self.setup_right_sidebar(width=150)  # ← pick your width (e.g., 260–320)
-        content_layout.addWidget(right_panel)
+        self.right_panel = self.setup_right_sidebar()
+        content_layout.addWidget(self.right_panel)
 
         editor_layout.addLayout(content_layout)
 
@@ -131,9 +132,11 @@ class PCEEditor(QMainWindow):
         footer = FooterWidget(self, theme_callback=self.toggle_theme)
         self.theme_button = footer.theme_button  # ✅ now this won't crash
         editor_layout.addWidget(footer)
+        self.right_panel.setGraphicsEffect(QGraphicsOpacityEffect(self.right_panel))
+        self.right_panel.graphicsEffect().setOpacity(0.0)
 
         # ✅ **Populate Tools**
-        self.tool_library.populate_tool_list("All Tools")
+        self.tool_library.update_tool_list()
 
     def copy_dropzone_to_clipboard(self):
         """Capture the drop zone as an image and copy it to the clipboard."""
@@ -156,11 +159,11 @@ class PCEEditor(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to copy drop zone:\n{str(e)}")
 
-    def setup_right_sidebar(self, width=300):
+    def setup_right_sidebar(self):
         """Creates the right sidebar for well details & summary as a fixed-width panel."""
         right_panel = QWidget()
         right_panel.setObjectName("rightSidebar")
-        right_panel.setFixedWidth(width)
+        right_panel.setFixedWidth(150)
         right_panel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
 
         input_layout = QVBoxLayout(right_panel)
@@ -269,3 +272,33 @@ class PCEEditor(QMainWindow):
         formatted_date = date.toString("d/M/yyyy")  # Example: 21/4/2025 (Monday)
         self.job_date.setDisplayFormat("d/M/yyyy")
         self.job_date.setToolTip(formatted_date)  # Optional: tooltip shows full date
+
+    def fade_right_sidebar(self, visible: bool):
+        """Fade the right sidebar in or out smoothly."""
+        if not hasattr(self, "right_panel") or self.right_panel is None:
+            return
+
+        # Create opacity effect if not yet applied
+        if not hasattr(self.right_panel, "opacity_effect"):
+            self.right_panel.opacity_effect = QGraphicsOpacityEffect(self.right_panel)
+            self.right_panel.setGraphicsEffect(self.right_panel.opacity_effect)
+
+        anim = QPropertyAnimation(self.right_panel.opacity_effect, b"opacity")
+        anim.setDuration(250)
+        anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        if visible:
+            self.right_panel.show()
+            anim.setStartValue(0.0)
+            anim.setEndValue(1.0)
+        else:
+            anim.setStartValue(1.0)
+            anim.setEndValue(0.0)
+
+            def hide_after():
+                self.right_panel.hide()
+
+            anim.finished.connect(hide_after)
+
+        anim.start()
+        self._fade_anim = anim  # Keep a reference so GC doesn’t kill it

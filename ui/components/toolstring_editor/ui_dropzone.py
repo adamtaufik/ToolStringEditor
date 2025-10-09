@@ -1,5 +1,5 @@
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QSpacerItem
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QSpacerItem, QGraphicsOpacityEffect
+from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QTimer
 
 from features.ts_editor.logic_image_processing import expand_and_center_images
 from ui.components.toolstring_editor.tool_widget import ToolWidget
@@ -65,7 +65,7 @@ class DropZone(QFrame):
         # **Tools Layout**
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)  
+        self.layout.setSpacing(0)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.main_layout.addLayout(self.layout)
         self.main_layout.setContentsMargins(0, 5, 0, 5)
@@ -128,3 +128,38 @@ class DropZone(QFrame):
             self.main_layout.insertWidget(2, self.placeholder_label)  # Keep it centered
             self.main_layout.insertItem(3, self.bottom_spacer)  # Push it up
 
+    def showEvent(self, event):
+        """Animate the DropZone expanding into view on startup."""
+        super().showEvent(event)
+
+        if getattr(self, "_startup_animated", False):
+            return
+
+        self._startup_animated = True  # prevent replay
+
+        # # --- Step 1: Fade-in effect ---
+        # opacity_effect = QGraphicsOpacityEffect(self)
+        # self.setGraphicsEffect(opacity_effect)
+        # opacity_anim = QPropertyAnimation(opacity_effect, b"opacity")
+        # opacity_anim.setDuration(600)
+        # opacity_anim.setStartValue(0)
+        # opacity_anim.setEndValue(1)
+        # opacity_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        # --- Step 2: Height expansion ---
+        start_height = 0
+        end_height = self.total_dropzone_height
+        height_anim = QPropertyAnimation(self, b"maximumHeight")
+        height_anim.setDuration(700)
+        height_anim.setStartValue(start_height)
+        height_anim.setEndValue(end_height)
+        height_anim.setEasingCurve(QEasingCurve.Type.OutBack)  # gives a smooth overshoot
+
+        # --- Step 3: Chain animations cleanly ---
+        # Start height first, then fade slightly after
+        height_anim.start()
+        # QTimer.singleShot(150, opacity_anim.start)
+
+        # # Keep references to prevent garbage collection
+        # self._animations = [height_anim, opacity_anim]
+        self._animations = [height_anim]

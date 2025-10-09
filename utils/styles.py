@@ -297,6 +297,7 @@ COMBO_STYLE_BLACK = f"""
                 selection-background-color: #87CEFA;
                 selection-color: black;
                 background-color: #fff;
+                color: black;
                 font-size: 10pt;
             }}
             """

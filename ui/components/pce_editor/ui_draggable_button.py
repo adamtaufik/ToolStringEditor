@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QPushButton, QLabel, QHBoxLayout, QMenu, QApplication, QToolTip
 from PyQt6.QtCore import Qt, QMimeData, QTimer
 from PyQt6.QtGui import QPixmap, QCursor, QDrag, QColor, QPalette, QAction
+from reportlab.platypus.paraparser import sizeDelta
 
 FEEDBACK_STYLE = """background-color: rgba(163, 163, 163, 1);
                 border-radius: 5px !important;
@@ -27,6 +28,12 @@ class DraggableButton(QPushButton):
         layout.setSpacing(10)
 
         self.text_label = QLabel(self.tool_name, self)
+        font = self.text_label.font()
+        size = 10
+        if 'X-Over' in self.tool_name:
+            size = 8
+        font.setPointSize(size)  # Set the desired font size
+        self.text_label.setFont(font)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignCenter)
         self.text_label.setWordWrap(True)
         layout.addWidget(self.text_label)

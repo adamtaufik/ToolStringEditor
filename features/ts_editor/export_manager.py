@@ -84,6 +84,7 @@ def on_export_finished(main_window, final_directory):
             os.startfile(final_directory)  # ✅ Opens the correct folder
         except Exception as e:
             print(f"⚠️ ERROR: Unable to open folder: {e}")
+
 def export_to_excel(excel_path, pdf_path, client_name, location, well_no, max_angle, well_type, date, operation_details, comments, drop_zone):
     """Exports tool string configuration to Excel and PDF."""
 
