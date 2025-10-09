@@ -88,6 +88,7 @@ def get_tool_data(tool_name=None):
             "OD": row.get("OD (Inches)", 0),
             "Length": row.get("Length (ft)", 0),
             "Weight": row.get("Weight (kg)", 0),
+            "Working Pressure": row.get("Working Pressure", 0),
             "Top Connections": str(row.get("Top Connection", "")).split(","),
             "Lower Connections": str(row.get("Lower Connection", "")).split(","),
         }

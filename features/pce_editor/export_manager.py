@@ -93,7 +93,7 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, date, 
     wb = Workbook()
     ws = wb.active
     ws.title = "Tool String"
-    last_column = 'H'
+    last_column = 'I'
     last_row = 52
 
     if drop_zone.layout.count() > 18:
@@ -268,8 +268,8 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, date, 
         ws.column_dimensions['B'].width = 18
 
     # === Remarks (after we know last_row) ===
-    cell_remarks_title = f"C{last_row - 5}"
-    cell_remarks_content = f"C{last_row - 4}"
+    cell_remarks_title = f"C{last_row - 3}"
+    cell_remarks_content = f"C{last_row - 2}"
     ws[cell_remarks_title] = "Remarks"
     ws[cell_remarks_title].font = Font(bold=True)
     ws[cell_remarks_content] = comments.replace("\n", "\n")
@@ -301,20 +301,65 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, date, 
     for column in ['C', 'D', 'E', 'F', 'G', 'H', 'J']:
         cell1 = f"{column}{last_row - 7}"
         cell2 = f"{column}{last_row - 6}"
+        cell3 = f"{column}{last_row - 5}"
+        cell4 = f"{column}{last_row - 4}"
         ws[cell1].font = Font(bold=True)
         ws[cell2].font = Font(bold=True)
+        ws[cell3].font = Font(bold=True)
+        ws[cell4].font = Font(bold=True)
         ws[cell1].alignment = Alignment(vertical="center")
         ws[cell2].alignment = Alignment(vertical="center")
+        ws[cell3].alignment = Alignment(vertical="center")
+        ws[cell4].alignment = Alignment(vertical="center")
         if column == 'C':
             ws[cell1] = "Minimum ID (in)"
+            ws[cell3] = "Maximum ID (in)"
         if column == 'E':
             ws[cell1] = "Bott. of Stuffing Box to Top of BOP (ft)"
-            ws[cell2] = "Bott. of Stuffing Box to Top of Tree (ft)"
+            ws[cell2] = "Bott. of BOP to Top of Tree (ft)"
+            ws[cell3] = "Maximum tool string capacity (ft)"
+            ws[cell4] = "Total PCE height (ft)"
+
         elif column == 'F':
-            ws[cell1] = total_length
-            ws[cell2] = total_length
+            # --- Detect key tools and compute sectional totals ---
+            stuffing_index = None
+            bop_index = None
+            for idx, row_data in enumerate(data):
+                tool_name = str(row_data[2]).lower()
+                if any(x in tool_name for x in ["stuffing box", "parasheave"]) and stuffing_index is None:
+                    stuffing_index = idx
+                if "bop" in tool_name and bop_index is None:
+                    bop_index = idx
+
+            # Default to total length if key tools not found
+            if stuffing_index is None or bop_index is None or bop_index <= stuffing_index:
+                ws[cell1] = total_length
+                ws[cell2] = total_length
+            else:
+                # Compute total length between Stuffing Box/Parasheave and BOP
+                length_between = 0.0
+                for row_data in data[stuffing_index + 1:bop_index]:
+                    length_between += get_number(row_data[5])
+
+                # Compute total length below BOP
+                length_below = 0.0
+                for row_data in data[bop_index + 1:]:
+                    length_below += get_number(row_data[5])
+
+                # Compute total length below BOP
+                length_capacity = 0.0
+                for row_data in data[stuffing_index + 1:]:
+                    length_capacity += get_number(row_data[5])
+
+                ws[cell1] = round(length_between, 2)
+                ws[cell2] = round(length_below, 2)
+                ws[cell3] = round(length_capacity, 2)
+
+            ws[cell4] = total_length
+
         elif column == 'G':
             ws[cell1] = "Total Weight (kg)"
+            ws[cell3] = "Total Weight (MT)"
 
     DATA_START_ROW = 7  # your first data row (headers at 6)
     summary_start_row = last_row - 7  # the row that contains "Max OD..." title
@@ -385,11 +430,15 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, date, 
             "A4:I4",
             "A5:I5",
             "C45:C46",
+            "C47:C48",
             "D45:D46",
+            "D47:D48",
             "G45:H46",
+            "G47:H48",
             "I45:I46",
-            "C47:I47",
-            "C48:I52",
+            "I47:I48",
+            "C49:I49",
+            "C50:I52",
         ]
 
         for rng in merge_ranges:
@@ -425,12 +474,20 @@ def export_to_excel(excel_path, pdf_path, client_name, location, well_no, date, 
             ws["D45"] = min(id_values)
             ws["D45"].font = Font(bold=True)
             ws["D45"].alignment = Alignment(horizontal="center", vertical="center")
+
+            ws["D47"] = max(id_values)
+            ws["D47"].font = Font(bold=True)
+            ws["D47"].alignment = Alignment(horizontal="center", vertical="center")
         else:
             ws["D45"] = ""
 
         ws["I45"] = total_weight
         ws["I45"].font = Font(bold=True)
         ws["I45"].alignment = Alignment(horizontal="center", vertical="center")
+
+        ws["I47"] = round(total_weight/1000, 1)
+        ws["I47"].font = Font(bold=True)
+        ws["I47"].alignment = Alignment(horizontal="center", vertical="center")
 
     except Exception as e:
         print(f"⚠️ Merge/border/min-ID patch failed: {e}")
@@ -519,6 +576,10 @@ def extract_tool_data(drop_zone):
         if "X-Over" in tool_name:
             data.append([
                 "", "", "X-Over", id, connection_text, length, service, wp, weight
+            ])
+        elif "Parasheave" in tool_name:
+            data.append([
+                "", "", f"{tool_name}", id, connection_text, length, service, wp, weight
             ])
         else:
             data.append([

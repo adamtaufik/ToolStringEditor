@@ -113,8 +113,8 @@ class SummaryWidget(QWidget):
         self.total_length_value.setText(f"{total_length:.1f} ft")
         self.total_length_metric.setText(f"({total_length*0.3048:.1f} m)")
 
-        self.total_weight_value.setText(f"{total_weight:.1f} lbs")
-        self.total_weight_metric.setText(f"({total_weight*0.453592:.1f} kg)")
+        self.total_weight_value.setText(f"{total_weight:.1f} kg")
+        self.total_weight_metric.setText(f"({total_weight/1000:.1f} MT)")
 
 def load_icon(label, file_name):
     """Loads an icon and applies color inversion while keeping transparency."""

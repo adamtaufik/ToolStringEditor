@@ -233,13 +233,26 @@ class ToolWidget(QWidget):
         if self.summary_widget:
             self.summary_widget.update_summary()
 
-    # -------- population helpers --------
     def init_brand_size_service_combos(self):
         brands = self.tool_data.get("brands", [])
+
         with QSignalBlocker(self.brand_label):
             self.brand_label.clear()
             self.brand_label.addItems(brands)
 
+            # --- Priority selection logic ---
+            preferred_brand = None
+            if "RMZ" in brands:
+                preferred_brand = "RMZ"
+            elif "NOV" in brands:
+                preferred_brand = "NOV"
+            elif brands:
+                preferred_brand = brands[0]
+
+            if preferred_brand:
+                self.brand_label.setCurrentText(preferred_brand)
+
+        # --- Populate size & service combos based on selected brand ---
         brand = self.brand_label.currentText() if brands else ""
         self._rebuild_sizes_for_brand(brand)
         size = self.nominal_size_selector.currentText()
@@ -310,7 +323,8 @@ class ToolWidget(QWidget):
 
         self.id_label.setText(f"{float(rec.get('ID', 0)):.3f}\"")
         self.length_label.setText(f"{float(rec.get('Length', 0)):.1f} ft")
-        self.weight_label.setText(f"{float(rec.get('Weight', 0)):.1f} lbs")
+        self.weight_label.setText(f"{float(rec.get('Weight', 0)):.1f} kg")
+        self.wp_label.setText(rec.get('Working Pressure', 0))
 
         lowers = [x.strip() for x in rec.get("Lower Connections", []) if x and x.lower() != "nan"]
         tops = [x.strip() for x in rec.get("Top Connections", []) if x and x.lower() != "nan"]

@@ -20,7 +20,7 @@ from ui.components.ui_titlebar import CustomTitleBar
 from ui.components.pce_editor.ui_tool_library import ToolLibrary
 
 # Windows
-from ui.windows.ui_database_window import DatabaseWindow
+from ui.windows.ui_database_window_pce import DatabaseWindow
 from ui.windows.ui_help_window import HelpWindow
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 
@@ -59,8 +59,8 @@ class PCEEditor(QMainWindow):
         self.drop_zone = DropZone(self)
 
         items = [
-            (get_icon_path('save'), "Save", lambda: save_configuration(self), "Save the current file (Ctrl+S)", "Ctrl+S"),
-            (get_icon_path('load'), "Load", lambda: load_configuration(self), "Open a file (Ctrl+O)", "Ctrl+O"),
+            # (get_icon_path('save'), "Save", lambda: save_configuration(self), "Save the current file (Ctrl+S)", "Ctrl+S"),
+            # (get_icon_path('load'), "Load", lambda: load_configuration(self), "Open a file (Ctrl+O)", "Ctrl+O"),
             (get_icon_path('copy'), "Copy as Image", self.copy_dropzone_to_clipboard, "Copy current tool config as PNG (Ctrl+C)", "Ctrl+C"),
             (get_icon_path('clear'), "Clear", self.drop_zone.clear_tools, "Clear all tools"),
             (get_icon_path('export'), "Export", lambda: export_configuration(self), "Export to Excel and PDF"),

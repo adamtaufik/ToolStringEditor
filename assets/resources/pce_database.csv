@@ -1,94 +1,98 @@
 Category,Brand,Tool Name,Nominal Size,Bore ID,Service,Working Pressure,Top Connection,Lower Connection,Length (ft),Weight (kg),Picture,Verified by,Description
-Stuffing Boxes,NOV,Stuffing Box,"3.5""",,H2S,10K,,"Otis 5-3/4""- 4 ACME",3,67,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 8ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,107,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 8ft + NPT Port,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,137,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 6ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,89,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 4ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,70,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 3ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,63,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 2ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,48,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 8ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,274,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 8ft + NPT Port,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,335,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 6ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,223,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 4ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,173,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 3ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,148,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 8ft,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 8ft + NPT Port,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 4ft,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,301,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-Lubricators,NOV,Lubricator 3ft,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,263,Yes,,Connects slickline to the toolstring by gripping the wireline; transmits tensile load and enables quick reheading at surface.
-BOP,NOV,Dual Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,300,Yes,,Seals around wire
-BOP,NOV,Dual Ram BOP,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.5,761,Yes,,Seals around wire
-BOP,NOV,Dual Ram BOP,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4.2,1545,Yes,,Seals around wire
-Special,NOV,Quick Test Sub,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.32,85,No,,PCE
-Special,NOV,Quick Test Sub,"5.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.6,204,No,,PCE
-Special,NOV,Quick Test Sub,"7""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.9,362,No,,PCE
-Special,NOV,Pump-in Tee,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.5,73,No,,PCE
-Special,NOV,Pump-in Tee,"5.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.6,184,No,,PCE
-Special,NOV,Pump-in Tee,"7.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,264,No,,PCE
-Special,NOV,TIW,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.6,176,No,,PCE
-Special,NOV,TIW,"5.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.1,306,No,,PCE
-Special,NOV,Chemical Injection Sub,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.8,65,No,,PCE
-Special,NOV,Hydraulic Ball Valve,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,200,No,,PCE
+Stuffing Boxes,NOV,Stuffing Box,"3.5""",,H2S,10K,,"Otis 5-3/4""- 4 ACME",3,67,Yes,,Guides the slickline into the top of the lubricator and contains well pressure
+Lubricators,NOV,Lubricator 8ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,107,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 8ft + NPT Port,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,137,Yes,,Fitted with a port to bleed off pressure
+Lubricators,NOV,Lubricator 6ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,89,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 4ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,70,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 3ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,63,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 2ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,48,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 8ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,274,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 8ft + NPT Port,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,335,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 6ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,223,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 4ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,173,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 3ft,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,148,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 8ft,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 8ft + NPT Port,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,453,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 4ft,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,301,Yes,,To house the tool string in preparation for running into the well
+Lubricators,NOV,Lubricator 3ft,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,263,Yes,,To house the tool string in preparation for running into the well
+BOP,NOV,Dual Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,300,Yes,,Seals around wire in case of blowout
+BOP,NOV,Dual Ram BOP,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.5,761,Yes,,Seals around wire in case of blowout
+BOP,NOV,Dual Ram BOP,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4.2,1545,Yes,,Seals around wire in case of blowout
+Special,NOV,Quick Test Sub,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.32,85,No,,To pressure test PCE
+Special,NOV,Quick Test Sub,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.6,204,No,,To pressure test PCE
+Special,NOV,Quick Test Sub,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.9,362,No,,To pressure test PCE
+Special,NOV,Pump-in Tee,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.5,73,No,, To provide convenient entry path for large flow fluid into pressure control equipment
+Special,NOV,Pump-in Tee,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.6,184,No,, To provide convenient entry path for large flow fluid into pressure control equipment
+Special,NOV,Pump-in Tee,"7.5""",7,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,264,No,, To provide convenient entry path for large flow fluid into pressure control equipment
+Special,NOV,TIW,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.6,176,No,,A ball valve that can hold pressure from both directions
+Special,NOV,TIW,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.1,306,No,,A ball valve that can hold pressure from both directions
+Special,NOV,Chemical Injection Sub,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.8,65,No,,To apply various fluids to the wireline during well service operations
+Special,NOV,Hydraulic Ball Valve,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,200,No,,A ball valve that can hold pressure from both directions
 Stuffing Boxes,RMZ,Stuffing Box,"16"" (5K)",,H2S,5K,,"Otis 5""- 4 ACME",3.03,32,Yes,,Guides the slickline into the top of the lubricator and contains well pressure
 Stuffing Boxes,RMZ,Stuffing Box,"16"" (10K)",,H2S,10K,,"Otis 5""- 4 ACME",3.03,32,Yes,,Guides the slickline into the top of the lubricator and contains well pressure
-Lubricators,RMZ,Lubricator 10ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",10,98,No,,PCE
-Lubricators,RMZ,Lubricator 8ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,53,Yes,,PCE
-Lubricators,RMZ,Lubricator 6ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",6,64,Yes,,PCE
-Lubricators,RMZ,Lubricator 4ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",4,35,Yes,,PCE
-Lubricators,RMZ,Lubricator 3ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,30,Yes,,PCE
-Lubricators,RMZ,Lubricator 8ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",8,189,Yes,,PCE
-Lubricators,RMZ,Lubricator 6ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",6,156,Yes,,PCE
-Lubricators,RMZ,Lubricator 4ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",4,123,Yes,,PCE
-Lubricators,RMZ,Lubricator 3ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",3,106,Yes,,PCE
-Lubricators,RMZ,Lubricator 8ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",12,256,Yes,,PCE
-Lubricators,RMZ,Lubricator 6ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",10,223,Yes,,PCE
-Lubricators,RMZ,Lubricator 4ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",5,140,Yes,,PCE
-Lubricators,RMZ,Lubricator 3ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",2,89,Yes,,PCE
-BOP,RMZ,Dual Ram BOP,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,190,Yes,,PCE
-Lubricators,RMZ,Lubricator 8ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,470,Yes,,PCE
-Lubricators,RMZ,Lubricator 6ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",6,380,Yes,,PCE
-Lubricators,RMZ,Lubricator 5ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",5,335,Yes,,PCE
-Lubricators,RMZ,Lubricator 4ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",4,290,Yes,,PCE
-Lubricators,RMZ,Lubricator 12ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",12,650,Yes,,PCE
-Lubricators,RMZ,Lubricator 10ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",10,560,Yes,,PCE
-Special,RMZ,Quick Test Sub,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",3.56,380,No,,PCE
-Special,RMZ,Hydraulic Ball Valve,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,76,No,,PCE
-Special,RMZ,Hydraulic Ball Valve,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",3.54,553,No,,PCE
-Stuffing Boxes,Parveen,Stuffing Box,"3.5""",,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,58,Yes,,
-Lubricators,Parveen,Lubricator 10ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",10,90,No,,
-Lubricators,Parveen,Lubricator 8ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,76,Yes,,
-Lubricators,Parveen,Lubricator 8ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,76,Yes,,
-Lubricators,Parveen,Lubricator 6ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,53,Yes,,
-Lubricators,Parveen,Lubricator 4ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,40,Yes,,
-BOP,Parveen,Dual Ram BOP,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,232,Yes,,
-Lubricators,Parveen,Lubricator 8ft,"4.5""",4,STD,,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,296,Yes,,
-Lubricators,Parveen,Lubricator 4ft,"4.5""",4,STD,,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,140,Yes,,
-BOP,Parveen,BOP,"4.5""",4,STD,,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,575,Yes,,
-Stuffing Boxes,Parveen,Stuffing Box,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,58,Yes,,
-Lubricators,Parveen,Lubricator 8ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,128,Yes,,
-Lubricators,Parveen,Lubricator 4ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,60,Yes,,
-BOP,Parveen,Dual Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,266,Yes,,
-Stuffing Boxes,Hunting,Stuffing Box,"3.5""",,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,38,Yes,,
-Lubricators,Hunting,Lubricator 10ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",10,56,Yes,,
-Lubricators,Hunting,Lubricator 8ft + NPT Port,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,48,Yes,,
-Lubricators,Hunting,Lubricator 8ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,48,Yes,,
-Lubricators,Hunting,Lubricator 6ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",6,40,Yes,,
-Lubricators,Hunting,Lubricator 4ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",4,32,Yes,,
-Lubricators,Hunting,Lubricator 3ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,28,Yes,,
-BOP,Hunting,Dual Ram BOP,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,293,Yes,,
-Stuffing Boxes,Exwell,Stuffing Box,"16""",,H2S,10K,,"Otis 5-3/4""- 4 ACME",3,42,Yes,,
-Lubricators,Exwell,Lubricator 8ft + NPT Port,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,515,Yes,,
-Lubricators,Exwell,Lubricator 8ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,515,Yes,,
-Lubricators,Exwell,Lubricator 6ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",6,413,Yes,,
-Lubricators,Exwell,Lubricator 4ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",4,313,Yes,,
-Lubricators,Exwell,Lubricator 3ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",3,264,Yes,,
-BOP,Exwell,Dual Ram BOP,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",4.62,1520,Yes,,
-Lubricators,Exwell (Big),Lubricator 8ft + NPT Port,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",8,615,Yes,,
-Lubricators,Exwell (Big),Lubricator 8ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",8,615,Yes,,
-Lubricators,Exwell (Big),Lubricator 6ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",6,460,Yes,,
-Lubricators,Exwell (Big),Lubricator 4ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",4,310,Yes,,
-Lubricators,Exwell (Big),Lubricator 3ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",3,311,Yes,,
-Lubricators,Exwell (Big),Lubricator 10ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",10,615,Yes,,
-BOP,Exwell (Big),Dual Ram BOP,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",4.62,2250,Yes,,
+Lubricators,RMZ,Lubricator 10ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",10,98,No,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 8ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,53,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 8ft + NPT Port,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,53,Yes,,Fitted with a port to bleed off pressure
+Lubricators,RMZ,Lubricator 6ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",6,64,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 4ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",4,35,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 3ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,30,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 8ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",8,189,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 8ft + NPT Port,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",8,189,Yes,,Fitted with a port to bleed off pressure
+Lubricators,RMZ,Lubricator 6ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",6,156,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 4ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",4,123,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 3ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",3,106,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 8ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",12,256,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 6ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",10,223,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 4ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",5,140,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 3ft,"4.5""",4.06,H2S,10K,"Otis 8-3/8""- 4 ACME","Otis 8-3/8""- 4 ACME",2,89,Yes,,To house the tool string in preparation for running into the well
+BOP,RMZ,Dual Ram BOP,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,190,Yes,,Seals around wire in case of blowout
+Lubricators,RMZ,Lubricator 8ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,470,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 8ft + NPT Port,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,470,Yes,,Fitted with a port to bleed off pressure
+Lubricators,RMZ,Lubricator 6ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",6,380,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 5ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",5,335,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 4ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",4,290,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 12ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",12,650,Yes,,To house the tool string in preparation for running into the well
+Lubricators,RMZ,Lubricator 10ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",10,560,Yes,,To house the tool string in preparation for running into the well
+Special,RMZ,Quick Test Sub,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",3.56,380,No,,To pressure test PCE
+Special,RMZ,Hydraulic Ball Valve,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,76,No,,A ball valve that can hold pressure from both directions
+Special,RMZ,Hydraulic Ball Valve,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",3.54,553,No,,A ball valve that can hold pressure from both directions
+Stuffing Boxes,Parveen,Stuffing Box,"3.5""",,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,58,Yes,,Guides the slickline into the top of the lubricator and contains well pressure
+Lubricators,Parveen,Lubricator 10ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",10,90,No,,To house the tool string in preparation for running into the well
+Lubricators,Parveen,Lubricator 8ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,76,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Parveen,Lubricator 8ft + NPT Port,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,76,Yes,,Fitted with a port to bleed off pressure
+Lubricators,Parveen,Lubricator 8ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,76,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Parveen,Lubricator 6ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",6,53,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Parveen,Lubricator 4ft,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,40,Yes,,To house the tool string in preparation for running into the well
+BOP,Parveen,Dual Ram BOP,"3.5""",3,STD,5K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,232,Yes,,Seals around wire in case of blowout
+Lubricators,Parveen,Lubricator 8ft,"4.5""",4,STD,,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,296,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Parveen,Lubricator 4ft,"4.5""",4,STD,,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,140,Yes,,To house the tool string in preparation for running into the well
+BOP,Parveen,Dual Ram BOP,"4.5""",4,STD,,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,575,Yes,,Seals around wire in case of blowout
+Stuffing Boxes,Parveen,Stuffing Box,"3.5""",,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,58,Yes,,Guides the slickline into the top of the lubricator and contains well pressure
+Lubricators,Parveen,Lubricator 8ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",8,128,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Parveen,Lubricator 4ft,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4,60,Yes,,To house the tool string in preparation for running into the well
+BOP,Parveen,Dual Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3,266,Yes,,Seals around wire in case of blowout
+Stuffing Boxes,Hunting,Stuffing Box,"3.5""",,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,38,Yes,,Guides the slickline into the top of the lubricator and contains well pressure
+Lubricators,Hunting,Lubricator 10ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",10,56,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Hunting,Lubricator 8ft + NPT Port,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,48,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Hunting,Lubricator 8ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",8,48,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Hunting,Lubricator 6ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",6,40,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Hunting,Lubricator 4ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",4,32,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Hunting,Lubricator 3ft,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,28,Yes,,To house the tool string in preparation for running into the well
+BOP,Hunting,Dual Ram BOP,"3.5""",3,H2S,5K,"Otis 5""- 4 ACME","Otis 5""- 4 ACME",3,293,Yes,,Seals around wire in case of blowout
+Stuffing Boxes,Exwell,Stuffing Box,"16""",,H2S,10K,,"Otis 5-3/4""- 4 ACME",3,42,Yes,,Guides the slickline into the top of the lubricator and contains well pressure
+Lubricators,Exwell,Lubricator 8ft + NPT Port,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,515,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Exwell,Lubricator 8ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",8,515,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Exwell,Lubricator 6ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",6,413,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Exwell,Lubricator 4ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",4,313,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Exwell,Lubricator 3ft,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",3,264,Yes,,To house the tool string in preparation for running into the well
+BOP,Exwell,Dual Ram BOP,"7""",6.625,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 11-1/2""- 4 ACME",4.62,1520,Yes,,Seals around wire in case of blowout
+Lubricators,Exwell (Big),Lubricator 8ft + NPT Port,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",8,615,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Exwell (Big),Lubricator 8ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",8,615,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Exwell (Big),Lubricator 6ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",6,460,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Exwell (Big),Lubricator 4ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",4,310,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Exwell (Big),Lubricator 3ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",3,311,Yes,,To house the tool string in preparation for running into the well
+Lubricators,Exwell (Big),Lubricator 10ft,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",10,615,Yes,,To house the tool string in preparation for running into the well
+BOP,Exwell (Big),Dual Ram BOP,"7""",7.06,H2S,10K,"Bowen 13-1/2""-4 ACME","Bowen 13-1/2""-4 ACME",4.62,2250,Yes,,Seals around wire in case of blowout
 X-Overs,RMZ,"X-Over (5"" 'O' X 4-3/4"" 'B')",-,3,H2S,5K,"Otis 5""- 4 ACME","Bowen 4-3/4""- 4 ACME",1.5,18,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
 X-Overs,RMZ,"X-Over (5"" 'O' X 4-3/4"" Solar Alert)",-,3,H2S,5K,"Otis 5""- 4 ACME","Solar Alert 4-3/4""- 4 ACME",1.5,18,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
 X-Overs,RMZ,"X-Over (5"" 'O' X 2-3/8"" MCEvoy)",-,2.1,H2S,5K,"Otis 5""- 4 ACME","2-3/8"" MCEvoy",1.5,12,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
@@ -112,5 +116,9 @@ X-Overs,Exwell,"X-Over (5-3/4"" 'O' X 5"" 'O')",-,3,H2S,5K,"Otis 5-3/4""- 4 ACME
 X-Overs,Exwell,"X-Over (5-1/2"" 'B' X 6-1/2"" 'O')",-,3,H2S,5K,"Bowen 5-1/2""- 4x2 ACME","Otis 6-1/2""- 4 ACME",1.5,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
 X-Overs,Exwell,"X-Over (5"" 'O' X 8-1/4"" 'O')",-,3,H2S,5K,"Otis 5""- 4 ACME","Otis 8-1/4""- 4 ACME",1,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
 X-Overs,Exwell,"X-Over (5-1/2"" 'B' X 8-3/4"" 'O')",-,3,H2S,5K,"Bowen 5-1/2""- 4x2 ACME","Otis 8-3/4""- 4 ACME",1.5,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
-X-Overs,NOV,X-Over,-,,H2S,10K,"Otis 5-3/4""- 4 ACME","2-7/8"" EUE 8RD",0.7,3.3,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
-Stuffing Boxes,Paradigm,Parasheave + Antenna,-,,H2S,10K,,"Otis 5-3/4""- 4 ACME",8.3,152,Yes,,
+X-Overs,NOV,"X-Over (5-3/4"" 'O' X 11-1/2"" 'O')",-,3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 11-1/2""- 4 ACME",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (5-3/4"" 'O' X 9"" 'O')",-,3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 9""- 4 ACME",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (11-1/2"" 'O' X 9-1/2"" 'O')",-,4,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 9-1/2""- 4 ACME",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (11-1/2"" 'O' X 11-1/2"" 'B')",-,6.63,H2S,10K,"Otis 11-1/2""- 4 ACME","Bowen 11-1/2""- 4 ACME (Non Std)",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (9"" 'O' X 11-1/2"" 'O')",-,4,H2S,10K,"Otis 9""- 4 ACME","Otis 11-1/2""- 4 ACME",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+Stuffing Boxes,Paradigm,Parasheave + Antenna,-,,H2S,10K,,"Otis 5-3/4""- 4 ACME",8.3,152,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
