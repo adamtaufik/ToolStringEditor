@@ -18,7 +18,7 @@ Lubricators,NOV,Lubricator 3ft,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 
 BOP,NOV,Dual Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,300,Yes,,Seals around wire in case of blowout
 BOP,NOV,Dual Ram BOP,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.5,761,Yes,,Seals around wire in case of blowout
 BOP,NOV,Dual Ram BOP,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4.2,1545,Yes,,Seals around wire in case of blowout
-BOP,NOV,Single Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.5,250,Yes,,Seals around wire in case of blowout
+BOP,,Single Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.5,250,Yes,,Seals around wire in case of blowout
 Special,NOV,Quick Test Sub,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.6,204,No,,To pressure test PCE
 Special,NOV,Quick Test Sub,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.9,362,No,,To pressure test PCE
 Special,NOV,Pump-in Tee,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.5,73,Yes,, To provide convenient entry path for large flow fluid into pressure control equipment
