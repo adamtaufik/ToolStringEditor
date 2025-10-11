@@ -15,20 +15,16 @@ class SummaryWidget(QWidget):
         self.dropzone = dropzone
 
         self.layout = QGridLayout(self)
-        self.layout.setSpacing(5)  # ✅ More vertical space between rows
+        self.layout.setSpacing(5)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # **Create Summary Items**
-        self.min_id_icon, self.min_id_label, self.min_id_value, self.min_id_metric = self.create_summary_item("Min ID",
-                                                                                          "icon_od")
-        self.total_length_icon, self.total_length_label, self.total_length_value, self.total_length_metric = self.create_summary_item(
-            "Total Length", "icon_length")
-        self.total_weight_icon, self.total_weight_label, self.total_weight_value, self.total_weight_metric = self.create_summary_item(
-            "Total Weight", "icon_weight")
+        self.min_id_icon, self.min_id_label, self.min_id_value, self.min_id_metric = self.create_summary_item("Min ID", "icon_od")
+        self.total_length_icon, self.total_length_label, self.total_length_value, self.total_length_metric = self.create_summary_item("Total Length", "icon_length")
+        self.total_weight_icon, self.total_weight_label, self.total_weight_value, self.total_weight_metric = self.create_summary_item("Total Weight", "icon_weight")
 
         # **Add Items to Grid Layout (Ensuring Alignment)**
-        self.layout.addWidget(self.min_id_icon, 0, 0)
-        self.min_id_icon.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.layout.addWidget(self.min_id_icon, 0, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self.od_layout = QVBoxLayout()
         self.od_layout.setSpacing(0)
         self.od_layout.addWidget(self.min_id_label)
@@ -36,10 +32,9 @@ class SummaryWidget(QWidget):
         self.od_layout.addWidget(self.min_id_metric)
         self.layout.addLayout(self.od_layout, 0, 1)
 
-        self.layout.addWidget(QLabel(""), 1, 0)  # ✅ Empty row for spacing
+        self.layout.addWidget(QLabel(""), 1, 0)
 
-        self.layout.addWidget(self.total_length_icon, 2, 0)
-        self.total_length_icon.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.layout.addWidget(self.total_length_icon, 2, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self.length_layout = QVBoxLayout()
         self.length_layout.setSpacing(0)
         self.length_layout.addWidget(self.total_length_label)
@@ -47,10 +42,9 @@ class SummaryWidget(QWidget):
         self.length_layout.addWidget(self.total_length_metric)
         self.layout.addLayout(self.length_layout, 2, 1)
 
-        self.layout.addWidget(QLabel(""), 3, 0)  # ✅ Empty row for spacing
+        self.layout.addWidget(QLabel(""), 3, 0)
 
-        self.layout.addWidget(self.total_weight_icon, 4, 0)
-        self.total_weight_icon.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.layout.addWidget(self.total_weight_icon, 4, 0, alignment=Qt.AlignmentFlag.AlignRight)
         self.weight_layout = QVBoxLayout()
         self.weight_layout.setSpacing(0)
         self.weight_layout.addWidget(self.total_weight_label)
@@ -59,34 +53,39 @@ class SummaryWidget(QWidget):
         self.layout.addLayout(self.weight_layout, 4, 1)
 
         self.layout.setContentsMargins(0, 0, 0, 0)
-
         self.update_summary()
 
     def create_summary_item(self, label_text, icon_name):
         """Creates a structured layout for each summary item."""
-
-        # **Load & Set Icon**
         icon_path = get_icon_path(icon_name)
+        pixmap = QPixmap(icon_path)
+
+        # ✅ Enable smooth scaling and high DPI support
+        if not pixmap.isNull():
+            pixmap.setDevicePixelRatio(self.devicePixelRatioF())
+            pixmap = pixmap.scaled(
+                icon_size, icon_size,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
 
         icon_label = QLabel()
-        icon_label.setPixmap(
-            QPixmap(icon_path).scaled(icon_size, icon_size, Qt.AspectRatioMode.KeepAspectRatio))  # ✅ Adjust icon size
+        icon_label.setPixmap(pixmap)
 
         # **Labels**
         label = QLabel(label_text)
-        label.setStyleSheet("font-size: 10px; font-weight: bold; ")  # ✅ Small label at the top
+        label.setStyleSheet("font-size: 10px; font-weight: bold;")
 
-        value_label = QLabel("0.00")  # Default value
-        value_label.setStyleSheet("font-size: 16px; font-weight: bold; ")  # ✅ Larger value below
+        value_label = QLabel("0.00")
+        value_label.setStyleSheet("font-size: 16px; font-weight: bold;")
 
-        metric_label = QLabel("0.00")  # Default value
-        metric_label.setStyleSheet("font-size: 12px; ")  # ✅ Larger value below
+        metric_label = QLabel("0.00")
+        metric_label.setStyleSheet("font-size: 12px;")
 
         return icon_label, label, value_label, metric_label
 
     def update_summary(self):
         """Updates summary values dynamically."""
-
         tool_widgets = self.dropzone.tool_widgets if self.dropzone else None
 
         min_id = 10.0
@@ -95,29 +94,36 @@ class SummaryWidget(QWidget):
 
         if tool_widgets is not None:
             for tool in tool_widgets:
-                id = float(tool.id_label.text().split()[0].strip('"')) if tool.id_label.text() != "N/A" else 0.0
+                id_val = float(tool.id_label.text().split()[0].strip('"')) if tool.id_label.text() != "N/A" else 0.0
                 length = float(tool.length_label.text().split()[0]) if tool.length_label.text() != "N/A" else 0.0
                 weight = float(tool.weight_label.text().split()[0]) if tool.weight_label.text() != "N/A" else 0.0
 
-                min_id = min(min_id, id)
+                min_id = min(min_id, id_val)
                 total_length += length
                 total_weight += weight
 
         if min_id < 10.0:
             self.min_id_value.setText(f"{min_id:.3f} in")
-            self.min_id_metric.setText(f"({min_id*25.4:.1f} mm)")
+            self.min_id_metric.setText(f"({min_id * 25.4:.1f} mm)")
         else:
-            self.min_id_value.setText(f"-")
-            self.min_id_metric.setText(f"-")
+            self.min_id_value.setText("-")
+            self.min_id_metric.setText("-")
 
         self.total_length_value.setText(f"{total_length:.1f} ft")
-        self.total_length_metric.setText(f"({total_length*0.3048:.1f} m)")
+        self.total_length_metric.setText(f"({total_length * 0.3048:.1f} m)")
 
         self.total_weight_value.setText(f"{total_weight:.1f} kg")
-        self.total_weight_metric.setText(f"({total_weight/1000:.1f} MT)")
+        self.total_weight_metric.setText(f"({total_weight / 1000:.1f} MT)")
 
 def load_icon(label, file_name):
     """Loads an icon and applies color inversion while keeping transparency."""
     icon_path = get_icon_path(file_name)
     pixmap = QPixmap(icon_path)
-    label.setPixmap(pixmap.scaled(icon_size, icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+    if not pixmap.isNull():
+        pixmap.setDevicePixelRatio(label.devicePixelRatioF())
+        pixmap = pixmap.scaled(
+            icon_size, icon_size,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation
+        )
+    label.setPixmap(pixmap)

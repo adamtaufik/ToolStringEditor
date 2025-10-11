@@ -18,12 +18,12 @@ Lubricators,NOV,Lubricator 3ft,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 
 BOP,NOV,Dual Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.2,300,Yes,,Seals around wire in case of blowout
 BOP,NOV,Dual Ram BOP,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.5,761,Yes,,Seals around wire in case of blowout
 BOP,NOV,Dual Ram BOP,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",4.2,1545,Yes,,Seals around wire in case of blowout
-Special,NOV,Quick Test Sub,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.32,85,No,,To pressure test PCE
+BOP,NOV,Single Ram BOP,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.5,250,Yes,,Seals around wire in case of blowout
 Special,NOV,Quick Test Sub,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.6,204,No,,To pressure test PCE
 Special,NOV,Quick Test Sub,"7""",6.625,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2.9,362,No,,To pressure test PCE
-Special,NOV,Pump-in Tee,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.5,73,No,, To provide convenient entry path for large flow fluid into pressure control equipment
-Special,NOV,Pump-in Tee,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.6,184,No,, To provide convenient entry path for large flow fluid into pressure control equipment
-Special,NOV,Pump-in Tee,"7.5""",7,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,264,No,, To provide convenient entry path for large flow fluid into pressure control equipment
+Special,NOV,Pump-in Tee,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.5,73,Yes,, To provide convenient entry path for large flow fluid into pressure control equipment
+Special,NOV,Pump-in Tee,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.6,184,Yes,, To provide convenient entry path for large flow fluid into pressure control equipment
+Special,NOV,Pump-in Tee,"7.5""",7,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",2,264,Yes,, To provide convenient entry path for large flow fluid into pressure control equipment
 Special,NOV,TIW,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.6,176,No,,A ball valve that can hold pressure from both directions
 Special,NOV,TIW,"5.5""",5,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",3.1,306,No,,A ball valve that can hold pressure from both directions
 Special,NOV,Chemical Injection Sub,"3.5""",3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 5-3/4""- 4 ACME",1.8,65,No,,To apply various fluids to the wireline during well service operations
@@ -116,9 +116,12 @@ X-Overs,Exwell,"X-Over (5-3/4"" 'O' X 5"" 'O')",-,3,H2S,5K,"Otis 5-3/4""- 4 ACME
 X-Overs,Exwell,"X-Over (5-1/2"" 'B' X 6-1/2"" 'O')",-,3,H2S,5K,"Bowen 5-1/2""- 4x2 ACME","Otis 6-1/2""- 4 ACME",1.5,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
 X-Overs,Exwell,"X-Over (5"" 'O' X 8-1/4"" 'O')",-,3,H2S,5K,"Otis 5""- 4 ACME","Otis 8-1/4""- 4 ACME",1,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
 X-Overs,Exwell,"X-Over (5-1/2"" 'B' X 8-3/4"" 'O')",-,3,H2S,5K,"Bowen 5-1/2""- 4x2 ACME","Otis 8-3/4""- 4 ACME",1.5,20,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
-X-Overs,NOV,"X-Over (5-3/4"" 'O' X 11-1/2"" 'O')",-,3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 11-1/2""- 4 ACME",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (5-3/4"" 'O' X 11-1/2"" 'O')",-,3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 11-1/2""- 4 ACME",2,165,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
 X-Overs,NOV,"X-Over (5-3/4"" 'O' X 9"" 'O')",-,3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 9""- 4 ACME",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
-X-Overs,NOV,"X-Over (11-1/2"" 'O' X 9-1/2"" 'O')",-,4,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 9-1/2""- 4 ACME",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
-X-Overs,NOV,"X-Over (11-1/2"" 'O' X 11-1/2"" 'B')",-,6.63,H2S,10K,"Otis 11-1/2""- 4 ACME","Bowen 11-1/2""- 4 ACME (Non Std)",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
-X-Overs,NOV,"X-Over (9"" 'O' X 11-1/2"" 'O')",-,4,H2S,10K,"Otis 9""- 4 ACME","Otis 11-1/2""- 4 ACME",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (9"" 'O' X 7"" 'B')",-,3,H2S,10K,"Otis 9""- 4 ACME","Bowen 7""- 5 ACME",1.5,108,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (9"" 'O' X JFE Bear)",-,3,H2S,10K,"Otis 9""- 4 ACME",JFE Bear,1.5,95,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (5-3/4"" 'O' X 9"" 'O')",-,3,H2S,10K,"Otis 5-3/4""- 4 ACME","Otis 9""- 4 ACME",1.5,150,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (11-1/2"" 'O' X 9-1/2"" 'O')",-,4,H2S,10K,"Otis 11-1/2""- 4 ACME","Otis 9-1/2""- 4 ACME",2,170,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (11-1/2"" 'O' X 11-1/2"" 'B')",-,6.63,H2S,10K,"Otis 11-1/2""- 4 ACME","Bowen 11-1/2""- 4 ACME (Non Std)",1.5,200,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
+X-Overs,NOV,"X-Over (9"" 'O' X 11-1/2"" 'O')",-,6.63,H2S,10K,"Otis 9""- 4 ACME","Otis 11-1/2""- 4 ACME",2,200,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"
 Stuffing Boxes,Paradigm,Parasheave + Antenna,-,,H2S,10K,,"Otis 5-3/4""- 4 ACME",8.3,152,Yes,,"Allows assembly of PCE with different connections, or for connecting PCE to wellheads"

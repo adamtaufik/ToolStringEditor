@@ -54,12 +54,12 @@ class WirelineCalculatorApp(QWidget):
 
         # Create tab widget
         self.tabs = QTabWidget()
-        self.tabs.addTab(WirefallTab(data), "Wirefall")
         self.tabs.addTab(HydrostaticTab(), "Hydrostatic Pressure")
+        self.tabs.addTab(WirefallTab(data), "Wirefall")
         self.tabs.addTab(WeightTab(), "Tool String Weight")
         self.tabs.addTab(ShearPinTab(), "Shear Pins")
         self.tabs.addTab(MDtoTVDTab(), "MD to TVD")
-        # self.set_tab_stylesheet(self.tabs)  # Apply styling to tabs
+        self.set_tab_stylesheet(self.tabs)  # Apply styling to tabs
 
         # ✅ Toolbar-style sidebar (left) for Save/Load
         items = [
@@ -93,3 +93,64 @@ class WirelineCalculatorApp(QWidget):
             theme_button=self.theme_button,
             summary_widget=None
         )
+
+    def set_tab_stylesheet(self, tabs: QTabWidget):
+        """Apply a modern, premium Fluent-style design to the tabs."""
+        accent = "#0078D7"  # Fluent blue accent
+        bg_dark = "#1E1E1E"
+        bg_light = "#F5F6F7"
+        text_light = "#F0F0F0"
+        text_dark = "#333333"
+        shadow = "rgba(0, 0, 0, 0.15)"
+
+        # Detect theme (you already use self.current_theme)
+        is_dark = self.current_theme.lower() in ["dark", "deleum"]
+        base_bg = bg_dark if is_dark else bg_light
+        text_color = text_light if is_dark else text_dark
+
+        tabs.setStyleSheet(f"""
+        QTabWidget::pane {{
+            border: none;
+            background: transparent;
+        }}
+
+        QTabBar {{
+            background: transparent;
+            qproperty-drawBase: 0;
+        }}
+
+        QTabBar::tab {{
+            background-color: {base_bg};
+            color: {text_color};
+            border-radius: 10px;
+            padding: 8px 24px;
+            margin: 6px 4px;
+            font-family: 'Segoe UI', 'Inter', 'Helvetica Neue', Arial;
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            transition: all 150ms ease-in-out;
+            box-shadow: 0px 2px 4px {shadow};
+        }}
+
+        QTabBar::tab:hover {{
+            background-color: {'#2D2D2D' if is_dark else '#E9ECEF'};
+            color: {'#FFFFFF' if is_dark else '#111111'};
+            transform: translateY(-1px);
+        }}
+
+        QTabBar::tab:selected {{
+            background-color: {accent};
+            color: white;
+            font-weight: 600;
+            box-shadow: 0px 4px 10px rgba(0, 120, 215, 0.3);
+        }}
+
+        QTabBar::tab:!selected {{
+            opacity: 0.9;
+        }}
+
+        QTabWidget::tab-bar {{
+            alignment: center;
+        }}
+        """)
