@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QSpacerItem, QGraphicsOpacityEffect
 from PyQt6.QtCore import Qt, QEasingCurve, QPropertyAnimation, QTimer
 
-from features.pce_editor.logic_image_processing import expand_and_center_images
+from features.editors.logic_image_processing import expand_and_center_images
 from ui.components.pce_editor.tool_widget import ToolWidget
 from utils.screen_info import get_height
 from utils.styles import DROPZONE_STYLE, DROPZONE_HEADERS

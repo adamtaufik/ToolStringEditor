@@ -1,8 +1,8 @@
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QTimer
 from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QScrollArea, QComboBox, QLabel, QGraphicsOpacityEffect, QPushButton
-from ui.components.pce_editor.ui_draggable_button import DraggableButton
-from database.logic_database_pce import get_tool_data, get_full_tool_database
+from ui.components.ui_draggable_button import DraggableButton
+from database.logic_database import get_pce_data, get_full_pce_database
 from utils.styles import DARK_STYLE
 
 
@@ -64,7 +64,7 @@ class ToolLibrary(QWidget):
         # **Filter Dropdown**
         self.filter_combo = QComboBox()
         self.filter_combo.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        tool_data = get_tool_data()
+        tool_data = get_pce_data()
         self.filter_combo.addItems(["All PCE"] + tool_data["Category"].unique().tolist())
         self.filter_combo.currentTextChanged.connect(self.update_tool_list)
         self.layout.addWidget(self.filter_combo)
@@ -93,7 +93,7 @@ class ToolLibrary(QWidget):
         selected_category = self.filter_combo.currentText()
         search_text = self.search_bar.text().strip().lower()
 
-        full_df = get_full_tool_database().copy()
+        full_df = get_full_pce_database().copy()
 
         if selected_category != "All PCE":
             full_df = full_df[full_df["Category"] == selected_category]

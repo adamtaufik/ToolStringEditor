@@ -1,10 +1,10 @@
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QTimer
-from PyQt6.QtGui import QCursor, QIcon, QAction
+from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QPushButton, QWidget, QVBoxLayout, QLineEdit, QScrollArea, QComboBox, QLabel, QGraphicsOpacityEffect
-from ui.components.toolstring_editor.ui_draggable_button import DraggableButton
+from ui.components.ui_draggable_button import DraggableButton
 from database.logic_database import get_tool_data, get_full_tool_database
 from utils.styles import DARK_STYLE
-import os
+
 
 class ToolLibrary(QWidget):
     """Sidebar for listing available tools."""

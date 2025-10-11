@@ -3,17 +3,25 @@ import os
 
 from PyQt6.QtWidgets import QFileDialog
 
-from features.ts_editor.logic_image_processing import expand_and_center_images
+from features.editors.logic_image_processing import expand_and_center_images
 from ui.components.toolstring_editor.tool_widget import ToolWidget
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 
 
 def save_configuration(main_window):
-    """Save configuration from ToolStringEditor."""
+    """Save configuration from ToolStringEditor as .bha file."""
+    file_name, _ = QFileDialog.getSaveFileName(
+        main_window,
+        "Save Configuration",
+        main_window.current_file_name or "",
+        "BHA Files (*.bha)"
+    )
 
-    file_name, _ = QFileDialog.getSaveFileName(main_window, "Save Configuration", main_window.current_file_name or "",
-                                               "JSON Files (*.json)")
     if file_name:
+        # Force .bha extension if missing
+        if not file_name.lower().endswith(".bha"):
+            file_name += ".bha"
+
         main_window.current_file_name = file_name
 
         drop_zone = main_window.drop_zone
@@ -39,7 +47,7 @@ def save_configuration(main_window):
                 "lower_connection": tool.lower_connection_label.currentText()
             })
 
-        with open(file_name, 'w') as f:
+        with open(file_name, "w") as f:
             json.dump(config, f, indent=4)
 
         main_window.setWindowTitle(f"Deleum Tool String Editor - {os.path.basename(file_name)}")
@@ -47,16 +55,21 @@ def save_configuration(main_window):
 
 
 def load_configuration(main_window):
-    """Load configuration into ToolStringEditor."""
+    """Load configuration into ToolStringEditor (.bha or .json)."""
+    file_name, _ = QFileDialog.getOpenFileName(
+        main_window,
+        "Load Configuration",
+        "",
+        "BHA or JSON Files (*.bha *.json)"
+    )
 
-    file_name, _ = QFileDialog.getOpenFileName(main_window, "Load Configuration", "", "JSON Files (*.json)")
     if file_name:
         main_window.current_file_name = file_name
 
         drop_zone = main_window.drop_zone
         summary_widget = main_window.summary_widget
 
-        with open(file_name, 'r') as f:
+        with open(file_name, "r") as f:
             config = json.load(f)
 
         # Restore fields
@@ -70,7 +83,7 @@ def load_configuration(main_window):
 
         drop_zone.clear_tools()
 
-        for tool_data in config["tools"]:
+        for tool_data in config.get("tools", []):
             new_tool = ToolWidget(tool_data["name"], drop_zone, summary_widget)
             new_tool.nominal_size_selector.setCurrentText(tool_data["nominal_size"])
             new_tool.od_label.setText(tool_data["od"])

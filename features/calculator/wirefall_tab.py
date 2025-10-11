@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import QWidget, QGridLayout, QVBoxLayout, QLabel, QLineEdit
 from PyQt6.QtGui import QFont, QPainter, QPen, QColor, QBrush, QPolygonF, QPixmap, QImage, QPainterPath
 import pandas as pd
 
-from utils.path_finder import get_image_path
+from utils.path_finder import get_tool_image_path
 
 
 class WirefallTab(QWidget):
@@ -310,7 +310,7 @@ class WireIllustration(QGraphicsView):
     def load_rope_socket_image(self):
         try:
             # Try loading from file first
-            self.rope_socket_img = QPixmap(get_image_path('Rope Socket'))
+            self.rope_socket_img = QPixmap(get_tool_image_path('Rope Socket'))
             if self.rope_socket_img.isNull():
                 # If file not found, create a simple placeholder
                 img = QImage(30, 50, QImage.Format.Format_ARGB32)

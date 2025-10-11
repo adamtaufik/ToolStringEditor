@@ -1,13 +1,15 @@
 import pandas as pd
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem
-from database.logic_database import get_full_tool_database
+from database.logic_database import get_full_tool_database, get_full_pce_database
 
 
 class DatabaseWindow(QWidget):
     """Displays the full tool database in a scrollable window."""
-    def __init__(self):
+    def __init__(self, data_type):
         super().__init__()
-        self.setWindowTitle("Tool Database")
+        self.data_type = data_type
+        title = self.data_type + " Database"
+        self.setWindowTitle(title)
         self.setGeometry(200, 200, 800, 400)
 
         layout = QVBoxLayout(self)
@@ -21,7 +23,12 @@ class DatabaseWindow(QWidget):
 
     def load_data(self):
         """Loads the tool database into the table."""
-        df = get_full_tool_database()  # Ensure function returns full dataframe
+        if self.data_type == "Tool":
+            df = get_full_tool_database()
+        elif self.data_type == "PCE":
+            df = get_full_pce_database()
+
+        # df = get_full_tool_database()  # Ensure function returns full dataframe
         if df.empty:
             return
 

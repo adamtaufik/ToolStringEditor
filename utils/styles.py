@@ -79,7 +79,7 @@ DARK_STYLE = """
         background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.2);
         color: #f0f0f0;
-        padding: 6px;
+        padding: 5px;
         border-radius: 8px;
         font-family: "Segoe UI";
     }
@@ -173,6 +173,8 @@ DELEUM_STYLE = """
         border-bottom: none;
         border-top-left-radius: 4px;
         border-top-right-radius: 4px;
+        font-family: "Segoe UI";
+        font-weight: 500;
     }
 
     QTabBar::tab:selected {
@@ -223,6 +225,7 @@ DELEUM_STYLE = """
         color: white;
         padding: 5px;
         border-radius: 8px;
+        font-family: "Segoe UI";
     }
 
     QLineEdit::placeholder {
@@ -235,6 +238,8 @@ DELEUM_STYLE = """
         border-radius: 10px;
         padding: 5px;
         color: white;
+        font-weight: 600;
+        font-family: "Segoe UI";
     }
 
     QPushButton:hover {
@@ -243,6 +248,7 @@ DELEUM_STYLE = """
 
     QLabel {
         color: white; 
+        font-family: "Segoe UI";
     }
 """
 

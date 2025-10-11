@@ -8,11 +8,11 @@ from openpyxl import Workbook
 from openpyxl.drawing.image import Image as ExcelImage
 from openpyxl.styles import Font, Border, Side, Alignment
 from PIL import Image as PILImage
-from openpyxl.utils import range_boundaries, get_column_letter
+from openpyxl.utils import range_boundaries
 
-from features.pce_editor.loading_worker import LoadingWorker
-from features.pce_editor.logic_image_processing import combine_tool_images, expand_and_center_images, remove_white_background
-from features.pce_editor.logic_utils import get_number
+from utils.loading_worker import LoadingWorker
+from features.editors.logic_image_processing import combine_tool_images, expand_and_center_images, remove_white_background
+from utils.logic_utils import get_number
 from ui.components.pce_editor.tool_widget import ToolWidget
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 from utils.check_file import is_file_open

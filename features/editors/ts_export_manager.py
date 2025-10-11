@@ -8,13 +8,13 @@ from openpyxl.drawing.image import Image as ExcelImage
 from openpyxl.styles import Font, Border, Side, Alignment
 from PIL import Image as PILImage
 
-from features.ts_editor.loading_worker import LoadingWorker
-from features.ts_editor.logic_image_processing import combine_tool_images, expand_and_center_images, remove_white_background
-from features.ts_editor.logic_utils import get_number
+from utils.loading_worker import LoadingWorker
+from features.editors.logic_image_processing import combine_tool_images, expand_and_center_images, remove_white_background
+from utils.logic_utils import get_number
 from ui.components.toolstring_editor.tool_widget import ToolWidget
 from ui.windows.ui_messagebox_window import MessageBoxWindow
 from utils.check_file import is_file_open
-from utils.path_finder import get_icon_path, get_image_path
+from utils.path_finder import get_icon_path, get_tool_image_path
 from io import BytesIO
 
 
@@ -346,7 +346,7 @@ def extract_tool_data(drop_zone):
 
         # **Retrieve Tool Image**
 
-        image_path = get_image_path(tool_name)
+        image_path = get_tool_image_path(tool_name)
         pixmap = QPixmap(image_path)
 
         # **Store tool image only if it's valid**

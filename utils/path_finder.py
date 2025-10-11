@@ -19,7 +19,7 @@ def get_icon_path(name):
 def get_resource_path(name):
     return get_path(os.path.join("assets", "resources", name))
 
-def get_image_path(name):
+def get_tool_image_path(name):
 
     if "X-Over" in name:
         name = "X-Over"  # Normalize X-Over naming

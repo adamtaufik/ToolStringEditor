@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 
 from ui.apps.ui_calculations_app import WirelineCalculatorApp
 from ui.apps.ui_pce_editor_app import PCEEditor
-from ui.apps.ui_sgs_txt_app import SGSTXTApp
+from ui.apps.ui_survey_app import SGSTXTApp
 from ui.apps.ui_simulator_app import WirelineSimulatorApp
 from ui.apps.ui_toolstring_editor_app import ToolStringEditor
 # from ui.apps.ui_sgs_fgs_app import SGSFGSApp
@@ -300,11 +300,6 @@ class StartWindow(QWidget):
         self.sgstxt_app = SGSTXTApp()
         self.sgstxt_app.show()
         self.close()
-
-    # def open_sgsfgs_app(self):
-    #     self.sgsfgs_app = SGSFGSApp()
-    #     self.sgsfgs_app.show()
-    #     self.close()
 
     def open_calculations_app(self):
         self.calculations_app = WirelineCalculatorApp()

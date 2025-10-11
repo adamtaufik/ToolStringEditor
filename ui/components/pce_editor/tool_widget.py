@@ -3,8 +3,8 @@ from PyQt6.QtCore import Qt, QSignalBlocker
 from PyQt6.QtGui import QPixmap, QCursor, QColor
 from pandas import factorize
 
-from database.logic_database_pce import get_tool_data
-from features.pce_editor.logic_image_processing import expand_and_center_images
+from database.logic_database import get_pce_data
+from features.editors.logic_image_processing import expand_and_center_images
 from utils.path_finder import get_pce_image_path  # ✅ Import helper function
 from utils.styles import COMBO_STYLE, COMBO_STYLE_BLACK
 
@@ -23,7 +23,7 @@ class ToolWidget(QWidget):
             self.summary_widget = summary_widget
 
             # --- load DB first ---
-            self.tool_data = get_tool_data(tool_name)
+            self.tool_data = get_pce_data(tool_name)
             if not self.tool_data:
                 print(f"⚠️ No data for '{tool_name}'")
                 return

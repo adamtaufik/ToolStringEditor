@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton, QComboBox
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QCursor, QColor
 from database.logic_database import get_tool_data
-from features.ts_editor.logic_image_processing import expand_and_center_images
-from utils.path_finder import get_image_path  # ✅ Import helper function
+from features.editors.logic_image_processing import expand_and_center_images
+from utils.path_finder import get_tool_image_path  # ✅ Import helper function
 from utils.styles import COMBO_STYLE, COMBO_STYLE_BLACK
 
 
@@ -42,7 +42,7 @@ class ToolWidget(QWidget):
         # **Tool Image (Original Size, Expanded Background)**
         self.image_label = QLabel()
 
-        image_path = get_image_path(tool_name)
+        image_path = get_tool_image_path(tool_name)
         pixmap = QPixmap(image_path)
 
         # Store original image size

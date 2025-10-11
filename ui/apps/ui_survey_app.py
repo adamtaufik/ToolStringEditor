@@ -14,11 +14,13 @@ import xlrd
 import matplotlib.dates as mdates
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.widgets import SpanSelector
-from PyQt6.QtCore import Qt, QTimer, QSize, QObject, QEvent, QDate
+from PyQt6.QtCore import Qt, QTimer, QSize, QObject, QEvent, QDate, QParallelAnimationGroup, QPropertyAnimation, \
+    QEasingCurve, QPoint
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QImage, QIcon
 from PyQt6.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QTableWidgetItem, QHBoxLayout, QApplication,
-    QSplitter, QGridLayout, QGroupBox, QStackedWidget, QTimeEdit, QLineEdit, QToolButton, QFrame, QDateEdit
+    QSplitter, QGridLayout, QGroupBox, QStackedWidget, QTimeEdit, QLineEdit, QToolButton, QFrame, QDateEdit,
+    QGraphicsOpacityEffect
 )
 
 # Local imports
@@ -108,6 +110,79 @@ class QuadrupleDragDropWidget(QWidget):
         button_layout.addWidget(self.process_btn)
 
         layout.addWidget(button_container, 2, 0, 1, 2)
+
+        # Initially hide all group boxes and bottom buttons for startup animation
+        for group_box in self.findChildren(QGroupBox):
+            group_box.setGraphicsEffect(QGraphicsOpacityEffect(group_box))
+            group_box.graphicsEffect().setOpacity(0)
+        button_container.setGraphicsEffect(QGraphicsOpacityEffect(button_container))
+        button_container.graphicsEffect().setOpacity(0)
+
+        # Animation trigger flag
+        self.animation_played = False
+
+        # --- Startup Animations ---
+        QTimer.singleShot(200, self.trigger_startup_animation_once)
+
+    def trigger_startup_animation_once(self):
+        """Ensure animations only play once when the widget first becomes visible"""
+        if not self.animation_played:
+            self.animate_startup()
+            self.animation_played = True
+
+    # --- Animation Helpers ---#
+    def animate_startup(self):
+        """Sequentially animate all main widgets on startup"""
+        delay = 0
+        for group_box in self.findChildren(QGroupBox):
+            QTimer.singleShot(delay, lambda gb=group_box: self.fade_and_slide_in(gb))
+            delay += 150  # stagger each box slightly
+
+        # Animate bottom button row after all boxes
+        QTimer.singleShot(delay + 200, lambda: self.fade_widget(self.process_btn.parentWidget()))
+
+    def fade_and_slide_in(self, widget):
+        """Fade and slide-in animation for a widget"""
+        start_pos = widget.pos() + QPoint(0, 30)
+        end_pos = widget.pos()
+        widget.move(start_pos)
+
+        # Fade
+        opacity = QGraphicsOpacityEffect(widget)
+        widget.setGraphicsEffect(opacity)
+        fade_anim = QPropertyAnimation(opacity, b"opacity", self)
+        fade_anim.setDuration(400)
+        fade_anim.setStartValue(0)
+        fade_anim.setEndValue(1)
+        fade_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        # Slide
+        move_anim = QPropertyAnimation(widget, b"pos", self)
+        move_anim.setDuration(400)
+        move_anim.setStartValue(start_pos)
+        move_anim.setEndValue(end_pos)
+        move_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        # Combine
+        group = QParallelAnimationGroup(self)
+        group.addAnimation(fade_anim)
+        group.addAnimation(move_anim)
+        group.start(QParallelAnimationGroup.DeletionPolicy.DeleteWhenStopped)
+
+        widget._anim_group = group  # prevent garbage collection
+
+    def fade_widget(self, widget):
+        """Simple fade-in animation for any widget"""
+        opacity = QGraphicsOpacityEffect(widget)
+        widget.setGraphicsEffect(opacity)
+        anim = QPropertyAnimation(opacity, b"opacity", self)
+        anim.setDuration(500)
+        anim.setStartValue(0)
+        anim.setEndValue(1)
+        anim.setEasingCurve(QEasingCurve.Type.OutQuad)
+        anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+        widget._fade_anim = anim
+
 
     # --- Helper Methods ---#
     def create_button(self, text, color, hover_color=None, height=None):
@@ -1182,30 +1257,6 @@ class SGSTXTApp(QWidget):
                 f"Failed to load survey:\n{str(e)}",
                 "warning"
             )
-
-    def update_info_labels(self):
-        """Update information labels with loaded data"""
-        self.location_label.setText("Location\t\t: " + str(self.location))
-        self.well_label.setText("Well No.\t\t: " + str(self.well))
-        self.date_label.setText("Date of Survey\t: " + self.date.strftime("%d/%m/%Y"))
-        self.time_label.setText("Start Time\t: " + str(self.start_time))
-        self.bdf_label.setText("THF\t\t: " + str(self.bdf) + " ft BDF")
-        self.sea_level_label.setText("DFE\t\t: " + str(self.sea_level) + " ft AMSL")
-
-        if hasattr(self, 'event_date_edit'):
-            self.event_date_edit.setDate(QDate(self.date))
-
-    def populate_events_table(self):
-        """Populate events table with loaded events"""
-        self.event_table.setRowCount(0)
-        for event in self.events:
-            row = self.event_table.rowCount()
-            self.event_table.insertRow(row)
-            event_datetime, desc = event
-            self.event_table.setItem(row, 0, QTableWidgetItem(event_datetime.strftime("%Y-%m-%d %H:%M:%S")))
-            self.event_table.setItem(row, 1, QTableWidgetItem(desc))
-
-        self.remove_event_btn.setEnabled(len(self.events) > 0)
 
     def show_file_upload(self):
         """Show file upload screen and reset state"""

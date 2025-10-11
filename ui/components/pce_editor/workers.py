@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from features.pce_editor.export_manager import export_to_excel
+from features.editors.pce_export_manager import export_to_excel
 
 
 class ExportWorker(QThread):
