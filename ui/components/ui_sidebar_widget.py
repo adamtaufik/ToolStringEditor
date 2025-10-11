@@ -82,13 +82,15 @@ class SidebarWidget(QFrame):
         self.layout.addLayout(self.lower_layout)
         # self.layout.addStretch()
 
-
     def toggle_sidebar(self):
+        parent_window = self.window()
+        original_width = parent_window.width()  # ✅ Remember current window width
+        parent_window.setFixedWidth(original_width)
 
         start_width = self.width()
         end_width = self.expanded_width if not self.expanded else self.collapsed_width
 
-        # Animate fixed width instead of min/max
+        # Animate sidebar width only
         animation = QPropertyAnimation(self, b"minimumWidth")
         animation.setDuration(200)
         animation.setStartValue(start_width)
@@ -96,7 +98,10 @@ class SidebarWidget(QFrame):
         animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
         def on_animation_finished():
-            self.setFixedWidth(end_width)  # Lock final width
+            parent_window.setMinimumWidth(0)
+            parent_window.setMaximumWidth(16777215)  # reset to normal
+
+            self.setFixedWidth(end_width)
             self.expanded = not self.expanded
             if self.expanded:
                 self.toggle_button.setIcon(QIcon(self.back_path))
@@ -107,14 +112,19 @@ class SidebarWidget(QFrame):
                 # for btn in self.menu_items:
                 #     btn.setVisible(False)
 
-        parent_editor = self.window()
-        if hasattr(parent_editor, "fade_right_sidebar"):
-            parent_editor.fade_right_sidebar(visible= self.expanded)
+            # ✅ Restore the original window width
+            geo = parent_window.geometry()
+            geo.setWidth(original_width)
+            parent_window.setGeometry(geo)
+
+        # Optional fade effect for right sidebar
+        if hasattr(parent_window, "fade_right_sidebar"):
+            parent_window.fade_right_sidebar(visible=self.expanded)
 
         animation.finished.connect(on_animation_finished)
         animation.start()
 
-        # Optional: keep reference so it doesn't get garbage collected
+        # Prevent GC
         self._animation = animation
 
     def show_version_window(self):
@@ -148,6 +158,3 @@ class SidebarWidget(QFrame):
         if reply == QMessageBox.StandardButton.Yes:
             parent_window = self.window()
             parent_window.close()
-
-
-

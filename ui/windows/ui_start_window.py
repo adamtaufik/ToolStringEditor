@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton, QSizePolicy,
     QSpacerItem, QFrame
 )
-from PyQt6.QtGui import QPixmap, QFont, QIcon, QColor, QPainter, QPainterPath, QImage
-from PyQt6.QtCore import Qt, QSize, QRectF
+from PyQt6.QtGui import QPixmap, QFont, QIcon, QColor, QPainter, QPainterPath, QImage, QDesktopServices
+from PyQt6.QtCore import Qt, QSize, QRectF, QUrl
 from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 
 from ui.apps.ui_calculations_app import WirelineCalculatorApp
@@ -210,7 +210,6 @@ class StartWindow(QWidget):
             if col >= max_cols:
                 col = 0
                 row += 1
-
         # ---- Footer: version ----
         footer_widget = FooterWidget()
         footer_version_info = footer_widget.get_version_info()
@@ -222,16 +221,69 @@ class StartWindow(QWidget):
         main = QVBoxLayout(self)
         main.setContentsMargins(0, 0, 0, 0)
         main.addLayout(header)
-        # main.addSpacing(10)
-        # # subtle divider
-        # divider = QFrame()
-        # divider.setFrameShape(QFrame.Shape.HLine)
-        # divider.setStyleSheet("color: rgba(255,255,255,0.08);")
-        # main.addWidget(divider)
         main.addSpacing(10)
         main.addLayout(grid)
         main.addStretch()
         main.addWidget(footer)
+
+
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setContentsMargins(0, 0, 12, 12)
+        buttons_layout.setSpacing(8)
+        buttons_layout.addStretch()
+
+        # version button
+        self.version_btn = QPushButton()
+        self.version_btn.setFixedSize(34, 34)
+        self.version_btn.setIcon(QIcon(get_icon_path("version")))
+        self.version_btn.setIconSize(QSize(18, 18))
+        self.version_btn.setToolTip("View version history")
+        self.version_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.version_btn.clicked.connect(self.open_version_window)
+
+        # feedback button
+        self.feedback_btn = QPushButton()
+        self.feedback_btn.setFixedSize(34, 34)
+        self.feedback_btn.setIcon(QIcon(get_icon_path("feedback")))  # you can use a 📨 or 💬 icon
+        self.feedback_btn.setIconSize(QSize(18, 18))
+        self.feedback_btn.setToolTip("Send feedback")
+        self.feedback_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.feedback_btn.clicked.connect(self.send_feedback)
+
+        # exit button
+        self.exit_btn = QPushButton()
+        self.exit_btn.setFixedSize(34, 34)
+        self.exit_btn.setIcon(QIcon(get_icon_path("exit")))
+        self.exit_btn.setIconSize(QSize(18, 18))
+        self.exit_btn.setToolTip("Exit application")
+        self.exit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.exit_btn.clicked.connect(self.close_app)
+
+        # shared style
+        button_style = """
+            QPushButton {
+                border-radius: 17px;
+                background-color: rgba(255,255,255,0.08);
+            }
+            QPushButton:hover {
+                background-color: rgba(255,255,255,0.18);
+            }
+            QPushButton:pressed {
+                background-color: rgba(255,255,255,0.28);
+            }
+        """
+        self.version_btn.setStyleSheet(button_style)
+        self.feedback_btn.setStyleSheet(button_style)
+        self.exit_btn.setStyleSheet(button_style)
+
+        buttons_layout.addWidget(self.version_btn)
+        buttons_layout.addWidget(self.feedback_btn)
+        buttons_layout.addWidget(self.exit_btn)
+
+        # ✅ Add buttons *before* footer
+        main.addLayout(buttons_layout)
+        main.addWidget(footer)
+
 
     # ---- Actions ----
     def open_toolstring_editor_app(self):
@@ -263,3 +315,18 @@ class StartWindow(QWidget):
         self.simulator_app = WirelineSimulatorApp()
         self.simulator_app.show()
         self.close()
+
+    def open_version_window(self):
+        from ui.windows.ui_version_window import VersionWindow
+        self.version_window = VersionWindow()
+        self.version_window.show()
+
+    def close_app(self):
+        self.close()
+
+    def send_feedback(self):
+        recipients = "Adam.MohdTaufik@deleum.com,adam.m.taufik@gmail.com"
+        subject = "Deleum WireHub App - Feedback"
+        body = "Hi Adam,\n\nI’d like to share some feedback about the WireHub App:\n\n"
+        mailto_link = f"mailto:{recipients}?subject={subject}&body={body}"
+        QDesktopServices.openUrl(QUrl(mailto_link))

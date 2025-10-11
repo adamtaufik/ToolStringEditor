@@ -1,6 +1,6 @@
 # PyQt6 core modules
-from PyQt6.QtCore import Qt, QDate, QPropertyAnimation, QEasingCurve, QTimer
-from PyQt6.QtGui import QCursor, QPixmap, QGuiApplication
+from PyQt6.QtCore import Qt, QDate, QPropertyAnimation, QEasingCurve, QTimer, QRect, QRectF
+from PyQt6.QtGui import QCursor, QPixmap, QGuiApplication, QRegion, QPainterPath
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit,
     QLabel, QComboBox, QMessageBox, QFrame, QDateEdit, QSizePolicy, QGraphicsOpacityEffect
@@ -36,13 +36,17 @@ class PCEEditor(QMainWindow):
     TOOLBAR_HEIGHT = 30  # ✅ Fixed toolbar height
     FOOTER_HEIGHT = 30  # ✅ Fixed footer height
     icon_size = 264
+    RESIZE_MARGIN = 8  # size (in px) around edges for resizing
+    resizing = False
+    resize_dir = None
+
 
     def __init__(self):
         super().__init__()
 
         self.current_file_name = None  # Track last saved or loaded filename
-        self.setMinimumHeight(get_height() - 10)  # ✅ Set minimum resizable height
-        self.setMinimumWidth(1366)
+        # self.setMinimumHeight(get_height() - 10)  # ✅ Set minimum resizable height
+        # self.setMinimumWidth(1366)
 
         # ✅ Set initial theme
         self.current_theme = "Deleum"
@@ -92,6 +96,10 @@ class PCEEditor(QMainWindow):
 
         main_container.addLayout(main_body)
         QTimer.singleShot(400, lambda: self.fade_right_sidebar(True))
+
+        self.setMouseTracking(True)
+        self.centralWidget().setMouseTracking(True)
+        self.enable_mouse_tracking(self)
 
     def setup_ui(self, editor_layout):
         """Sets up the main UI layout."""
@@ -302,3 +310,106 @@ class PCEEditor(QMainWindow):
 
         anim.start()
         self._fade_anim = anim  # Keep a reference so GC doesn’t kill it
+
+    def enable_mouse_tracking(self, widget):
+        widget.setMouseTracking(True)
+        for child in widget.findChildren(QWidget):
+            child.setMouseTracking(True)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.set_rounded_corners()
+
+    def mousePressEvent(self, event):
+        """Detect when resizing starts."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._mouse_pos = event.globalPosition().toPoint()
+            self._geo = self.geometry()
+
+            margin = self.RESIZE_MARGIN
+            x, y = event.position().x(), event.position().y()
+            w, h = self.width(), self.height()
+
+            # Determine resize direction
+            if x <= margin and y <= margin:
+                self.resize_dir = "topleft"
+            elif x >= w - margin and y <= margin:
+                self.resize_dir = "topright"
+            elif x <= margin and y >= h - margin:
+                self.resize_dir = "bottomleft"
+            elif x >= w - margin and y >= h - margin:
+                self.resize_dir = "bottomright"
+            elif x <= margin:
+                self.resize_dir = "left"
+            elif x >= w - margin:
+                self.resize_dir = "right"
+            elif y <= margin:
+                self.resize_dir = "top"
+            elif y >= h - margin:
+                self.resize_dir = "bottom"
+            else:
+                self.resize_dir = None
+
+            if self.resize_dir:
+                self.resizing = True
+                event.accept()
+            else:
+                super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Handle cursor feedback and perform resizing."""
+        pos = event.position().toPoint()
+        margin = self.RESIZE_MARGIN
+        x, y = pos.x(), pos.y()
+        w, h = self.width(), self.height()
+
+        if not self.resizing:
+            # Change cursor shape when hovering near edges
+            if x <= margin and y <= margin:
+                self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+            elif x >= w - margin and y <= margin:
+                self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+            elif x <= margin and y >= h - margin:
+                self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+            elif x >= w - margin and y >= h - margin:
+                self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+            elif x <= margin or x >= w - margin:
+                self.setCursor(Qt.CursorShape.SizeHorCursor)
+            elif y <= margin or y >= h - margin:
+                self.setCursor(Qt.CursorShape.SizeVerCursor)
+            else:
+                self.setCursor(Qt.CursorShape.ArrowCursor)
+            return
+
+        # Perform resizing
+        if self.resizing:
+            delta = event.globalPosition().toPoint() - self._mouse_pos
+            geom = QRect(self._geo)
+
+            if "left" in self.resize_dir:
+                geom.setLeft(geom.left() + delta.x())
+            if "right" in self.resize_dir:
+                geom.setRight(geom.right() + delta.x())
+            if "top" in self.resize_dir:
+                geom.setTop(geom.top() + delta.y())
+            if "bottom" in self.resize_dir:
+                geom.setBottom(geom.bottom() + delta.y())
+
+            min_width, min_height = self.minimumWidth(), self.minimumHeight()
+            if geom.width() >= min_width and geom.height() >= min_height:
+                self.setGeometry(geom)
+                self.set_rounded_corners()
+
+    def mouseReleaseEvent(self, event):
+        """Stop resizing."""
+        self.resizing = False
+        self.resize_dir = None
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().mouseReleaseEvent(event)
+
+    def set_rounded_corners(self, radius=12):
+        rect = QRectF(0, 0, float(self.width()), float(self.height()))
+        path = QPainterPath()
+        path.addRoundedRect(rect, float(radius), float(radius))
+        region = QRegion(path.toFillPolygon().toPolygon())
+        self.setMask(region)
