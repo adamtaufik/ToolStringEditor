@@ -7,6 +7,7 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QSplashScreen, QMessageBox
 from PyQt6.QtGui import QFont, QPixmap, QIcon, QGuiApplication
 
+from auth.microsoft_login import login_with_microsoft
 from ui.windows.ui_start_window import StartWindow
 from utils.path_finder import get_path
 
@@ -26,9 +27,8 @@ class InitializationManager:
         self.timer = QTimer()
         self.timer.timeout.connect(self.process_tasks)
 
-
     def start_initialization(self):
-        self.timer.start(50)  # Update every 50ms
+        self.timer.start(50)
 
     def process_tasks(self):
         if self.current_task >= self.total_tasks:
@@ -37,17 +37,12 @@ class InitializationManager:
 
         task = self.tasks[self.current_task]
         progress = int((self.current_task + 1) / self.total_tasks * 100)
-
-        # Update splash screen
         self.splash.showMessage(
             f"{task['message']}\nProgress: {progress}%",
-            alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom
+            alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom,
         )
-
-        # Simulate real work (replace with actual initialization code)
-        QApplication.processEvents()  # Keep UI responsive
-        time.sleep(task['duration'] / 1000)  # Replace this with real work
-
+        QApplication.processEvents()
+        time.sleep(task["duration"] / 1000)
         self.current_task += 1
 
 
@@ -57,56 +52,57 @@ if __name__ == "__main__":
     )
     app = QApplication(sys.argv)
 
-    # Set application icon
+    # Splash Screen
     icon_path = get_path(os.path.join("assets", "icons", "logo_full_qTd_icon.ico"))
     app_icon = QIcon(icon_path)
     app.setWindowIcon(app_icon)
 
-    # Create splash screen
     splash_path = get_path(os.path.join("assets", "backgrounds", "splash.png"))
     splash_image = QPixmap(splash_path)
     splash = QSplashScreen(splash_image)
     splash.show()
+    splash.setFont(QFont("Roboto", 12))
 
-    # Set font
-    splash_font = QFont("Roboto", 12)
-    splash.setFont(splash_font)
+    splash.showMessage("Authenticating Microsoft account...", Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
+    QApplication.processEvents()
 
-    # Trial expiration check (done before creating StartWindow)
-    expiration_date = datetime(2025, 10, 31)
-    today = datetime.today()
-    days_left = (expiration_date - today).days
-
-    if days_left >= 0:
-        QMessageBox.information(
-            splash,
-            "Free Trial",
-            f"This free trial is valid until {expiration_date.strftime('%d %B %Y')}.\n"
-            f"Days remaining: {days_left} day(s)."
-        )
-    else:
-        QMessageBox.critical(
-            splash,
-            "Trial Expired",
-            "The free trial period has ended.\nPlease contact support (Adam) to continue using the app."
-        )
+    # ---- Microsoft Login ----
+    result = login_with_microsoft()
+    if "access_token" not in result:
+        QMessageBox.critical(None, "Login Failed", "Microsoft login was unsuccessful.\nPlease try again.")
         sys.exit(0)
 
-    # Set font and begin initialization
+    user_name = result["id_token_claims"].get("name", "Unknown User")
+    user_email = result["id_token_claims"].get("preferred_username", "Unknown Email")
+
+    print(f"Login successful: {user_name} ({user_email})")
+
+    # ---- Trial Check ----
+    expiration_date = datetime(2025, 12, 31)
+    today = datetime.today()
+    days_left = (expiration_date - today).days
+    if days_left < 0:
+        QMessageBox.critical(None, "Trial Expired",
+            "The free trial period has ended.\nPlease contact Adam to continue using the app.")
+        sys.exit(0)
+    else:
+        QMessageBox.information(None, "Free Trial",
+            f"Valid until {expiration_date.strftime('%d %B %Y')}.\nDays remaining: {days_left} day(s).")
+
+    # ---- Initialization ----
     app.setFont(QFont("Roboto", 10))
     init_manager = InitializationManager(splash)
     init_manager.start_initialization()
 
-    # Create main window
-    window = StartWindow(app_icon=app_icon)
-
-    # Wait for initialization to complete
     while init_manager.timer.isActive():
         app.processEvents()
 
+    # ---- Start Window ----
+    splash.showMessage("Starting application...", Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
+    QApplication.processEvents()
+
+    window = StartWindow(app_icon=app_icon)
     splash.finish(window)
     window.show()
 
-    exit_code = app.exec()
-    del window
-    sys.exit(exit_code)
+    sys.exit(app.exec())

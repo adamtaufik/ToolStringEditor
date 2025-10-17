@@ -40,7 +40,10 @@ class WirelineSimulatorApp(QMainWindow):
 
         # Custom Frameless Title Bar
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        self.title_bar = CustomTitleBar(self, lambda: self.sidebar.toggle_visibility(), "Wireline Operations Simulator")
+        self.title_bar = CustomTitleBar(
+            self,
+            lambda: self.sidebar.toggle_visibility(),
+            "Wireline Operations Simulator")
         root_layout.addWidget(self.title_bar)
 
         # Create main content area (sidebar + tabs)

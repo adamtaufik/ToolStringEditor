@@ -248,10 +248,10 @@ class ToolWidget(QWidget):
 
             # --- Priority selection logic ---
             preferred_brand = None
-            if "RMZ" in brands:
-                preferred_brand = "RMZ"
-            elif "NOV" in brands:
+            if "NOV" in brands:
                 preferred_brand = "NOV"
+            elif "RMZ" in brands:
+                preferred_brand = "RMZ"
             elif brands:
                 preferred_brand = brands[0]
 

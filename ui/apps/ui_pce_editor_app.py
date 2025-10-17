@@ -1,4 +1,5 @@
 # ui/apps/ui_pce_editor_app.py
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QGraphicsOpacityEffect
 
 from database.file_io_pce import save_configuration, load_configuration
@@ -10,6 +11,7 @@ from ui.components.ui_footer import FooterWidget
 from ui.windows.ui_database_window import DatabaseWindow
 from features.editors.pce_export_manager import export_configuration
 from utils.path_finder import get_icon_path
+from utils.screen_info import screen_width, screen_height
 
 
 class PCEEditor(BaseEditor):
@@ -65,8 +67,20 @@ class PCEEditor(BaseEditor):
         self.tool_library.update_tool_list()
         self.fade_right_sidebar(True, delay=400)
 
-        self.resize(1300, 800)  # or any preferred default size
-        self.center_on_screen()
+        # # Delay maximize until after showEvent to ensure correct geometry setup
+        # QTimer.singleShot(0, self._maximize_after_init)
+
+        # Full-screen
+        if screen_width/screen_height < 2:
+            QTimer.singleShot(0, self._maximize_after_init)
+
+
+    def _maximize_after_init(self):
+        """Ensure the window properly maximizes after initialization."""
+        self.showMaximized()
+        if hasattr(self, "title_bar"):
+            self.title_bar.maximized = True
+            self.title_bar.maximize_btn.setText("🗗")
 
     def clear_tools(self):
         """Clear all tools from drop zone."""

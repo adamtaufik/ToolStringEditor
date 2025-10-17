@@ -1,75 +1,84 @@
-from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QMovie
-import os
-from utils.path_finder import get_path
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QWidget
+from PyQt6.QtCore import Qt, QTimer, QRectF, QThread, pyqtSignal
+from PyQt6.QtGui import QPainter, QPen, QColor
+
+
+class SpinnerWidget(QWidget):
+    """Custom minimalist spinner animation."""
+
+    def __init__(self, parent=None, size=60, line_width=4, color="#0078D7"):
+        super().__init__(parent)
+        self.size = size
+        self.line_width = line_width
+        self.color = QColor(color)
+        self.angle = 0
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.rotate)
+        self.timer.start(16)  # ~60 FPS
+
+        self.setFixedSize(self.size + 10, self.size + 10)
+
+    def rotate(self):
+        self.angle = (self.angle + 5) % 360
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        rect = QRectF(5, 5, self.size, self.size)
+
+        pen = QPen(self.color, self.line_width)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+
+        # Draw 270° arc (3/4 circle)
+        painter.drawArc(rect, int(self.angle * 16), int(270 * 16))
 
 
 class LoadingDialog(QDialog):
-    """Displays a loading animation while exporting."""
+    """Displays a spinning circle while exporting."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Exporting...")
-
-        # ✅ **Set background color to light gray**
-        self.setStyleSheet("background-color: rgba(240, 240, 240, 255); border-radius: 0px;")
-
-        # ✅ **Remove title bar and make it frameless**
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setStyleSheet("background-color: rgba(245, 245, 245, 255); border-radius: 12px;")
 
-        # ✅ **Layout & GIF Label**
         layout = QVBoxLayout(self)
-        self.label = QLabel(self)
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.label)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setContentsMargins(20, 20, 20, 20)
 
-        # ✅ **Load & Scale GIF**
-        gif_path = get_path(os.path.join("assets", "resources", "new_loading.gif"))
-        print(f"Finding GIF at: {gif_path}")
+        # ✅ Add spinner
+        self.spinner = SpinnerWidget(self, size=60, line_width=5, color="#0078D7")
+        layout.addWidget(self.spinner)
 
-        self.movie = QMovie(gif_path)
-
-        if not self.movie.isValid():
-            print("❌ ERROR: Invalid GIF File - Check File Path or Format")
-            return  # Prevent crash if GIF is invalid
-        else:
-            print("✅ GIF is valid")
-
-        # self.movie.setScaledSize(self.movie.currentPixmap().size().scaled(80, 80, Qt.AspectRatioMode.KeepAspectRatio))
-        self.label.setMovie(self.movie)
-        self.movie.start()
-
-        # ✅ **Set window size to match the GIF**
-        # self.setFixedSize(100, 100)
+        self.setFixedSize(120, 120)
 
     def stop(self):
-        """Stops the loading animation and closes the dialog."""
+        """Stops animation and closes the dialog."""
         print("Stopping LoadingDialog()")
-        self.movie.stop()
+        self.spinner.timer.stop()
         self.accept()
 
 
 class LoadingWorker(QThread):
     """Runs the loading dialog in the main thread while exporting in the background."""
 
-    start_signal = pyqtSignal()  # ✅ Signal to show the dialog
-    stop_signal = pyqtSignal()  # ✅ Signal to stop the dialog
+    start_signal = pyqtSignal()
+    stop_signal = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.loading_dialog = LoadingDialog(parent)  # ✅ Create the dialog in the main thread
-        # ✅ Connect signals
+        self.loading_dialog = LoadingDialog(parent)
         self.start_signal.connect(self.loading_dialog.show)
         self.stop_signal.connect(self.loading_dialog.stop)
 
     def run(self):
-        """Shows the loading dialog while exporting."""
         self.start_signal.emit()
-        self.exec()  # ✅ Keep the thread running
+        self.exec()
 
     def stop_dialog(self):
-        """Stops and closes the loading dialog safely."""
-        self.stop_signal.emit()  # ✅ Close dialog safely
-        self.quit()  # ✅ Stop the thread
+        self.stop_signal.emit()
+        self.quit()

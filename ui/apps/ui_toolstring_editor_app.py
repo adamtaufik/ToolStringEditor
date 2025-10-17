@@ -1,4 +1,5 @@
 # ui/apps/ui_toolstring_editor_app.py
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QGraphicsOpacityEffect
 from ui.components.ui_base_editor import BaseEditor
 from ui.components.inputs import AngleInput
@@ -10,6 +11,7 @@ from ui.windows.ui_database_window import DatabaseWindow
 from database.file_io import save_configuration, load_configuration
 from features.editors.ts_export_manager import export_configuration
 from utils.path_finder import get_icon_path
+from utils.screen_info import get_width, get_height, get_screen_width, get_screen_height
 
 
 class ToolStringEditor(BaseEditor):
@@ -49,7 +51,7 @@ class ToolStringEditor(BaseEditor):
         self.max_angle = AngleInput()
 
         # Right Sidebar
-        self.right_panel = self.setup_common_right_sidebar()
+        self.right_panel = self.setup_common_right_sidebar(fixed_width=150)
         content_layout.addWidget(self.right_panel)
 
         self.editor_layout.addLayout(content_layout)
@@ -67,8 +69,21 @@ class ToolStringEditor(BaseEditor):
         self.tool_library.update_tool_list()
         self.fade_right_sidebar(True, delay=300)
 
-        self.resize(1300, 800)  # or any preferred default size
-        self.center_on_screen()
+        # Detect screen size
+        screen_width = get_screen_width()
+        screen_height = get_screen_height()
+
+        # Full-screen
+        if screen_width/screen_height < 2:
+            QTimer.singleShot(0, self._maximize_after_init)
+
+    def _maximize_after_init(self):
+        """Ensure the window properly maximizes after initialization."""
+        self.showMaximized()
+        if hasattr(self, "title_bar"):
+            self.title_bar.maximized = True
+            self.title_bar.maximize_btn.setText("🗗")
+
 
     def clear_tools(self):
         """Clear all tools from drop zone."""

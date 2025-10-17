@@ -1,17 +1,21 @@
 from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout, QGraphicsBlurEffect
 from PyQt6.QtCore import Qt, QPoint, QRect, QPropertyAnimation
-from PyQt6.QtGui import QCursor, QPixmap
+from PyQt6.QtGui import QPixmap
 
-from utils.path_finder import get_path, get_icon_path
+from utils.path_finder import get_icon_path
+from utils.session_manager import SessionManager
+
 
 class CustomTitleBar(QWidget):
-    def __init__(self, parent, menu_callback=None, title=""):
+    def __init__(self, parent, menu_callback=None, title="", user_info=""):
         super().__init__(parent)
         self.parent = parent
         self.menu_callback = menu_callback
         self.setFixedHeight(40)
+        session = SessionManager()
+        user_info = session.get_user()
 
-        # Background blur widget
+        # Background blur
         self.background = QWidget(self)
         self.background.setStyleSheet("background-color: rgba(255, 255, 255, 0.1);")
         blur = QGraphicsBlurEffect()
@@ -23,12 +27,12 @@ class CustomTitleBar(QWidget):
         self.content.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         self.layout = QHBoxLayout(self.content)
-        self.layout.setContentsMargins(0, 0, 10, 0)  # <-- Adjust spacing here
-        self.layout.setSpacing(5)
+        self.layout.setContentsMargins(10, 0, 10, 0)
+        self.layout.setSpacing(8)
 
         # Logo
         self.logo = QLabel()
-        pixmap = QPixmap(get_icon_path('logo'))
+        pixmap = QPixmap(get_icon_path("logo"))
         self.logo.setPixmap(pixmap.scaledToHeight(24, Qt.TransformationMode.SmoothTransformation))
         self.logo.setFixedWidth(50)
         self.logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -37,7 +41,20 @@ class CustomTitleBar(QWidget):
         # Title
         self.title = QLabel(title)
         self.layout.addWidget(self.title)
-        self.layout.addStretch()  # <-- Push everything else to the right
+        self.layout.addStretch()
+
+        # Fetch user info
+        display_name, email = user_info
+
+        # User info label
+        self.user_label = QLabel(f"{display_name}  |  {email}")
+        self.user_label.setStyleSheet("""
+            font-size: 10pt;
+            color: rgba(255, 255, 255, 0.8);
+        """)
+        self.user_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
+
+        self.layout.addWidget(self.user_label)
 
         # Control buttons
         self.minimize_btn = QPushButton("–")
@@ -81,13 +98,17 @@ class CustomTitleBar(QWidget):
         """)
 
         self.start_pos = None
-        self.maximized = False
-
+        self.maximized = parent.isMaximized()
+        if self.maximized:
+            self.maximize_btn.setText("🗗")
 
     def add_menu_button(self, button: QPushButton):
-        """Externally add a menu button (e.g., hamburger) to the title bar."""
         self.menu_button = button
         self.layout.insertWidget(0, button)
+
+    def set_user_info(self, text: str):
+        """Allow dynamic update of user info from any app."""
+        self.user_label.setText(text)
 
     def toggle_max_restore(self):
         if self.maximized:
@@ -97,7 +118,7 @@ class CustomTitleBar(QWidget):
         else:
             self.parent.showMaximized()
             self.maximized = True
-            self.maximize_btn.setText("🗗")  # Restore icon
+            self.maximize_btn.setText("🗗")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -113,7 +134,6 @@ class CustomTitleBar(QWidget):
         self.start_pos = None
 
     def animate_minimize(self):
-        """Simulate shrink animation before minimizing."""
         geom = self.parent.geometry()
         target_geom = QRect(geom.x() + geom.width() // 2,
                             geom.y() + geom.height() // 2,
@@ -125,8 +145,6 @@ class CustomTitleBar(QWidget):
         animation.setEndValue(target_geom)
         animation.finished.connect(self.parent.showMinimized)
         animation.start()
-
-        # Store animation to prevent garbage collection
         self._minimize_animation = animation
 
     def resizeEvent(self, event):

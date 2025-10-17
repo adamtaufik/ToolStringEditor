@@ -23,7 +23,8 @@ class BaseEditor(QMainWindow):
     RESIZE_MARGIN = 8
 
     def __init__(self, window_title, sidebar_items, drop_zone_class, tool_library_class, summary_widget_class):
-        super().__init__()  # ✅ This calls QMainWindow.__init__()
+
+        super().__init__()
 
         self.current_file_name = None
         self.resizing = False
@@ -62,7 +63,11 @@ class BaseEditor(QMainWindow):
 
         self.sidebar = SidebarWidget(self, self.sidebar_items)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
-        self.title_bar = CustomTitleBar(self, lambda: self.sidebar.toggle_visibility(), self.window_title)
+        self.title_bar = CustomTitleBar(
+            self,
+            lambda: self.sidebar.toggle_visibility(),
+            self.window_title
+        )
 
         main_container.addWidget(self.title_bar)
 
@@ -136,9 +141,9 @@ class BaseEditor(QMainWindow):
         """Creates the common right sidebar for well details & summary."""
         right_panel = QWidget()
         right_panel.setObjectName("rightSidebar")
-        if fixed_width:
-            right_panel.setFixedWidth(fixed_width)
-            right_panel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        # if fixed_width:
+        #     right_panel.setFixedWidth(fixed_width)
+        #     right_panel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
 
         input_layout = QVBoxLayout(right_panel)
         input_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -182,11 +187,13 @@ class BaseEditor(QMainWindow):
         little_layout.setSpacing(5)
         little_layout.addWidget(self.well_no)
 
-        # Add angle input for ToolStringEditor
-        if hasattr(self, 'max_angle'):
-            little_layout.addWidget(self.max_angle)
+        # # Add angle input for ToolStringEditor
+        # if hasattr(self, 'max_angle'):
+        #     little_layout.addWidget(self.max_angle)
 
         input_layout.addLayout(little_layout)
+        if hasattr(self, 'max_angle'):
+            input_layout.addWidget(self.max_angle)
         input_layout.addWidget(self.well_type)
 
         date_layout = QHBoxLayout()
@@ -222,7 +229,7 @@ class BaseEditor(QMainWindow):
         input_layout.addWidget(line2)
 
         from ui.components.inputs import LimitedTextEdit
-        self.comments = LimitedTextEdit(max_lines=5)
+        self.comments = LimitedTextEdit(max_lines=4)
         input_layout.addWidget(self.comments, alignment=Qt.AlignmentFlag.AlignTop)
 
         input_layout.setContentsMargins(3, 10, 8, 0)
@@ -308,7 +315,12 @@ class BaseEditor(QMainWindow):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.set_rounded_corners()
+
+        # Remove rounded corners when maximized, restore otherwise
+        if self.isMaximized():
+            self.clearMask()  # Remove mask to make edges square
+        else:
+            self.set_rounded_corners()
 
     def mousePressEvent(self, event):
         """Detect when resizing or dragging starts."""
@@ -358,6 +370,8 @@ class BaseEditor(QMainWindow):
         margin = self.RESIZE_MARGIN
         x, y = pos.x(), pos.y()
         w, h = self.width(), self.height()
+
+        # print(w,'\t',h)
 
         # Cursor feedback
         if not self.resizing:

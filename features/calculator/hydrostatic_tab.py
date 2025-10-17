@@ -91,12 +91,6 @@ class HydrostaticTab(QWidget):
         calculator_group = QWidget()
         calculator_layout = QVBoxLayout(calculator_group)
 
-        # Title
-        title_label = QLabel("Hydrostatic Pressure Calculator")
-        title_label.setStyleSheet("font-size: 14pt; font-weight: bold;")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        calculator_layout.addWidget(title_label)
-
         # Input grid
         input_grid = self.create_input_grid()
         calculator_layout.addLayout(input_grid)

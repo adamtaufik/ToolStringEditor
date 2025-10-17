@@ -8,7 +8,7 @@ class LimitedTextEdit(QTextEdit):
         super().__init__()
         self.max_lines = max_lines
         self.setPlaceholderText(f"Remarks (max {max_lines} lines)")
-        self.setFixedHeight(5 * 20)  # Approx height for 5 lines
+        self.setFixedHeight(4 * 20)  # Approx height for 5 lines
         self.textChanged.connect(self.limit_lines)
 
         # **Apply Rounded Border Style**

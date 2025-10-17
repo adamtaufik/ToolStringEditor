@@ -18,6 +18,8 @@ from utils.path_finder import get_path, get_icon_path
 
 import os
 
+from utils.session_manager import SessionManager
+
 
 class AppCard(QPushButton):
     def __init__(self, icon_path: str, title: str, subtitle: str = "", parent=None):
@@ -143,17 +145,18 @@ class AppCard(QPushButton):
         super().mouseReleaseEvent(e)
 
 
-# ---------- Modern Start Window ----------
 class StartWindow(QWidget):
     def __init__(self, app_icon=None):
         super().__init__()
         self.setWindowTitle("Deleum WireHub")
-        self.setFixedSize(860, 600)  # a bit wider to breathe
+        self.setFixedSize(860, 600)
+        session = SessionManager()
+        self.user_info = session.get_user()
 
         if app_icon:
             self.setWindowIcon(app_icon)
 
-        # Subtle gradient / image backdrop
+        # background style same as before...
         self.setStyleSheet("""
             QWidget {
                 font-family: 'Segoe UI';
@@ -163,16 +166,24 @@ class StartWindow(QWidget):
             }
         """)
 
-        # ---- Top: brand/logo ----
+        # ---- Header (logo + user info) ----
         logo_path = get_path(os.path.join("assets", "icons", "WireHub Logo.png"))
         logo = QLabel()
         if os.path.exists(logo_path):
             logo.setPixmap(QPixmap(logo_path).scaledToHeight(100, Qt.TransformationMode.SmoothTransformation))
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        header = QVBoxLayout()
-        header.setContentsMargins(0, 15, 0, 15)
-        header.addWidget(logo)
+        session = SessionManager()
+        user_name, user_email = session.get_user()
+        user_label = QLabel(f"Signed in as {user_name} ({user_email})")
+        user_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        user_label.setStyleSheet("color: #9aa7b5; font-size: 11px; padding-right: 12px;")
+
+        header_layout = QVBoxLayout()
+        header_layout.setContentsMargins(10, 10, 10, 0)
+        header_layout.addWidget(logo)
+        header_layout.addWidget(user_label)
+
 
         # ---- Center: app cards grid ----
         grid = QGridLayout()
@@ -220,7 +231,7 @@ class StartWindow(QWidget):
         # ---- Main layout ----
         main = QVBoxLayout(self)
         main.setContentsMargins(0, 0, 0, 0)
-        main.addLayout(header)
+        main.addLayout(header_layout)
         main.addSpacing(10)
         main.addLayout(grid)
         main.addStretch()
