@@ -1,9 +1,11 @@
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PyQt6.QtMultimediaWidgets import QGraphicsVideoItem
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton, QSizePolicy,
-    QSpacerItem, QFrame
+    QSpacerItem, QFrame, QGraphicsView, QGraphicsScene
 )
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QColor, QPainter, QPainterPath, QImage, QDesktopServices
-from PyQt6.QtCore import Qt, QSize, QRectF, QUrl
+from PyQt6.QtCore import Qt, QSize, QRectF, QUrl, QSizeF
 from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 
 from ui.apps.ui_calculations_app import WirelineCalculatorApp
@@ -149,12 +151,44 @@ class StartWindow(QWidget):
     def __init__(self, app_icon=None):
         super().__init__()
         self.setWindowTitle("Deleum WireHub")
-        self.setFixedSize(860, 600)
+        self.setFixedSize(940, 600)
         session = SessionManager()
         self.user_info = session.get_user()
 
         if app_icon:
             self.setWindowIcon(app_icon)
+        # ---- Background Wave Animation ----
+        video_path = get_path(os.path.join("assets", "backgrounds", "Wave Loop.mp4"))
+
+        self.scene = QGraphicsScene(self)
+        self.video_item = QGraphicsVideoItem()
+        self.video_item.setOpacity(0.55)  # adjust transparency if needed
+        self.scene.addItem(self.video_item)
+
+        self.bg_view = QGraphicsView(self.scene, self)
+        self.bg_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.bg_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.bg_view.setStyleSheet("background: transparent; border: none;")
+        self.bg_view.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.bg_view.setFrameShape(QFrame.Shape.NoFrame)
+
+        # Make it fill window
+        self.bg_view.lower()
+        self.bg_view.setGeometry(self.rect())
+        self.bg_view.setRenderHint(
+            QPainter.RenderHint.Antialiasing |
+            QPainter.RenderHint.SmoothPixmapTransform
+        )
+
+        # Media Player
+        self.player = QMediaPlayer(self)
+        self.audio = QAudioOutput(self)
+        self.audio.setVolume(0.0)  # mute (background animation should not play audio)
+        self.player.setAudioOutput(self.audio)
+        self.player.setVideoOutput(self.video_item)
+        self.player.setSource(QUrl.fromLocalFile(video_path))
+        self.player.play()
+        self.player.setLoops(QMediaPlayer.Loops.Infinite)
 
         # background style same as before...
         self.setStyleSheet("""
@@ -295,6 +329,11 @@ class StartWindow(QWidget):
         main.addLayout(buttons_layout)
         main.addWidget(footer)
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, "bg_view"):
+            self.bg_view.setGeometry(self.rect())
+            self.video_item.setSize(QSizeF(self.size()))
 
     # ---- Actions ----
     def open_toolstring_editor_app(self):

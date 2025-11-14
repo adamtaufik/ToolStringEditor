@@ -71,6 +71,8 @@ class DropZone(QFrame):
         self.main_layout.setContentsMargins(0, 5, 0, 5)
         self.main_layout.setSpacing(0)
 
+        self.setFixedSize(self.size())  # freezes the entire window size
+
     # ---------------- ANIMATION ON STARTUP ---------------- #
     def showEvent(self, event):
         """Animate the DropZone expanding into view on startup."""
