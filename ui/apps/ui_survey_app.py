@@ -1,4 +1,5 @@
 import datetime
+import gc
 import io
 import os
 import pickle
@@ -6,22 +7,20 @@ import re
 import shutil
 import tempfile
 
+import pyqtgraph as pg
 import openpyxl
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 import xlrd
-import matplotlib.dates as mdates
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.widgets import SpanSelector
 from PyQt6.QtCore import Qt, QTimer, QSize, QObject, QEvent, QDate, QParallelAnimationGroup, QPropertyAnimation, \
     QEasingCurve, QPoint
-from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QImage, QIcon
+from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QImage, QIcon, QColor
 from PyQt6.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QTableWidgetItem, QHBoxLayout, QApplication,
     QSplitter, QGridLayout, QGroupBox, QStackedWidget, QTimeEdit, QLineEdit, QToolButton, QFrame, QDateEdit,
     QGraphicsOpacityEffect
 )
+pg.setConfigOptions(background='w', antialias=True)
 
 # Local imports
 from ui.components.ui_footer import FooterWidget
@@ -610,9 +609,9 @@ class SGSTXTApp(QWidget):
         table_group_layout = QVBoxLayout(table_group)
 
         self.table_widget = QTableWidget()
-        self.table_widget.setColumnCount(19)
+        self.table_widget.setColumnCount(18)
         self.table_widget.setHorizontalHeaderLabels([
-            "Station", "Depth (ft)", "Start T.", "End T.", "Dur. (min)",
+            "Station", "Depth (ft)", "Start T.", "End T.",
             "AHD FTBDF", "TVD FTBDF",
             "High P (T)", "Low P (T)", "Med P (T)", "High T (T)", "Low T (T)", "Med T (T)",
             "High P (B)", "Low P (B)", "Med P (B)", "High T (B)", "Low T (B)", "Med T (B)"
@@ -631,6 +630,7 @@ class SGSTXTApp(QWidget):
                 font-weight: bold;
             }
         """)
+        self.table_widget.itemChanged.connect(self.on_station_time_changed)
 
         # Add table to group
         table_group_layout.addWidget(self.table_widget)
@@ -743,7 +743,7 @@ class SGSTXTApp(QWidget):
         self.event_desc_edit = QLineEdit()
         self.event_desc_edit.setPlaceholderText("Enter event description")
 
-        self.add_event_btn = QPushButton("Add Event")
+        self.add_event_btn = QPushButton("Add")
         self.add_event_btn.setIcon(QIcon(get_icon_path('add')))
         self.add_event_btn.clicked.connect(self.add_event)
         self.add_event_btn.setStyleSheet("""
@@ -758,7 +758,7 @@ class SGSTXTApp(QWidget):
             }
         """)
 
-        self.remove_event_btn = QPushButton("Remove Selected")
+        self.remove_event_btn = QPushButton("Remove")
         self.remove_event_btn.setIcon(QIcon(get_icon_path('remove')))
         self.remove_event_btn.clicked.connect(self.remove_event)
         self.remove_event_btn.setStyleSheet(DELETE_BUTTON)
@@ -860,14 +860,14 @@ class SGSTXTApp(QWidget):
         toolbar_layout.setContentsMargins(0, 5, 0, 5)
 
         # Reset zoom button
-        self.reset_zoom_btn = QPushButton("Reset Zoom")
+        self.reset_zoom_btn = QPushButton("Reset")
         self.reset_zoom_btn.setIcon(QIcon(get_icon_path('unzoom')))
         self.reset_zoom_btn.setStyleSheet(DELETE_BUTTON)
         self.reset_zoom_btn.clicked.connect(self.reset_graph_zoom)
         self.reset_zoom_btn.setEnabled(False)
 
         # Copy graphs button
-        self.copy_graphs_button = QPushButton("Copy Graphs")
+        self.copy_graphs_button = QPushButton("Copy")
         self.copy_graphs_button.setIcon(QIcon(get_icon_path('copy')))
         self.copy_graphs_button.setStyleSheet("""
             QPushButton {
@@ -902,12 +902,524 @@ class SGSTXTApp(QWidget):
         for widget in self.findChildren(QPushButton) + self.findChildren(QToolButton):
             widget.installEventFilter(self.cursor_filter)
 
+    def show_stacked_graphs(self, top_file_path, bottom_file_path):
+        # Clear previous graph
+        while self.graph_layout.count():
+            item = self.graph_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # ============================
+        # Main container: HBox → graphs | right column (legend + buttons)
+        # ============================
+        graph_container = QWidget()
+        main_layout = QHBoxLayout(graph_container)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(10)
+
+        # ----------------------------
+        # Left side: stacked graphs
+        # ----------------------------
+        graphs_container = QWidget()
+        graphs_layout = QVBoxLayout(graphs_container)
+        graphs_layout.setContentsMargins(0, 0, 0, 0)
+        graphs_layout.setSpacing(5)
+
+        # ============================
+        # Data extraction and conversion
+        # ============================
+        # Initialize data arrays
+        top_timestamps = top_pressures = top_temps = None
+        bottom_timestamps = bottom_pressures = bottom_temps = None
+
+        # Process top data
+        if self.top_data is not None:
+            if hasattr(self.top_data, 'dtype') and self.top_data.dtype.names is not None:
+                top_timestamps = np.array([dt.timestamp() for dt in self.top_data['datetime']])
+                top_pressures = self.top_data['pressure'].astype(np.float32)
+                top_temps = self.top_data['temperature'].astype(np.float32)
+            elif isinstance(self.top_data, list) and len(self.top_data) > 0:
+                top_timestamps = np.array([dt.timestamp() for dt, _, _ in self.top_data])
+                top_pressures = np.array([p for _, p, _ in self.top_data], dtype=np.float32)
+                top_temps = np.array([t for _, _, t in self.top_data], dtype=np.float32)
+
+        # Process bottom data
+        if self.bottom_data is not None:
+            if hasattr(self.bottom_data, 'dtype') and self.bottom_data.dtype.names is not None:
+                bottom_timestamps = np.array([dt.timestamp() for dt in self.bottom_data['datetime']])
+                bottom_pressures = self.bottom_data['pressure'].astype(np.float32)
+                bottom_temps = self.bottom_data['temperature'].astype(np.float32)
+            elif isinstance(self.bottom_data, list) and len(self.bottom_data) > 0:
+                bottom_timestamps = np.array([dt.timestamp() for dt, _, _ in self.bottom_data])
+                bottom_pressures = np.array([p for _, p, _ in self.bottom_data], dtype=np.float32)
+                bottom_temps = np.array([t for _, _, t in self.bottom_data], dtype=np.float32)
+
+        # Store for later use
+        self.top_timestamps = top_timestamps
+        self.top_pressures = top_pressures
+        self.top_temps = top_temps
+        self.bottom_timestamps = bottom_timestamps
+        self.bottom_pressures = bottom_pressures
+        self.bottom_temps = bottom_temps
+
+        # ============================
+        # Custom Time Axis Formatter
+        # ============================
+        class TimeAxisItem(pg.AxisItem):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.enableAutoSIPrefix(False)
+
+            def tickStrings(self, values, scale, spacing):
+                strings = []
+                for v in values:
+                    try:
+                        dt = datetime.datetime.fromtimestamp(v)
+                        strings.append(dt.strftime("%H:%M:%S"))
+                    except:
+                        strings.append(str(v))
+                return strings
+
+        # ============================
+        # Helper to create plot with secondary y-axis
+        # ============================
+        def create_plot_with_temp(timestamps, pressures, temps, title):
+            # Enable OpenGL for faster rendering
+            plot_widget = pg.PlotWidget(axisItems={'bottom': TimeAxisItem(orientation='bottom')}, useOpenGL=True)
+            plot_widget.setLabel('left', 'Pressure', units='psia')
+            plot_widget.setLabel('bottom', 'Time')
+            plot_widget.setTitle(title)
+            plot_widget.showGrid(x=True, y=True, alpha=0.3)
+
+            # Add legend - THIS IS THE KEY ADDITION
+            plot_widget.addLegend()
+
+            # Main pressure curve - use OpenGL for large datasets
+            pressure_curve = pg.PlotCurveItem(timestamps, pressures,
+                                              pen=pg.mkPen('b', width=1.5),
+                                              name='Pressure',  # Name appears in legend
+                                              connect='all',
+                                              antialias=True,
+                                              useOpenGL=True)
+            plot_widget.addItem(pressure_curve)
+
+            # Secondary y-axis for temperature
+            temp_view = pg.ViewBox()
+            plot_widget.getPlotItem().scene().addItem(temp_view)
+            plot_widget.getPlotItem().getAxis('right').linkToView(temp_view)
+            temp_view.setXLink(plot_widget.getPlotItem())
+
+            temp_curve = pg.PlotCurveItem(timestamps, temps,
+                                          pen=pg.mkPen('r', width=1.5),
+                                          name='Temperature',  # Name appears in legend
+                                          connect='all',
+                                          antialias=True,
+                                          useOpenGL=True)
+            temp_view.addItem(temp_curve)
+
+            # IMPORTANT: Also add temperature curve to main plot's legend
+            # This ensures it shows up in the legend even though it's in a different ViewBox
+            plot_widget.getPlotItem().legend.addItem(temp_curve, temp_curve.name())
+
+            # Keep views synced on resize
+            def update_views():
+                temp_view.setGeometry(plot_widget.getPlotItem().vb.sceneBoundingRect())
+                temp_view.linkedViewChanged(plot_widget.getPlotItem().vb, temp_view.XAxis)
+
+            plot_widget.getPlotItem().vb.sigResized.connect(update_views)
+
+            # Right axis label
+            temp_axis = pg.AxisItem('right')
+            plot_widget.getPlotItem().layout.addItem(temp_axis, 2, 3)
+            temp_axis.linkToView(temp_view)
+            temp_axis.setLabel('Temperature', units='°F', color='r')
+
+            return plot_widget
+
+        # Add top and bottom plots to graphs_layout
+        if top_timestamps is not None and len(top_timestamps) > 0:
+            self.top_plot = create_plot_with_temp(top_timestamps, top_pressures, top_temps,
+                                                  f"Top Gauge - {os.path.basename(top_file_path)}")
+            graphs_layout.addWidget(self.top_plot)
+
+        if bottom_timestamps is not None and len(bottom_timestamps) > 0:
+            self.bottom_plot = create_plot_with_temp(bottom_timestamps, bottom_pressures, bottom_temps,
+                                                     f"Bottom Gauge - {os.path.basename(bottom_file_path)}")
+            if hasattr(self, 'top_plot') and self.top_plot is not None:
+                self.bottom_plot.setXLink(self.top_plot)
+            graphs_layout.addWidget(self.bottom_plot)
+
+        main_layout.addWidget(graphs_container, stretch=3)
+
+        # ============================
+        # Station shading
+        # ============================
+        self.plot_regions = []
+
+        if hasattr(self, 'station_timings') and self.station_timings:
+            colors = []
+            station_labels = []
+            cmap = pg.colormap.get('viridis', source='matplotlib')  # can pick another colormap
+            n = len(self.station_timings)
+            for i in range(len(self.station_timings)):
+                hue = int(360 * i / n)  # evenly spaced hues
+                color = QColor()
+                color.setHsv(hue, 200, 255, 60)
+                # color.setAlpha(50)  # adjust 0-255 for transparency
+
+                colors.append(color)
+
+                # Get station label
+                label = self.station_timings[i].get('label', f'Station {i+1}')
+                station_labels.append(label)
+
+            for idx, station in enumerate(self.station_timings):
+                try:
+                    start_ts = station['start'].timestamp()
+                    end_ts = station['end'].timestamp()
+                    color = colors[idx]
+                    region_top = pg.LinearRegionItem(values=[start_ts, end_ts], brush=pg.mkBrush(color), movable=False)
+                    region_bottom = pg.LinearRegionItem(values=[start_ts, end_ts], brush=pg.mkBrush(color),
+                                                        movable=False)
+
+                    if hasattr(self, 'top_plot') and self.top_plot is not None:
+                        self.top_plot.addItem(region_top)
+                    if hasattr(self, 'bottom_plot') and self.bottom_plot is not None:
+                        self.bottom_plot.addItem(region_bottom)
+
+                    self.plot_regions.append((region_top, region_bottom))
+                except Exception as e:
+                    print(f"Error adding station region {idx}: {e}")
+
+        # ----------------------------
+        # Right side: legend + buttons
+        # ----------------------------
+        right_column = QWidget()
+        right_column.setFixedWidth(100)
+        right_layout = QVBoxLayout(right_column)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(10)
+
+        # Right side: legend + buttons
+        if hasattr(self, 'station_timings') and self.station_timings:
+            colors = []
+            labels = []
+
+            cmap = pg.colormap.get('viridis', source='matplotlib')  # can pick another colormap
+            n = len(self.station_timings)
+            for i, station in enumerate(self.station_timings):
+                hue = int(360 * i / n)  # evenly spaced hues
+                color = QColor()
+                color.setHsv(hue, 200, 255, 60)
+                # color.setAlpha(50)  # adjust 0-255 for transparency
+
+                colors.append(color)
+
+                # Include depth in label like old code
+                station_name = station.get('station', f'Station {i + 1}')
+                depth = station.get('depth', '')
+                if depth != '':
+                    label = f"{station_name} - {depth}ft"
+                else:
+                    label = station_name
+                labels.append(label)
+
+            self.create_station_legend(colors, labels, right_column)
+
+        right_layout.addStretch()
+        # ============================
+        # Cursor readout widget
+        # ============================
+        self.cursor_readout_widget = QWidget()
+        cursor_layout = QVBoxLayout(self.cursor_readout_widget)
+        cursor_layout.setContentsMargins(0, 0, 0, 0)
+        cursor_layout.setSpacing(4)
+
+        self.cursor_time_label = QLabel("Time: --:--:--\n")
+        self.cursor_top_label = QLabel("Top: \nP = -- psia\nT = -- °F\n")
+        self.cursor_bottom_label = QLabel("Bottom: \nP = -- psia\nT = -- °F")
+
+        for lbl in (
+                self.cursor_time_label,
+                self.cursor_top_label,
+                self.cursor_bottom_label
+        ):
+            lbl.setStyleSheet(
+                "font-family: Consolas; font-size: 11px;"
+            )
+
+        title = QLabel("Cursor Values")
+        title.setStyleSheet("font-weight: bold;")
+
+        cursor_layout.addWidget(title)
+        cursor_layout.addWidget(self.cursor_time_label)
+        cursor_layout.addWidget(self.cursor_top_label)
+        cursor_layout.addWidget(self.cursor_bottom_label)
+
+        right_layout.addWidget(self.cursor_readout_widget)
+
+        # Toolbar buttons
+        button_container = QWidget()
+        button_layout = QVBoxLayout(button_container)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.setSpacing(5)
+
+        # Reset Zoom button
+        self.reset_zoom_btn.setEnabled(hasattr(self, 'top_plot') and self.top_plot is not None)
+        button_layout.addWidget(self.reset_zoom_btn)
+
+        # Copy Graphs button
+        self.copy_graphs_button.setEnabled(True)
+        button_layout.addWidget(self.copy_graphs_button)
+
+        right_layout.addWidget(button_container)
+
+
+        main_layout.addWidget(right_column, stretch=1)  # less width than graphs
+
+        self.graph_layout.addWidget(graph_container)
+
+        # ============================
+        # Synchronized cursors
+        # ============================
+        if hasattr(self, 'top_plot') and self.top_plot is not None and \
+                hasattr(self, 'bottom_plot') and self.bottom_plot is not None:
+
+            # Create vertical lines for both plots
+            self.cursor_vline_top = pg.InfiniteLine(angle=90, movable=False,
+                                                    pen=pg.mkPen('k', width=1, style=pg.QtCore.Qt.PenStyle.DashLine))
+            self.cursor_vline_bottom = pg.InfiniteLine(angle=90, movable=False,
+                                                       pen=pg.mkPen('k', width=1, style=pg.QtCore.Qt.PenStyle.DashLine))
+
+            self.top_plot.addItem(self.cursor_vline_top)
+            self.bottom_plot.addItem(self.cursor_vline_bottom)
+
+            # One handler, two scenes
+            self.proxy_top = pg.SignalProxy(
+                self.top_plot.scene().sigMouseMoved,
+                rateLimit=60,
+                slot=self.on_mouse_move_pyqtgraph
+            )
+
+            self.proxy_bottom = pg.SignalProxy(
+                self.bottom_plot.scene().sigMouseMoved,
+                rateLimit=60,
+                slot=self.on_mouse_move_pyqtgraph
+            )
+
+    def on_mouse_move_pyqtgraph(self, event):
+        """Handle mouse movement over either top or bottom PyQtGraph plots"""
+        try:
+            # Extract position from SignalProxy
+            if isinstance(event, tuple):
+                pos = event[0]
+            else:
+                pos = event
+
+            # Determine which plot the mouse is over
+            plot_item = None
+            if hasattr(self, 'top_plot') and self.top_plot is not None:
+                if self.top_plot.plotItem.sceneBoundingRect().contains(pos):
+                    plot_item = self.top_plot.plotItem
+            if hasattr(self, 'bottom_plot') and self.bottom_plot is not None:
+                if self.bottom_plot.plotItem.sceneBoundingRect().contains(pos):
+                    plot_item = self.bottom_plot.plotItem
+
+            if plot_item is not None:
+                # Map scene coordinates to plot coordinates
+                mouse_point = plot_item.vb.mapSceneToView(pos)
+                x_val = mouse_point.x()
+
+                # ============================
+                # Update cursor readout widget
+                # ============================
+                if hasattr(self, 'cursor_time_label'):
+                    try:
+                        dt = datetime.datetime.fromtimestamp(x_val)
+                        self.cursor_time_label.setText(
+                            f"Time: {dt.strftime('%H:%M:%S')}\n"
+                        )
+
+                        # -------- Top gauge --------
+                        if self.top_timestamps is not None:
+                            idx = np.argmin(np.abs(self.top_timestamps - x_val))
+                            if idx < len(self.top_pressures):
+                                p = self.top_pressures[idx]
+                                t = self.top_temps[idx]
+                                self.cursor_top_label.setText(
+                                    f"Top: \nP = {p:.2f} psia\nT = {t:.2f} °F\n"
+                                )
+
+                        # -------- Bottom gauge --------
+                        if self.bottom_timestamps is not None:
+                            idx = np.argmin(np.abs(self.bottom_timestamps - x_val))
+                            if idx < len(self.bottom_pressures):
+                                p = self.bottom_pressures[idx]
+                                t = self.bottom_temps[idx]
+                                self.cursor_bottom_label.setText(
+                                    f"Bottom: \nP = {p:.2f} psia\nT = {t:.2f} °F"
+                                )
+
+                    except Exception:
+                        pass
+
+                # Update both cursor lines
+                if hasattr(self, 'cursor_vline_top') and self.cursor_vline_top is not None:
+                    self.cursor_vline_top.setPos(x_val)
+                if hasattr(self, 'cursor_vline_bottom') and self.cursor_vline_bottom is not None:
+                    self.cursor_vline_bottom.setPos(x_val)
+
+                # Convert timestamp to datetime for display
+                try:
+                    dt = datetime.datetime.fromtimestamp(x_val)
+                    time_str = dt.strftime("%H:%M:%S")
+
+                    status_lines = [f"Time: {time_str}"]
+
+                    # Top gauge data
+                    if hasattr(self, 'top_timestamps') and self.top_timestamps is not None:
+                        idx = np.argmin(np.abs(self.top_timestamps - x_val))
+                        if idx < len(self.top_pressures) and idx < len(self.top_temps):
+                            top_p = self.top_pressures[idx]
+                            top_t = self.top_temps[idx]
+                            status_lines.append(f"Top: Pressure = {top_p:.2f} psia, Temp = {top_t:.2f} °F")
+
+                    # Bottom gauge data
+                    if hasattr(self, 'bottom_timestamps') and self.bottom_timestamps is not None:
+                        idx = np.argmin(np.abs(self.bottom_timestamps - x_val))
+                        if idx < len(self.bottom_pressures) and idx < len(self.bottom_temps):
+                            bottom_p = self.bottom_pressures[idx]
+                            bottom_t = self.bottom_temps[idx]
+                            status_lines.append(f"Bottom: Pressure = {bottom_p:.2f} psia, Temp = {bottom_t:.2f} °F")
+
+                    # Update status label (or print for debug)
+                    # self.status_label.setText("\n".join(status_lines))
+                    # print("\n".join(status_lines))  # optional debug
+
+                except (ValueError, IndexError):
+                    pass
+
+        except Exception:
+            pass
+
+    def on_station_time_changed(self, item: QTableWidgetItem):
+        row = item.row()
+        col = item.column()
+
+        # Only react to Start T. (2) or End T. (3)
+        if col not in (2, 3):
+            return
+
+        if row >= len(self.station_timings):
+            return
+
+        text = item.text().strip()
+
+        try:
+            # Parse HH:MM:SS
+            new_time = datetime.datetime.strptime(text, "%H:%M:%S").time()
+
+            station = self.station_timings[row]
+
+            # Preserve original date
+            old_dt = station['start'] if col == 2 else station['end']
+            new_dt = datetime.datetime.combine(old_dt.date(), new_time)
+
+            if col == 2:
+                station['start'] = new_dt
+            else:
+                station['end'] = new_dt
+
+            # Safety: ensure start < end
+            if station['start'] >= station['end']:
+                raise ValueError("Start time must be before end time")
+
+            # Update plot regions
+            self.update_station_region(row)
+
+            # Recompute statistics for this station
+            self.recompute_station_stats(row)
+
+        except Exception as e:
+            # Revert invalid edit
+            self.table_widget.blockSignals(True)
+            old_dt = self.station_timings[row]['start' if col == 2 else 'end']
+            item.setText(old_dt.strftime("%H:%M:%S"))
+            self.table_widget.blockSignals(False)
+
+    def update_station_region(self, index: int):
+        if index >= len(self.plot_regions):
+            return
+
+        station = self.station_timings[index]
+        start_ts = station['start'].timestamp()
+        end_ts = station['end'].timestamp()
+
+        region_top, region_bottom = self.plot_regions[index]
+
+        if region_top:
+            region_top.setRegion([start_ts, end_ts])
+
+        if region_bottom:
+            region_bottom.setRegion([start_ts, end_ts])
+
+    def create_station_legend(self, colors, labels, parent_container):
+        """Create a separate legend widget for stations"""
+        # Create a frame for the legend
+        legend_frame = QFrame()
+        legend_frame.setFrameStyle(QFrame.Shape.Box.value | QFrame.Shadow.Raised.value)  # PyQt6 way
+        legend_frame.setStyleSheet("background-color: white; padding: 0px; border: 0px solid #ccc;")
+
+        legend_layout = QVBoxLayout(legend_frame)
+        legend_layout.setContentsMargins(5, 5, 5, 5)
+
+        # Add title
+        title = QLabel("Stations")
+        title.setStyleSheet("font-weight: bold; color: black")
+        legend_layout.addWidget(title)
+
+        # Add each station with its color
+        for color, label in zip(colors, labels):
+            station_item = QWidget()
+            station_layout = QHBoxLayout(station_item)
+            station_layout.setContentsMargins(0, 0, 0, 0)
+            # station_layout.setSpacing(0)
+
+            # Color indicator
+            color_label = QLabel()
+            color_label.setFixedSize(15, 15)
+            color_label.setStyleSheet(
+                f"background-color: rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()}); border: 1px solid gray;")
+
+            # Label text
+            text_label = QLabel(label)
+            text_label.setStyleSheet("color: black")
+            print(label)
+
+            station_layout.addWidget(color_label)
+            station_layout.addWidget(text_label)
+            station_layout.addStretch()
+
+            legend_layout.addWidget(station_item)
+
+        legend_layout.addStretch()
+
+        # Add legend to the graph container (position it in a corner)
+        parent_container.layout().addWidget(legend_frame, 0, Qt.AlignmentFlag.AlignTop)
+
     def populate_station_table(self):
         self.table_widget.setRowCount(len(self.station_timings))
 
-        # Precompute data arrays for vectorized operations
-        top_data = np.array(self.top_data, dtype=object) if self.top_data else None
-        bottom_data = np.array(self.bottom_data, dtype=object) if self.bottom_data else None
+        # Handle different data formats
+        if isinstance(self.top_data, np.ndarray):
+            top_data = self.top_data
+        else:
+            top_data = np.array(self.top_data, dtype=object) if self.top_data else None
+
+        if isinstance(self.bottom_data, np.ndarray):
+            bottom_data = self.bottom_data
+        else:
+            bottom_data = np.array(self.bottom_data, dtype=object) if self.bottom_data else None
 
         for row, station in enumerate(self.station_timings):
             # Basic station info
@@ -915,25 +1427,32 @@ class SGSTXTApp(QWidget):
             self.table_widget.setItem(row, 1, QTableWidgetItem(str(station.get('depth', 'N/A'))))
             self.table_widget.setItem(row, 2, QTableWidgetItem(station['start'].strftime("%H:%M:%S")))
             self.table_widget.setItem(row, 3, QTableWidgetItem(station['end'].strftime("%H:%M:%S")))
-            self.table_widget.setItem(row, 4, QTableWidgetItem(str(station['duration'])))
 
             # TVD data
             ahd = self.tvd_data.get('ahd_values', [])
             tvd = self.tvd_data.get('tvd_values', [])
-            self.table_widget.setItem(row, 5, QTableWidgetItem(f"{ahd[row]:.2f}" if row < len(ahd) else "N/A"))
-            self.table_widget.setItem(row, 6, QTableWidgetItem(f"{tvd[row]:.2f}" if row < len(tvd) else "N/A"))
+            self.table_widget.setItem(row, 4, QTableWidgetItem(f"{ahd[row]:.2f}" if row < len(ahd) else "N/A"))
+            self.table_widget.setItem(row, 5, QTableWidgetItem(f"{tvd[row]:.2f}" if row < len(tvd) else "N/A"))
 
             # Process gauge statistics
             for col_offset, data, gauge_name in [
-                (7, top_data, 'top'),
-                (13, bottom_data, 'bottom')
+                (6, top_data, 'top'),
+                (12, bottom_data, 'bottom')
             ]:
-                if data is None:
+                if data is None or len(data) == 0:
                     continue
 
-                times = data[:, 0].astype('datetime64[us]')
-                pressures = data[:, 1].astype(float)
-                temps = data[:, 2].astype(float)
+                # Handle both structured arrays and object arrays
+                if hasattr(data, 'dtype') and data.dtype.names is not None:
+                    # Structured array
+                    times = data['datetime']
+                    pressures = data['pressure']
+                    temps = data['temperature']
+                else:
+                    # Object array
+                    times = data[:, 0]
+                    pressures = data[:, 1].astype(float)
+                    temps = data[:, 2].astype(float)
 
                 start_dt = np.datetime64(station['start'])
                 end_dt = np.datetime64(station['end'])
@@ -954,309 +1473,16 @@ class SGSTXTApp(QWidget):
                     self.table_widget.setItem(row, col_offset + i, item)
 
         # Auto-generate events after populating table
-        self.auto_generate_events()
+        try:
+            self.auto_generate_events()
+        except Exception as e:
+            print(e)
 
         # Enable UI components
         for btn in [self.copy_button, self.generate_as2_button, self.copy_graphs_button, self.process_data_button]:
             btn.setEnabled(True)
 
         self.table_widget.resizeColumnsToContents()
-
-    def init_span_selectors(self, ax_top, ax_bottom):
-        """Initialize span selectors for both top and bottom graphs"""
-        # Create SpanSelector for top graph
-        self.span_selector_top = SpanSelector(
-            ax_top,
-            self.on_horizontal_select,
-            'horizontal',
-            useblit=True,
-            props=dict(alpha=0.5, facecolor='tab:blue')
-        )
-
-        # Create SpanSelector for bottom graph
-        self.span_selector_bottom = SpanSelector(
-            ax_bottom,
-            self.on_horizontal_select,
-            'horizontal',
-            useblit=True,
-            props=dict(alpha=0.5, facecolor='tab:blue')
-        )
-
-    def show_stacked_graphs(self, top_file_path, bottom_file_path):
-        # Clear previous graph
-        while self.graph_layout.count():
-            child = self.graph_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-
-        # Create figure with two subplots and a status bar area
-        fig = plt.figure(figsize=(10, 8.5))
-        gs = fig.add_gridspec(3, 1, height_ratios=[1, 1, 0.1])
-        ax_top = fig.add_subplot(gs[0])
-        ax_bottom = fig.add_subplot(gs[1], sharex=ax_top)
-        ax_status = fig.add_subplot(gs[2])
-        ax_status.axis('off')
-
-        fig.patch.set_alpha(0)
-        ax_top.set_facecolor("none")
-        ax_bottom.set_facecolor("none")
-        ax_status.set_facecolor("none")
-
-        # Store initial x-axis limits for reset functionality
-        if self.top_data or self.bottom_data:
-            all_times = []
-            if self.top_data:
-                all_times.extend([item[0] for item in self.top_data])
-            if self.bottom_data:
-                all_times.extend([item[0] for item in self.bottom_data])
-            min_time = min(all_times)
-            max_time = max(all_times)
-            self.initial_x_lim = (min_time, max_time)
-        else:
-            self.initial_x_lim = None
-
-        # Plot top gauge data
-        if self.top_data:
-            times_top = [item[0] for item in self.top_data]
-            pressures_top = [item[1] for item in self.top_data]
-            temps_top = [item[2] for item in self.top_data]
-
-            # Plot pressure
-            ax_top.plot(times_top, pressures_top, 'b-', label='Pressure (psia)', linewidth=1.5)
-            ax_top.set_ylabel('Pressure (psia)', color='b', fontsize=10)
-            ax_top.tick_params(axis='y', labelcolor='b')
-            ax_top.grid(True, linestyle='--', alpha=0.7)
-            ax_top.set_title(f"Top Gauge - {top_file_path.split('/')[-1]}", fontsize=10)
-
-            # Add temperature on secondary axis
-            ax_top2 = ax_top.twinx()
-            ax_top2.set_facecolor("none")
-            ax_top2.plot(times_top, temps_top, 'r-', label='Temperature (°F)', linewidth=1.5)
-            ax_top2.set_ylabel('Temperature (°F)', color='r', fontsize=10)
-            ax_top2.tick_params(axis='y', labelcolor='r')
-
-        # Plot bottom gauge data
-        if self.bottom_data:
-            times_bottom = [item[0] for item in self.bottom_data]
-            pressures_bottom = [item[1] for item in self.bottom_data]
-            temps_bottom = [item[2] for item in self.bottom_data]
-
-            # Plot pressure
-            ax_bottom.plot(times_bottom, pressures_bottom, 'b-', label='Pressure (psia)', linewidth=1.5)
-            ax_bottom.set_ylabel('Pressure (psia)', color='b', fontsize=10)
-            ax_bottom.tick_params(axis='y', labelcolor='b')
-            ax_bottom.grid(True, linestyle='--', alpha=0.7)
-            ax_bottom.set_title(f"Bottom Gauge - {bottom_file_path.split('/')[-1]}", fontsize=10)
-
-            # Add temperature on secondary axis
-            ax_bottom2 = ax_bottom.twinx()
-            ax_bottom2.set_facecolor("none")
-            ax_bottom2.plot(times_bottom, temps_bottom, 'r-', label='Temperature (°F)', linewidth=1.5)
-            ax_bottom2.set_ylabel('Temperature (°F)', color='r', fontsize=10)
-            ax_bottom2.tick_params(axis='y', labelcolor='r')
-
-        # Format x-axis for both plots
-        ax_bottom.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-        ax_bottom.xaxis.set_major_locator(mdates.MinuteLocator(interval=15))
-        fig.autofmt_xdate()
-
-        # Create status text
-        self.status_text = ax_status.text(
-            0.5, 0.5, "",
-            ha="center", va="center",
-            fontsize=10,
-            transform=ax_status.transAxes
-        )
-
-        # Initialize cursor lines
-        init_x = self.top_data[0][0] if self.top_data else self.bottom_data[0][0] if self.bottom_data else 0
-        self.cursor_vline_top = ax_top.axvline(
-            x=init_x, color='k', alpha=0.5, linewidth=1, visible=False
-        )
-        self.cursor_vline_bottom = ax_bottom.axvline(
-            x=init_x, color='k', alpha=0.5, linewidth=1, visible=False
-        )
-
-        # Initialize markers for data points
-        self.top_p_marker, = ax_top.plot([init_x], [0], 'bo', markersize=6, visible=False)
-        self.top_t_marker, = ax_top2.plot([init_x], [0], 'ro', markersize=6, visible=False)
-        self.bottom_p_marker, = ax_bottom.plot([init_x], [0], 'bo', markersize=6, visible=False)
-        self.bottom_t_marker, = ax_bottom2.plot([init_x], [0], 'ro', markersize=6, visible=False)
-
-        # Store data for quick lookup
-        self.top_times = mdates.date2num(times_top) if self.top_data else None
-        self.bottom_times = mdates.date2num(times_bottom) if self.bottom_data else None
-        self.top_pressures = pressures_top if self.top_data else None
-        self.top_temps = temps_top if self.top_data else None
-        self.bottom_pressures = pressures_bottom if self.bottom_data else None
-        self.bottom_temps = temps_bottom if self.bottom_data else None
-
-        # Highlight station timings on both graphs
-        colors = plt.cm.tab20(np.linspace(0, 1, len(self.station_timings)))
-        for idx, station in enumerate(self.station_timings):
-            ax_top.axvspan(
-                station['start'], station['end'],
-                alpha=0.2, color=colors[idx],
-                label=f"{station['station']} - {station['depth']}ft"
-            )
-            ax_bottom.axvspan(
-                station['start'], station['end'],
-                alpha=0.2, color=colors[idx],
-                label=f"{station['station']} - {station['depth']}ft"
-            )
-
-        # Add legend to top plot only
-        lines_top, labels_top = ax_top.get_legend_handles_labels()
-        lines_top2, labels_top2 = ax_top2.get_legend_handles_labels()
-        ax_top.legend(lines_top + lines_top2, labels_top + labels_top2, loc='upper left', fontsize=8)
-
-        fig.tight_layout(rect=[0.04, 0.04, 0.96, 0.96])
-
-        # Initialize span selectors for both graphs
-        self.init_span_selectors(ax_top, ax_bottom)
-
-        # Add canvas and toolbar to layout
-        canvas = FigureCanvas(fig)
-        canvas.setStyleSheet("background-color: transparent;")
-        canvas.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        canvas.setAutoFillBackground(False)
-
-        # Wrap canvas in a QFrame to apply rounded corner style
-        canvas_wrapper = QFrame()
-        canvas_layout = QVBoxLayout(canvas_wrapper)
-        canvas_layout.setContentsMargins(0, 0, 0, 0)
-        canvas_layout.setSpacing(0)
-        canvas_layout.addWidget(canvas)
-
-        canvas_wrapper.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border-radius: 16px;
-            }
-        """)
-
-        self.graph_layout.addWidget(canvas_wrapper)
-        self.graph_layout.addWidget(self.toolbar_widget)
-
-        self.current_canvas = canvas
-        canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
-
-    def save_file(self):
-        """Save current application state to a file"""
-        if not self.station_timings:
-            MessageBoxWindow.message_simple(self, "No Data", "Nothing to save - process files first", "warning")
-            return
-
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Survey", "", "Survey Files (*.survey)"
-        )
-        if not file_path:
-            return
-
-        # Add extension if needed
-        if not file_path.endswith('.survey'):
-            file_path += '.survey'
-
-        try:
-            # Prepare state dictionary
-            state = {
-                'top_file_path': self.top_file_path,
-                'bottom_file_path': self.bottom_file_path,
-                'timesheet_file_path': self.timesheet_file_path,
-                'tvd_file_path': self.tvd_file_path,
-                'top_data': self.top_data,
-                'bottom_data': self.bottom_data,
-                'station_timings': self.station_timings,
-                'tvd_data': self.tvd_data,
-                'events': self.events,
-                'location': self.location,
-                'well': self.well,
-                'date': self.date,
-                'start_time': self.start_time,
-                'bdf': self.bdf,
-                'sea_level': self.sea_level,
-                'app_version': '1.0'
-            }
-
-            with open(file_path, 'wb') as f:
-                pickle.dump(state, f)
-
-            self.save_file_path = file_path
-            MessageBoxWindow.message_simple(
-                self, "Save Successful",
-                f"Survey saved successfully to:\n{file_path}"
-            )
-        except Exception as e:
-            MessageBoxWindow.message_simple(
-                self, "Save Error",
-                f"Failed to save survey:\n{str(e)}",
-                "warning"
-            )
-
-    def open_file(self):
-        """Load application state from a file"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Open Survey", "", "Survey Files (*.survey)"
-        )
-        if not file_path:
-            return
-
-        try:
-            with open(file_path, 'rb') as f:
-                state = pickle.load(f)
-
-            # Validate file version
-            if state.get('app_version') != '1.0':
-                MessageBoxWindow.message_simple(
-                    self, "Version Mismatch",
-                    "This file was created with a different version of the application",
-                    "warning"
-                )
-                return
-
-            # Load state into application
-            self.top_file_path = state.get('top_file_path')
-            self.bottom_file_path = state.get('bottom_file_path')
-            self.timesheet_file_path = state.get('timesheet_file_path')
-            self.tvd_file_path = state.get('tvd_file_path')
-            self.top_data = state.get('top_data')
-            self.bottom_data = state.get('bottom_data')
-            self.station_timings = state.get('station_timings')
-            self.tvd_data = state.get('tvd_data')
-            self.events = state.get('events', [])
-            self.location = state.get('location')
-            self.well = state.get('well')
-            self.date = state.get('date')
-            self.start_time = state.get('start_time')
-            self.bdf = state.get('bdf')
-            self.sea_level = state.get('sea_level')
-            self.save_file_path = file_path
-
-            # Update UI
-            self.content_stack.setCurrentIndex(1)  # Show results screen
-            self.update_info_labels()
-            self.populate_station_table()
-            self.populate_events_table()
-            self.show_stacked_graphs(self.top_file_path, self.bottom_file_path)
-
-            # Enable UI components
-            for btn in [self.copy_button, self.generate_as2_button,
-                        self.copy_graphs_button, self.process_data_button]:
-                btn.setEnabled(True)
-
-            self.reset_zoom_btn.setEnabled(True)
-            self.copy_graphs_button.setEnabled(True)
-
-            MessageBoxWindow.message_simple(
-                self, "Load Successful",
-                f"Survey loaded successfully from:\n{file_path}"
-            )
-        except Exception as e:
-            MessageBoxWindow.message_simple(
-                self, "Load Error",
-                f"Failed to load survey:\n{str(e)}",
-                "warning"
-            )
 
     def show_file_upload(self):
         """Show file upload screen and reset state"""
@@ -1274,54 +1500,112 @@ class SGSTXTApp(QWidget):
         self.save_file_path = None
 
     def process_sgs_txt_file(self, file_path):
+        """Process SGS text file with memory-efficient streaming"""
         try:
+            # Use a more memory-efficient approach with numpy arrays
+            data_points = []
+
+            # Pre-allocate chunks to reduce reallocation
+            chunk_size = 5000  # Smaller chunks for better memory control
+            current_chunk = []
+
             with open(file_path, 'r') as f:
-                lines = f.readlines()
+                # Find where data starts
+                header_found = False
+                data_start_line = 0
+                lines_processed = 0
 
-            # Find where data starts
-            data_start = 0
-            for i, line in enumerate(lines):
-                if "Date" in line and "Time" in line and "Press" in line:
-                    data_start = i + 2  # Skip header and unit line
-                    break
+                # First pass: find header and count lines
+                for i, line in enumerate(f):
+                    if "Date" in line and "Time" in line and "Press" in line:
+                        header_found = True
+                        data_start_line = i + 2  # Skip header and unit line
+                        break
 
-            if data_start == 0:
-                MessageBoxWindow.message_simple(self, "Error", "Could not find data headers in file", "warning")
-                return None
+                if not header_found:
+                    MessageBoxWindow.message_simple(self, "Error", "Could not find data headers in file", "warning")
+                    return None
 
-            # Parse data
-            data = []
-            for line in lines[data_start:]:
-                parts = line.strip().split()
-                if len(parts) < 4:
-                    continue
+                # Reset file pointer and skip to data start
+                f.seek(0)
+                for _ in range(data_start_line):
+                    next(f)
 
-                try:
-                    date_str = parts[0].replace("-", "/")
-                    time_str = parts[1]
+                # Process data in memory-efficient chunks
+                date_cache = {}  # Cache date strings to reduce memory
 
-                    # Try parsing with both 4-digit and 2-digit year
-                    date_time = None
-                    for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%y %H:%M:%S"):
-                        try:
-                            date_time = datetime.datetime.strptime(
-                                f"{date_str} {time_str}", fmt
-                            )
-                            break
-                        except ValueError:
+                for line in f:
+                    try:
+                        parts = line.strip().split()
+                        if len(parts) < 4:
                             continue
 
-                    if date_time is None:
-                        continue  # Skip invalid line
+                        # Parse date and time
+                        date_str = parts[0].replace("-", "/")
+                        time_str = parts[1]
 
-                    pressure = float(parts[2])
-                    temperature = float(parts[3])
-                    data.append((date_time, pressure, temperature))
+                        # Use caching for date parsing to reduce object creation
+                        date_key = f"{date_str}_{time_str}"
 
-                except ValueError:
-                    continue
+                        if date_key in date_cache:
+                            date_time = date_cache[date_key]
+                        else:
+                            # Try different date formats
+                            date_time = None
+                            for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%y %H:%M:%S"):
+                                try:
+                                    date_time = datetime.datetime.strptime(
+                                        f"{date_str} {time_str}", fmt
+                                    )
+                                    date_cache[date_key] = date_time
+                                    break
+                                except ValueError:
+                                    continue
 
-            return data if data else None
+                            if date_time is None:
+                                continue
+
+                        # Parse numeric values directly without intermediate string manipulation
+                        try:
+                            # Direct conversion without creating intermediate strings
+                            pressure = float(parts[2])
+                            temperature = float(parts[3])
+
+                            # Store as tuple (more memory efficient than list)
+                            current_chunk.append((date_time, pressure, temperature))
+                            lines_processed += 1
+
+                            # Process chunk when it reaches chunk_size
+                            if len(current_chunk) >= chunk_size:
+                                # Extend using list comprehension for efficiency
+                                data_points.extend(current_chunk)
+                                # Clear chunk and free memory
+                                current_chunk.clear()
+                                # Force garbage collection if needed
+                                if lines_processed % 50000 == 0:
+                                    gc.collect()
+
+                        except (ValueError, IndexError):
+                            continue
+
+                    except Exception:
+                        continue
+
+                # Add any remaining data
+                if current_chunk:
+                    data_points.extend(current_chunk)
+
+            # Clear cache to free memory
+            date_cache.clear()
+            print('length of data points:', len(data_points))
+
+            if len(data_points) == 0:
+                return None
+
+            # ALWAYS return as list of tuples with Python datetime objects
+            # This ensures compatibility with timestamp() method
+            print('process_sgs_txt_file complete (return data_points)')
+            return data_points
 
         except Exception as e:
             MessageBoxWindow.message_simple(self, "Error", f"Failed to process data file:\n{str(e)}", "warning")
@@ -1365,14 +1649,14 @@ class SGSTXTApp(QWidget):
             date_value = None
             for i in range(len(df)):
                 cell_value = str(df.iloc[i, 2])
-                if "Date of Survey" in cell_value or "Date :" in cell_value:
+                if "Date" in cell_value:
                     # Main format: "Date of Survey  :  1/05/2025"
-                    if "Date of Survey" in cell_value:
+                    if "/" in cell_value:
                         date_match = re.search(r'(\d{1,2}/\d{1,2}/\d{4})', cell_value)
                         if date_match:
                             date_value = datetime.datetime.strptime(date_match.group(1), "%d/%m/%Y").date()
                     # Alternate format: "Date : 01.05.2025"
-                    elif "Date :" in cell_value:
+                    elif "." in cell_value:
                         date_match = re.search(r'Date :\s*(\d{2}\.\d{2}\.\d{4})', cell_value)
                         if date_match:
                             date_value = datetime.datetime.strptime(date_match.group(1), "%d.%m.%Y").date()
@@ -1519,53 +1803,9 @@ class SGSTXTApp(QWidget):
         except Exception as e:
             MessageBoxWindow.message_simple(self, "Processing Error", f"Failed to process data:\n{str(e)}", "warning")
 
-    def reset_button(self, button, original_text, original_icon):
-        """Revert button to original state"""
-        # Determine the appropriate style based on button type
-        if button == self.copy_button:
-            style = """
-                QPushButton {
-                    background-color: #3498db;
-                    color: white;
-                    border-radius: 5px;
-                    padding: 8px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #2980b9;
-                }
-                QPushButton:disabled {
-                    background-color: #cccccc;
-                    color: #888888;
-                }
-            """
-        elif button == self.copy_graphs_button:
-            style = """
-                QPushButton {
-                    background-color: #9b59b6;
-                    color: white;
-                    border-radius: 5px;
-                    padding: 8px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #8e44ad;
-                }
-                QPushButton:disabled {
-                    background-color: #cccccc;
-                    color: #888888;
-                }
-            """
-        else:
-            style = ""
-
-        button.setStyleSheet(style)
-        button.setIcon(QIcon(get_icon_path(original_icon)))
-        button.setText(original_text)
-
-
     def process_all_files(self, top_file_path, bottom_file_path, timesheet_file_path, tvd_file_path):
         try:
+            self.cleanup_memory()
             self.top_file_path = top_file_path
             self.bottom_file_path = bottom_file_path
             self.timesheet_file_path = timesheet_file_path
@@ -1585,72 +1825,124 @@ class SGSTXTApp(QWidget):
             self.events = []
             self.event_table.setRowCount(0)
             self.remove_event_btn.setEnabled(False)
+            print(1)
 
-            if self.top_data and self.bottom_data and self.station_timings and self.tvd_data:
+            # Fix: Properly check if data exists for numpy arrays and lists
+            has_top_data = self.top_data is not None and (
+                    (isinstance(self.top_data, np.ndarray) and len(self.top_data) > 0) or
+                    (isinstance(self.top_data, list) and len(self.top_data) > 0)
+            )
+            print(2)
+
+            has_bottom_data = self.bottom_data is not None and (
+                    (isinstance(self.bottom_data, np.ndarray) and len(self.bottom_data) > 0) or
+                    (isinstance(self.bottom_data, list) and len(self.bottom_data) > 0)
+            )
+            print(3)
+
+            has_station_timings = self.station_timings and len(self.station_timings) > 0
+            has_tvd_data = self.tvd_data and len(self.tvd_data.get('ahd_values', [])) > 0
+            print(4)
+
+            if has_top_data and has_bottom_data and has_station_timings and has_tvd_data:
                 # Show results screen
+                print(5)
                 self.content_stack.setCurrentIndex(1)
+                print(6)
 
                 # Create stacked graphs
                 self.show_stacked_graphs(top_file_path, bottom_file_path)
+                print(7)
 
                 # Populate table with station timings and gauge data
                 self.populate_station_table()
             else:
-                MessageBoxWindow.message_simple(self, "Error", "Failed to process one or more files", "warning")
+                # Log what's missing for debugging
+                missing_items = []
+                if not has_top_data:
+                    missing_items.append("Top Gauge Data")
+                if not has_bottom_data:
+                    missing_items.append("Bottom Gauge Data")
+                if not has_station_timings:
+                    missing_items.append("Station Timings")
+                if not has_tvd_data:
+                    missing_items.append("TVD Data")
+
+                MessageBoxWindow.message_simple(
+                    self,
+                    "Error",
+                    f"Failed to process one or more files.\nMissing: {', '.join(missing_items)}",
+                    "warning"
+                )
 
         except Exception as e:
             MessageBoxWindow.message_simple(self, "Error", f"Failed to process files:\n{str(e)}", "warning")
 
-    def process_tvd_file(self, file_path):
-        """Optimized TVD file processing with better validation"""
-        try:
-            lower_path = file_path.lower()
-            if lower_path.endswith('.xlsx'):
-                wb = openpyxl.load_workbook(file_path, data_only=True)
-                sheet = wb[wb.sheetnames[0]]
-            elif lower_path.endswith('.xls'):
-                wb = xlrd.open_workbook(file_path)
-                sheet = wb.sheet_by_index(0)
+    def recompute_station_stats(self, row: int):
+        """
+        Recompute high / low / median pressure & temperature
+        for a single station and update the table row.
+        """
+
+        if row >= len(self.station_timings):
+            return
+
+        station = self.station_timings[row]
+        start_dt = station['start']
+        end_dt = station['end']
+
+        start_np = np.datetime64(start_dt)
+        end_np = np.datetime64(end_dt)
+
+        def compute_stats(data):
+            if data is None or len(data) == 0:
+                return ["N/A"] * 6
+
+            # Structured array
+            if hasattr(data, 'dtype') and data.dtype.names is not None:
+                times = data['datetime']
+                pressures = data['pressure']
+                temps = data['temperature']
             else:
-                MessageBoxWindow.message_simple(self, "Error", "Unsupported TVD file format", "warning")
-                return {}
+                # List-of-tuples format
+                data_np = np.array(data, dtype=object)
+                times = data_np[:, 0]
+                pressures = data_np[:, 1].astype(float)
+                temps = data_np[:, 2].astype(float)
 
-            tvd_data = {
-                'ahd_values': [],
-                'tvd_values': []
-            }
-            self.bdf = self.get_cell_value(sheet, 1, 3)
-            self.sea_level = self.get_cell_value(sheet, 2, 3)
-            self.date = self.get_cell_value(sheet, 1, 8)
-            self.location = self.get_cell_value(sheet, 2, 8)
-            self.well = self.get_cell_value(sheet, 3, 8)
+            mask = (times >= start_np) & (times <= end_np)
 
-            self.location_label.setText("Location\t\t: " + str(self.location))
-            self.well_label.setText("Well No.\t\t: " + str(self.well))
-            self.bdf_label.setText("THF\t\t: " + str(self.bdf) + " ft BDF")
-            self.sea_level_label.setText("DFE\t\t: " + str(self.sea_level) + " ft AMSL")
-            self.date_label.setText("Date of Survey\t: " + self.date.strftime("%d/%m/%Y"))
+            if not np.any(mask):
+                return ["N/A"] * 6
 
-            if hasattr(self, 'event_date_edit'):  # If UI is already created
-                self.event_date_edit.setDate(QDate(self.date))
+            p_slice = pressures[mask]
+            t_slice = temps[mask]
 
-            for row in range(8, sheet.max_row if hasattr(sheet, 'max_row') else sheet.nrows):
-                ahd_val = self.parse_numeric_cell(self.get_cell_value(sheet, row, 2))
-                tvd_val = self.parse_numeric_cell(self.get_cell_value(sheet, row, 8))
+            return [
+                np.max(p_slice), np.min(p_slice), np.median(p_slice),
+                np.max(t_slice), np.min(t_slice), np.median(t_slice)
+            ]
 
-                if ahd_val is None and tvd_val is None:
-                    break
+        # Compute new stats
+        top_stats = compute_stats(self.top_data)
+        bottom_stats = compute_stats(self.bottom_data)
 
-                if ahd_val is not None:
-                    tvd_data['ahd_values'].append(ahd_val)
-                if tvd_val is not None:
-                    tvd_data['tvd_values'].append(tvd_val)
+        self.table_widget.blockSignals(True)
+        # Write back to table
+        for i, stat in enumerate(top_stats):
+            col = 6 + i
+            self.table_widget.setItem(
+                row, col,
+                QTableWidgetItem(f"{stat:.2f}" if isinstance(stat, float) else str(stat))
+            )
 
-            return tvd_data
-
-        except Exception as e:
-            MessageBoxWindow.message_simple(self, "Error", f"TVD Processing Error:\n{str(e)}", "warning")
-            return {}
+        for i, stat in enumerate(bottom_stats):
+            col = 12 + i
+            self.table_widget.setItem(
+                row, col,
+                QTableWidgetItem(f"{stat:.2f}" if isinstance(stat, float) else str(stat))
+            )
+        self.table_widget.blockSignals(False)
 
     def get_cell_value(self, sheet, row, col):
         """Unified cell value getter for different Excel formats"""
@@ -1706,6 +1998,102 @@ class SGSTXTApp(QWidget):
         # Return midnight as default
         return datetime.time(0, 0)
 
+    def process_tvd_file(self, file_path):
+        """Optimized TVD file processing with better validation"""
+        try:
+            lower_path = file_path.lower()
+            if lower_path.endswith('.xlsx'):
+                wb = openpyxl.load_workbook(file_path, data_only=True)
+                sheet = wb[wb.sheetnames[0]]
+            elif lower_path.endswith('.xls'):
+                wb = xlrd.open_workbook(file_path)
+                sheet = wb.sheet_by_index(0)
+            else:
+                MessageBoxWindow.message_simple(self, "Error", "Unsupported TVD file format", "warning")
+                return {}
+
+            tvd_data = {
+                'ahd_values': [],
+                'tvd_values': []
+            }
+            self.bdf = self.get_cell_value(sheet, 1, 3)
+            self.sea_level = self.get_cell_value(sheet, 2, 3)
+            self.date = self.get_cell_value(sheet, 1, 8)
+            self.location = self.get_cell_value(sheet, 2, 8)
+            self.well = self.get_cell_value(sheet, 3, 8)
+
+            self.location_label.setText("Location\t: " + str(self.location))
+            self.well_label.setText("Well No.\t: " + str(self.well))
+            self.bdf_label.setText("THF\t\t: " + str(self.bdf) + " ft BDF")
+            self.sea_level_label.setText("DFE\t\t: " + str(self.sea_level) + " ft AMSL")
+            self.date_label.setText("Date of Survey\t: " + self.date.strftime("%d/%m/%Y"))
+
+            if hasattr(self, 'event_date_edit'):  # If UI is already created
+                self.event_date_edit.setDate(QDate(self.date))
+
+            for row in range(8, sheet.max_row if hasattr(sheet, 'max_row') else sheet.nrows):
+                ahd_val = self.parse_numeric_cell(self.get_cell_value(sheet, row, 2))
+                tvd_val = self.parse_numeric_cell(self.get_cell_value(sheet, row, 8))
+
+                if ahd_val is None and tvd_val is None:
+                    break
+
+                if ahd_val is not None:
+                    tvd_data['ahd_values'].append(ahd_val)
+                if tvd_val is not None:
+                    tvd_data['tvd_values'].append(tvd_val)
+
+            return tvd_data
+
+        except Exception as e:
+            MessageBoxWindow.message_simple(self, "Error", f"TVD Processing Error:\n{str(e)}", "warning")
+            return {}
+
+
+    def reset_button(self, button, original_text, original_icon):
+        """Revert button to original state"""
+        # Determine the appropriate style based on button type
+        if button == self.copy_button:
+            style = """
+                QPushButton {
+                    background-color: #3498db;
+                    color: white;
+                    border-radius: 5px;
+                    padding: 8px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #2980b9;
+                }
+                QPushButton:disabled {
+                    background-color: #cccccc;
+                    color: #888888;
+                }
+            """
+        elif button == self.copy_graphs_button:
+            style = """
+                QPushButton {
+                    background-color: #9b59b6;
+                    color: white;
+                    border-radius: 5px;
+                    padding: 8px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #8e44ad;
+                }
+                QPushButton:disabled {
+                    background-color: #cccccc;
+                    color: #888888;
+                }
+            """
+        else:
+            style = ""
+
+        button.setStyleSheet(style)
+        button.setIcon(QIcon(get_icon_path(original_icon)))
+        button.setText(original_text)
+
     def show_file_upload(self):
         # Switch back to file upload screen
         self.content_stack.setCurrentIndex(0)
@@ -1718,316 +2106,51 @@ class SGSTXTApp(QWidget):
             suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
         return f"{n}{suffix}"
 
-    def auto_generate_events(self):
-        """Auto-generate events based on processed data and station timings"""
-        self.events = []  # Clear existing events
-
-        # 1. Battery connected (earliest time from .txt file)
-        if self.top_data or self.bottom_data:
-            all_times = []
-            if self.top_data:
-                all_times.extend([d[0] for d in self.top_data])
-            if self.bottom_data:
-                all_times.extend([d[0] for d in self.bottom_data])
-            if all_times:
-                min_time = min(all_times)
-                self.events.append((min_time, "Battery Connected"))
-
-        # 2. ATM Reading (start time of ATM station)
-        atm_stations = [s for s in self.station_timings if s['station'] == 'ATM']
-        if atm_stations:
-            first_atm = atm_stations[0]
-            self.events.append((first_atm['start'], "Reading ATM"))
-
-        # 3. Open Swab Valve (pressure increase from data)
-        if self.top_data:
-            # Find first significant pressure increase
-            base_pressure = None
-            for data_point in self.top_data:
-                _, pressure, _ = data_point
-                if base_pressure is None:
-                    base_pressure = pressure
-                elif pressure > base_pressure + 0.5:  # 500 psi threshold
-                    self.events.append((data_point[0], "Open Swab Valve"))
-                    break
-
-        # 4. THP Reading and POOH events
-        thp_stations = [s for s in self.station_timings if s['station'] == 'THP']
-        non_thp_stations = [s for s in self.station_timings if s['station'] not in ['ATM', 'THP']]
-
-        for idx, thp in enumerate(thp_stations):
-            # THP Reading event
-            self.events.append((thp['start'], "Reading THP"))
-
-            # Only add POOH if it's not the last THP station
-            first = True
-            if idx < len(thp_stations) - 1:
-                if first:
-                    self.events.append((thp['end'], "RIH"))
-                    first = False
-                else:
-                    self.events.append((thp['end'], "POOH"))
-
-            # For each non-THP station after this THP
-            station_count = 0
-            for station in non_thp_stations:
-                if station['start'] > thp['end']:
-                    station_count += 1
-                    ordinal = self.get_ordinal(station_count)
-
-                    # Station start event
-                    self.events.append((
-                        station['start'],
-                        f"{ordinal} Stop at {station['depth']} ft WLD"
-                    ))
-
-                    # Station end event (POOH)
-                    self.events.append((station['end'], "POOH"))
-
-        # Update event table UI
-        self.event_table.setRowCount(0)
-        for event_time, desc in self.events:
-            row = self.event_table.rowCount()
-            self.event_table.insertRow(row)
-            self.event_table.setItem(row, 0, QTableWidgetItem(event_time.strftime("%Y-%m-%d %H:%M:%S")))
-            self.event_table.setItem(row, 1, QTableWidgetItem(desc))
-
-        # Enable remove button
-        self.remove_event_btn.setEnabled(len(self.events) > 0)
-
-    def copy_statistics(self):
-        """Copy pressure and temperature statistics to clipboard with visual feedback"""
-        clipboard = QApplication.clipboard()
-
-        # Get statistics data
-        stats_data = []
-        for row in range(self.table_widget.rowCount()):
-            row_data = []
-            for col in range(5, 19):  # Columns 5 to 18
-                item = self.table_widget.item(row, col)
-                row_data.append(item.text() if item else "")
-            stats_data.append("\t".join(row_data))
-
-        # Format as tab-separated values
-        text_data = "\n".join(stats_data)
-
-        # Set to clipboard
-        clipboard.setText(text_data)
-
-        # Show visual feedback
-        self.set_button_success_feedback(
-            self.copy_button,
-            "Copied!",
-            'check',
-            "Copy Statistics",
-            'copy'
-        )
-
-    def paste_to_template(self, template_path):
-        """Paste clipboard data to template starting at C13 with row deletion"""
-        try:
-            wb = openpyxl.load_workbook(template_path)
-            sheet = wb.active
-            clipboard = QApplication.clipboard()
-            rows = clipboard.text().split('\n')
-
-            # Count valid data rows (non-empty)
-            x = sum(1 for row in rows if row.strip())
-
-            # Calculate unused rows
-            U = 69 - x
-
-            # Delete unused rows if needed
-            if U > 0:
-                # Delete from top section (row 80-U to 80)
-                start_top = 82 - U
-                sheet.delete_rows(start_top, U + 1)  # +1 to include end row
-
-            # Paste data
-            for row_idx, row in enumerate(rows):
-                if not row.strip():
-                    continue
-
-                cells = row.split('\t')[:14]  # Only process first 14 columns
-                for col_idx, cell_value in enumerate(cells):
-                    try:
-                        value = float(cell_value)
-                    except ValueError:
-                        value = cell_value
-
-                    sheet.cell(
-                        row=13 + row_idx,
-                        column=3 + col_idx,
-                        value=value
-                    )
-
-            # Update header information
-            sheet.cell(row=3, column=3, value=f": {self.location}")
-            sheet.cell(row=4, column=3, value=f": {self.well}")
-            sheet.cell(row=3, column=18, value=self.date)
-            sheet.cell(row=4, column=18, value=self.sea_level)
-            sheet.cell(row=5, column=18, value=self.bdf)
-
-            wb.save(template_path)
-
-            # Access the first chart
-            chart = sheet._charts[0]
-
-            # --- Get Pressure Min/Max (Column G) ---
-            pressure_values = [
-                sheet.cell(row=r, column=7).value
-                for r in range(13, 13 + x)
-                if isinstance(sheet.cell(row=r, column=7).value, (int, float))
-            ]
-            if pressure_values:
-                chart.x_axis.scaling.min = min(pressure_values)
-                chart.x_axis.scaling.max = max(pressure_values)
-
-            # --- Get Temperature Min/Max (Column E) ---
-            temp_values = [
-                sheet.cell(row=r, column=10).value
-                for r in range(13, 13 + x)
-                if isinstance(sheet.cell(row=r, column=10).value, (int, float))
-            ]
-            # if temp_values:
-            #     if chart.x2_axis.secondary_axis:
-            #         chart.x2_axis.scaling.min = min(temp_values)
-            #         chart.x2_axis.secondary_axis.scaling.max = max(temp_values)
-
-            # Save the workbook again after modifying chart axes
-            wb.save(template_path)
-
-            return True
-
-        except Exception as e:
-            MessageBoxWindow.message_simple(self, "Paste Error", f"Failed to paste to template:\n{str(e)}", "warning")
-            return False
-
-    # Add this helper method to the class
-    def set_button_success_feedback(self, button, success_text, success_icon, original_text, original_icon):
-        """Set button to success state and schedule reset"""
-        button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #28a745;
-                color: white;
-                border-radius: 5px;
-                padding: 8px;
-                font-weight: bold;
-            }}
-        """)
-        button.setIcon(QIcon(get_icon_path(success_icon)))
-        button.setText(success_text)
-
-        # Set timer to revert button after 3 seconds
-        QTimer.singleShot(3000, lambda: self.reset_button(button, original_text, original_icon))
-
-    def on_mouse_move(self, event):
-        """Handle mouse movement over the graph"""
-        if event.inaxes is None:
-            # Hide everything when mouse leaves plot area
-            self.cursor_vline_top.set_visible(False)
-            self.cursor_vline_bottom.set_visible(False)
-            self.top_p_marker.set_visible(False)
-            self.top_t_marker.set_visible(False)
-            self.bottom_p_marker.set_visible(False)
-            self.bottom_t_marker.set_visible(False)
-            self.status_text.set_text("")
-            self.cursor_vline_top.figure.canvas.draw_idle()
-            return
-
-        x = event.xdata
-        x_dt = mdates.num2date(x)
-
-        # Update vertical lines
-        self.cursor_vline_top.set_xdata([x])
-        self.cursor_vline_bottom.set_xdata([x])
-        self.cursor_vline_top.set_visible(True)
-        self.cursor_vline_bottom.set_visible(True)
-
-        # Initialize status text
-        status_lines = [f"Time: {x_dt.strftime('%H:%M:%S')}"]
-
-        # Find and display top gauge values
-        if self.top_times is not None:
-            idx = np.argmin(np.abs(self.top_times - x))
-            closest_time = self.top_times[idx]
-            time_diff = abs(closest_time - x)
-
-            # Only show if we're close to actual data point
-            if time_diff < 0.0001:  # Matplotlib time units (days)
-                top_p = self.top_pressures[idx]
-                top_t = self.top_temps[idx]
-
-                # Update markers
-                self.top_p_marker.set_data([x], [top_p])
-                self.top_t_marker.set_data([x], [top_t])
-                self.top_p_marker.set_visible(True)
-                self.top_t_marker.set_visible(True)
-
-                status_lines.append(f"Top: Pressure = {top_p:.2f} psia, Temp = {top_t:.2f} °F")
-            else:
-                self.top_p_marker.set_visible(False)
-                self.top_t_marker.set_visible(False)
-
-        # Find and display bottom gauge values
-        if self.bottom_times is not None:
-            idx = np.argmin(np.abs(self.bottom_times - x))
-            closest_time = self.bottom_times[idx]
-            time_diff = abs(closest_time - x)
-
-            # Only show if we're close to actual data point
-            if time_diff < 0.0001:  # Matplotlib time units (days)
-                bottom_p = self.bottom_pressures[idx]
-                bottom_t = self.bottom_temps[idx]
-
-                # Update markers
-                self.bottom_p_marker.set_data([x], [bottom_p])
-                self.bottom_t_marker.set_data([x], [bottom_t])
-                self.bottom_p_marker.set_visible(True)
-                self.bottom_t_marker.set_visible(True)
-
-                status_lines.append(f"Bottom: Pressure = {bottom_p:.2f} psia, Temp = {bottom_t:.2f} °F")
-            else:
-                self.bottom_p_marker.set_visible(False)
-                self.bottom_t_marker.set_visible(False)
-
-        # Update status text
-        self.status_text.set_text("\n".join(status_lines))
-
-        # Redraw canvas
-        self.cursor_vline_top.figure.canvas.draw_idle()
-
-    # Update the copy_graphs method
     def copy_graphs(self):
         """Copy the current graphs to clipboard as an image"""
-        if not self.current_canvas:  # Check if canvas exists
-            MessageBoxWindow.message_simple(self, "No Graphs", "No graphs available to copy", "warning")
-            return
-
         try:
-            # Create a buffer to save the image
-            buf = io.BytesIO()
-            self.current_canvas.figure.savefig(buf, format='png', dpi=100)
-            buf.seek(0)
+            if hasattr(self, 'top_plot') and self.top_plot is not None:
+                # Grab the graph widget as QPixmap
+                pixmap = self.top_plot.grab()
 
-            # Create QImage from buffer
-            image = QImage()
-            image.loadFromData(buf.getvalue(), 'PNG')
+                # Copy to clipboard
+                clipboard = QApplication.clipboard()
+                clipboard.setPixmap(pixmap)
 
-            # Copy to clipboard
-            clipboard = QApplication.clipboard()
-            clipboard.setImage(image)
-
-            # Show visual feedback
-            self.set_button_success_feedback(
-                self.copy_graphs_button,
-                "Copied!",
-                'check',
-                "Copy Graphs",
-                'copy'
-            )
+                # Show feedback
+                self.set_button_success_feedback(
+                    self.copy_graphs_button,
+                    "Copied!",
+                    'check',
+                    "Copy Graphs",
+                    'copy'
+                )
+            else:
+                MessageBoxWindow.message_simple(self, "No Graphs", "No graphs available to copy", "warning")
         except Exception as e:
             MessageBoxWindow.message_simple(self, "Error", f"Failed to copy graphs:\n{str(e)}", "warning")
+
+    def reset_graph_zoom(self):
+        """Reset graph zoom to show all data"""
+        if hasattr(self, 'top_plot') and self.top_plot is not None:
+            self.top_plot.autoRange()
+            self.reset_zoom_btn.setEnabled(False)
+
+    def cleanup_memory(self):
+        """Clean up memory-intensive objects"""
+        self.top_times = None
+        self.top_pressures = None
+        self.top_temps = None
+        self.bottom_times = None
+        self.bottom_pressures = None
+        self.bottom_temps = None
+
+        if hasattr(self, 'current_canvas') and self.current_canvas:
+            self.current_canvas.figure.clear()
+            # plt.close(self.current_canvas.figure)
+            self.current_canvas = None
+
+        gc.collect()
 
     def toggle_theme(self):
         self.current_theme = toggle_theme(
@@ -2047,29 +2170,6 @@ class SGSTXTApp(QWidget):
             # Disable remove button if no events left
             if not self.events:
                 self.remove_event_btn.setEnabled(False)
-
-    # Add this method to SGSTXTApp
-    def reset_graph_zoom(self):
-        """Reset graph zoom to original view"""
-        if self.initial_x_lim:
-            ax_top = self.current_canvas.figure.axes[0]
-            ax_bottom = self.current_canvas.figure.axes[1]
-
-            ax_top.set_xlim(self.initial_x_lim)
-            ax_bottom.set_xlim(self.initial_x_lim)
-            self.current_canvas.draw_idle()
-            self.reset_zoom_btn.setEnabled(False)
-
-    # Add this method to SGSTXTApp
-    def on_horizontal_select(self, xmin, xmax):
-        """Handle horizontal zoom selection"""
-        ax_top = self.current_canvas.figure.axes[0]
-        ax_bottom = self.current_canvas.figure.axes[1]
-
-        ax_top.set_xlim(xmin, xmax)
-        ax_bottom.set_xlim(xmin, xmax)
-        self.current_canvas.draw_idle()
-        self.reset_zoom_btn.setEnabled(True)
 
     def _download_template(self, template_name, dialog_title, silent=False):
         """Generic template download handler with TVD directory as default"""
@@ -2192,3 +2292,323 @@ class SGSTXTApp(QWidget):
                 f.write(line)
 
         return output_file_path
+
+    def save_file(self):
+        """Save current application state to a file"""
+        if not self.station_timings:
+            MessageBoxWindow.message_simple(self, "No Data", "Nothing to save - process files first", "warning")
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Survey", "", "Survey Files (*.survey)"
+        )
+        if not file_path:
+            return
+
+        # Add extension if needed
+        if not file_path.endswith('.survey'):
+            file_path += '.survey'
+
+        try:
+            # Prepare state dictionary
+            state = {
+                'top_file_path': self.top_file_path,
+                'bottom_file_path': self.bottom_file_path,
+                'timesheet_file_path': self.timesheet_file_path,
+                'tvd_file_path': self.tvd_file_path,
+                'top_data': self.top_data,
+                'bottom_data': self.bottom_data,
+                'station_timings': self.station_timings,
+                'tvd_data': self.tvd_data,
+                'events': self.events,
+                'location': self.location,
+                'well': self.well,
+                'date': self.date,
+                'start_time': self.start_time,
+                'bdf': self.bdf,
+                'sea_level': self.sea_level,
+                'app_version': '1.0'
+            }
+
+            with open(file_path, 'wb') as f:
+                pickle.dump(state, f)
+
+            self.save_file_path = file_path
+            MessageBoxWindow.message_simple(
+                self, "Save Successful",
+                f"Survey saved successfully to:\n{file_path}"
+            )
+        except Exception as e:
+            MessageBoxWindow.message_simple(
+                self, "Save Error",
+                f"Failed to save survey:\n{str(e)}",
+                "warning"
+            )
+
+    def open_file(self):
+        """Load application state from a file"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Open Survey", "", "Survey Files (*.survey)"
+        )
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, 'rb') as f:
+                state = pickle.load(f)
+
+            # Validate file version
+            if state.get('app_version') != '1.0':
+                MessageBoxWindow.message_simple(
+                    self, "Version Mismatch",
+                    "This file was created with a different version of the application",
+                    "warning"
+                )
+                return
+
+            # Load state into application
+            self.top_file_path = state.get('top_file_path')
+            self.bottom_file_path = state.get('bottom_file_path')
+            self.timesheet_file_path = state.get('timesheet_file_path')
+            self.tvd_file_path = state.get('tvd_file_path')
+            self.top_data = state.get('top_data')
+            self.bottom_data = state.get('bottom_data')
+            self.station_timings = state.get('station_timings')
+            self.tvd_data = state.get('tvd_data')
+            self.events = state.get('events', [])
+            self.location = state.get('location')
+            self.well = state.get('well')
+            self.date = state.get('date')
+            self.start_time = state.get('start_time')
+            self.bdf = state.get('bdf')
+            self.sea_level = state.get('sea_level')
+            self.save_file_path = file_path
+
+            # Update UI
+            self.content_stack.setCurrentIndex(1)  # Show results screen
+            self.update_info_labels()
+            self.populate_station_table()
+            self.populate_events_table()
+            self.show_stacked_graphs(self.top_file_path, self.bottom_file_path)
+
+            # Enable UI components
+            for btn in [self.copy_button, self.generate_as2_button,
+                        self.copy_graphs_button, self.process_data_button]:
+                btn.setEnabled(True)
+
+            self.reset_zoom_btn.setEnabled(True)
+            self.copy_graphs_button.setEnabled(True)
+
+            MessageBoxWindow.message_simple(
+                self, "Load Successful",
+                f"Survey loaded successfully from:\n{file_path}"
+            )
+        except Exception as e:
+            MessageBoxWindow.message_simple(
+                self, "Load Error",
+                f"Failed to load survey:\n{str(e)}",
+                "warning"
+            )
+
+    def auto_generate_events(self):
+        """Auto-generate events based on processed data and station timings"""
+        self.events = []  # Clear existing events
+
+        # 1. Battery connected (earliest time from .txt file)
+        if self.top_data or self.bottom_data:
+            all_times = []
+            if self.top_data:
+                all_times.extend([d[0] for d in self.top_data])
+            if self.bottom_data:
+                all_times.extend([d[0] for d in self.bottom_data])
+            if all_times:
+                min_time = min(all_times)
+                self.events.append((min_time, "Battery Connected"))
+
+        # 2. ATM Reading (start time of ATM station)
+        atm_stations = [s for s in self.station_timings if s['station'] == 'ATM']
+        if atm_stations:
+            first_atm = atm_stations[0]
+            self.events.append((first_atm['start'], "Reading ATM"))
+
+        # 3. Open Swab Valve (pressure increase from data)
+        if self.top_data:
+            # Find first significant pressure increase
+            base_pressure = None
+            for data_point in self.top_data:
+                _, pressure, _ = data_point
+                if base_pressure is None:
+                    base_pressure = pressure
+                elif pressure > base_pressure + 0.5:  # 500 psi threshold
+                    self.events.append((data_point[0], "Open Swab Valve"))
+                    break
+
+        # 4. THP Reading and POOH events
+        thp_stations = [s for s in self.station_timings if s['station'] == 'THP']
+        non_thp_stations = [s for s in self.station_timings if s['station'] not in ['ATM', 'THP']]
+
+        for idx, thp in enumerate(thp_stations):
+            # THP Reading event
+            self.events.append((thp['start'], "Reading THP"))
+
+            # Only add POOH if it's not the last THP station
+            first = True
+            if idx < len(thp_stations) - 1:
+                if first:
+                    self.events.append((thp['end'], "RIH"))
+                    first = False
+                else:
+                    self.events.append((thp['end'], "POOH"))
+
+            # For each non-THP station after this THP
+            station_count = 0
+            for station in non_thp_stations:
+                if station['start'] > thp['end']:
+                    station_count += 1
+                    ordinal = self.get_ordinal(station_count)
+
+                    # Station start event
+                    self.events.append((
+                        station['start'],
+                        f"{ordinal} Stop at {station['depth']} ft WLD"
+                    ))
+
+                    # Station end event (POOH)
+                    self.events.append((station['end'], "POOH"))
+
+        # Update event table UI
+        self.event_table.setRowCount(0)
+        for event_time, desc in self.events:
+            row = self.event_table.rowCount()
+            self.event_table.insertRow(row)
+            self.event_table.setItem(row, 0, QTableWidgetItem(event_time.strftime("%Y-%m-%d %H:%M:%S")))
+            self.event_table.setItem(row, 1, QTableWidgetItem(desc))
+
+        # Enable remove button
+        self.remove_event_btn.setEnabled(len(self.events) > 0)
+
+    def copy_statistics(self):
+        """Copy pressure and temperature statistics to clipboard with visual feedback"""
+        clipboard = QApplication.clipboard()
+
+        # Get statistics data
+        stats_data = []
+        for row in range(self.table_widget.rowCount()):
+            row_data = []
+            for col in range(4, 18):  # Columns 5 to 18
+                item = self.table_widget.item(row, col)
+                row_data.append(item.text() if item else "")
+            stats_data.append("\t".join(row_data))
+
+        # Format as tab-separated values
+        text_data = "\n".join(stats_data)
+
+        # Set to clipboard
+        clipboard.setText(text_data)
+
+        # Show visual feedback
+        self.set_button_success_feedback(
+            self.copy_button,
+            "Copied!",
+            'check',
+            "Copy",
+            'copy'
+        )
+
+    def paste_to_template(self, template_path):
+        """Paste clipboard data to template starting at C13 with row deletion"""
+        try:
+            wb = openpyxl.load_workbook(template_path)
+            sheet = wb.active
+            clipboard = QApplication.clipboard()
+            rows = clipboard.text().split('\n')
+
+            # Count valid data rows (non-empty)
+            x = sum(1 for row in rows if row.strip())
+
+            # Calculate unused rows
+            U = 69 - x
+
+            # Delete unused rows if needed
+            if U > 0:
+                # Delete from top section (row 80-U to 80)
+                start_top = 82 - U
+                sheet.delete_rows(start_top, U + 1)  # +1 to include end row
+
+            # Paste data
+            for row_idx, row in enumerate(rows):
+                if not row.strip():
+                    continue
+
+                cells = row.split('\t')[:14]  # Only process first 14 columns
+                for col_idx, cell_value in enumerate(cells):
+                    try:
+                        value = float(cell_value)
+                    except ValueError:
+                        value = cell_value
+
+                    sheet.cell(
+                        row=13 + row_idx,
+                        column=3 + col_idx,
+                        value=value
+                    )
+
+            # Update header information
+            sheet.cell(row=3, column=3, value=f": {self.location}")
+            sheet.cell(row=4, column=3, value=f": {self.well}")
+            sheet.cell(row=3, column=18, value=self.date)
+            sheet.cell(row=4, column=18, value=self.sea_level)
+            sheet.cell(row=5, column=18, value=self.bdf)
+
+            wb.save(template_path)
+
+            # Access the first chart
+            chart = sheet._charts[0]
+
+            # --- Get Pressure Min/Max (Column G) ---
+            pressure_values = [
+                sheet.cell(row=r, column=7).value
+                for r in range(13, 13 + x)
+                if isinstance(sheet.cell(row=r, column=7).value, (int, float))
+            ]
+            if pressure_values:
+                chart.x_axis.scaling.min = min(pressure_values)
+                chart.x_axis.scaling.max = max(pressure_values)
+
+            # --- Get Temperature Min/Max (Column E) ---
+            temp_values = [
+                sheet.cell(row=r, column=10).value
+                for r in range(13, 13 + x)
+                if isinstance(sheet.cell(row=r, column=10).value, (int, float))
+            ]
+            # if temp_values:
+            #     if chart.x2_axis.secondary_axis:
+            #         chart.x2_axis.scaling.min = min(temp_values)
+            #         chart.x2_axis.secondary_axis.scaling.max = max(temp_values)
+
+            # Save the workbook again after modifying chart axes
+            wb.save(template_path)
+
+            return True
+
+        except Exception as e:
+            MessageBoxWindow.message_simple(self, "Paste Error", f"Failed to paste to template:\n{str(e)}", "warning")
+            return False
+
+    # Add this helper method to the class
+    def set_button_success_feedback(self, button, success_text, success_icon, original_text, original_icon):
+        """Set button to success state and schedule reset"""
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #28a745;
+                color: white;
+                border-radius: 5px;
+                padding: 8px;
+                font-weight: bold;
+            }}
+        """)
+        button.setIcon(QIcon(get_icon_path(success_icon)))
+        button.setText(success_text)
+
+        # Set timer to revert button after 3 seconds
+        QTimer.singleShot(3000, lambda: self.reset_button(button, original_text, original_icon))

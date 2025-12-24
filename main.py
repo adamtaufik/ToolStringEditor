@@ -64,7 +64,7 @@ def show_trial_check_and_start_window(user_name, user_email):
     global main_window
 
     # Trial Check
-    expiration_date = datetime(2025, 12, 31)
+    expiration_date = datetime(2026, 1, 15)
     today = datetime.today()
     days_left = (expiration_date - today).days
 
