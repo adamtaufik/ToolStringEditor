@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 
 from ui.apps.ui_calculations_app import WirelineCalculatorApp
 from ui.apps.ui_pce_editor_app import PCEEditor
-from ui.apps.ui_survey_app import SGSTXTApp
+from ui.apps.ui_survey_app import SurveyApp
 from ui.apps.ui_simulator_app import WirelineSimulatorApp
 from ui.apps.ui_toolstring_editor_app import ToolStringEditor
 # from ui.apps.ui_sgs_fgs_app import SGSFGSApp
@@ -347,7 +347,7 @@ class StartWindow(QWidget):
         self.close()
 
     def open_sgstxt_app(self):
-        self.sgstxt_app = SGSTXTApp()
+        self.sgstxt_app = SurveyApp()
         self.sgstxt_app.show()
         self.close()
 

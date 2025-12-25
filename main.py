@@ -145,4 +145,5 @@ if __name__ == "__main__":
     login_thread.finished.connect(on_login_finished)
     login_thread.start()
 
+    # show_trial_check_and_start_window("user_name", "user_email")
     sys.exit(app.exec())
