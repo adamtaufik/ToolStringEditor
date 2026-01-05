@@ -6,7 +6,7 @@ from PyQt6.QtGui import QPixmap, QImage
 from utils.screen_info import get_height
 
 
-def expand_and_center_images(images, max_width, return_list=False):
+def expand_and_center_images(images, max_width, return_list=False, scale_factor=1.0):
     """
     Processes a list of images by:
     1. Expanding their backgrounds to a uniform width.
@@ -26,7 +26,6 @@ def expand_and_center_images(images, max_width, return_list=False):
 
     expanded_images = []
     dropzone_height = get_height() - 55  # Adjust for padding
-    scale_factor = 1.0
     min_height = 0
 
     if not return_list:

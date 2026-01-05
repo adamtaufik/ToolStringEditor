@@ -137,13 +137,13 @@ class BaseEditor(QMainWindow):
 
         return content_layout
 
-    def setup_common_right_sidebar(self, fixed_width=None):
+    def setup_common_right_sidebar(self, fixed_width=100):
         """Creates the common right sidebar for well details & summary."""
         right_panel = QWidget()
         right_panel.setObjectName("rightSidebar")
-        # if fixed_width:
-        #     right_panel.setFixedWidth(fixed_width)
-        #     right_panel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        if fixed_width:
+            right_panel.setFixedWidth(fixed_width)
+            right_panel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
 
         input_layout = QVBoxLayout(right_panel)
         input_layout.setAlignment(Qt.AlignmentFlag.AlignTop)

@@ -44,8 +44,8 @@ class ToolWidget(QWidget):
             #            '7"':1}
             # factor = factors[self.nominal_size_selector]
             factor = 1
-            width = pixmap.width() * factor
-            height = pixmap.height() * factor
+            width = int(round(pixmap.width() * factor))
+            height = int(round(pixmap.height() * factor))
             self.image_label.setFixedSize(width, height)
             self.image_label.setStyleSheet("background: transparent; border: none;")
             self.layout.addWidget(self.image_label)

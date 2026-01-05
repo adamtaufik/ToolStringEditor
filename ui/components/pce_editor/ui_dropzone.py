@@ -130,7 +130,7 @@ class DropZone(QFrame):
             self.update_placeholder()
             self.refresh_dynamic_names()  # ← NEW
             self.main_window.summary_widget.update_summary()
-            expand_and_center_images(self.tool_widgets, self.diagram_width)
+            expand_and_center_images(self.tool_widgets, self.diagram_width,False,0.5)
         else:
             print(f"⚠️ ERROR: Tool '{tool_name}' not found in database!")
 
