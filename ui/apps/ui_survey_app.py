@@ -6,19 +6,19 @@ import re
 import shutil
 import tempfile
 
+import pandas as pd
 import pyqtgraph as pg
 import openpyxl
-import pandas as pd
 import numpy as np
-import xlrd
 from PyQt6.QtCore import Qt, QTimer, QSize, QObject, QEvent, QDate, QParallelAnimationGroup, QPropertyAnimation, \
     QEasingCurve, QPoint, QTime, QRegularExpression
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QIcon, QColor, QRegularExpressionValidator
 from PyQt6.QtWidgets import (
     QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog, QTableWidget, QTableWidgetItem, QHBoxLayout, QApplication,
     QSplitter, QGridLayout, QGroupBox, QStackedWidget, QTimeEdit, QLineEdit, QToolButton, QFrame, QDateEdit,
-    QGraphicsOpacityEffect, QDoubleSpinBox, QComboBox, QSizePolicy, QAbstractSpinBox
+    QGraphicsOpacityEffect, QDoubleSpinBox, QComboBox, QSizePolicy, QAbstractSpinBox, QMessageBox
 )
+
 pg.setConfigOptions(background='w', antialias=True)
 
 # Local imports
@@ -40,7 +40,6 @@ class HoverCursorFilter(QObject):
             QApplication.restoreOverrideCursor()
             return True
         return super().eventFilter(obj, event)
-
 
 class InputWidget(QWidget):
     def __init__(self, callback, parent=None):
@@ -74,7 +73,15 @@ class InputWidget(QWidget):
         self.clear_buttons = {}
         self.browse_buttons = {}
 
-        left_layout = QVBoxLayout(self)
+        # Create main horizontal container for drop zones and gauge type section
+        drop_and_gauge_container = QWidget()
+        drop_and_gauge_layout = QHBoxLayout(drop_and_gauge_container)
+        drop_and_gauge_layout.setContentsMargins(0, 0, 0, 0)
+        drop_and_gauge_layout.setSpacing(20)
+
+        # Left side: Drop zones in vertical layout
+        left_drop_layout = QVBoxLayout()
+        left_drop_layout.setSpacing(20)
 
         for file_type, config in self.file_types.items():
             # Create UI components
@@ -91,9 +98,166 @@ class InputWidget(QWidget):
             )
 
             # Add to layout and store references
-            left_layout.addWidget(group_box)
+            left_drop_layout.addWidget(group_box)
             self.drop_areas[file_type] = drop_area
             self.labels[file_type] = label
+
+        # Right side: Gauge type and SPM inputs
+        gauge_type_group = QGroupBox("Survey Type && SPM")
+        gauge_type_group.setStyleSheet(GROUPBOX_STYLE)
+        gauge_type_group.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Maximum
+        )
+        gauge_type_layout = QVBoxLayout(gauge_type_group)
+
+        # Gauge type label above toggle
+        gauge_type_label = QLabel("Survey Type:")
+        gauge_type_label.setFixedWidth(170)
+        gauge_type_label.setStyleSheet("font-weight: bold; color: white; font-size: 11pt;")
+        gauge_type_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        gauge_type_layout.addWidget(gauge_type_label)
+
+        # Gauge type toggle buttons
+        gauge_type_toggle_layout = QHBoxLayout()
+
+        # Create toggle buttons (using QPushButton as toggle)
+        self.sgs_toggle = QPushButton("SGS")
+        self.fgs_toggle = QPushButton("FGS")
+
+        # Style the toggle buttons
+        toggle_style = """
+            QPushButton {
+                padding: 8px 15px;
+                border: 2px solid #3498db;
+                border-radius: 5px;
+                font-weight: bold;
+                margin: 2px;
+                font-size: 10pt;
+            }
+            QPushButton:checked {
+                background-color: #3498db;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #e3f2fd;
+            }
+        """
+
+        self.sgs_toggle.setStyleSheet(toggle_style + "background-color: #3498db; color: white;")
+        self.fgs_toggle.setStyleSheet(toggle_style + "background-color: white; color: #3498db;")
+
+        # Make them checkable and exclusive
+        self.sgs_toggle.setCheckable(True)
+        self.fgs_toggle.setCheckable(True)
+        self.sgs_toggle.setChecked(True)  # Default to SGS
+
+        # Connect toggle functionality
+        self.sgs_toggle.clicked.connect(self.on_gauge_type_toggled)
+        self.fgs_toggle.clicked.connect(self.on_gauge_type_toggled)
+
+        gauge_type_toggle_layout.addStretch()
+        gauge_type_toggle_layout.addWidget(self.sgs_toggle)
+        gauge_type_toggle_layout.addWidget(self.fgs_toggle)
+        gauge_type_toggle_layout.addStretch()
+
+        gauge_type_layout.addLayout(gauge_type_toggle_layout)
+        gauge_type_layout.addSpacing(10)  # Add some spacing
+
+        # SPM section (initially hidden)
+        self.spm_section = QWidget()
+        spm_layout = QVBoxLayout(self.spm_section)
+        spm_layout.setContentsMargins(5, 10, 5, 5)
+
+        # SPM table setup
+        self.spm_table = QTableWidget()
+        self.spm_table.setColumnCount(2)  # SPM #, Depth (ft), Remove
+        self.spm_table.setHorizontalHeaderLabels(["SPM #", "Depth (ft)", ""])
+        self.spm_table.horizontalHeader().setStretchLastSection(True)  # Stretch last column
+
+        # Set column widths
+        self.spm_table.setColumnWidth(0, 55)  # SPM #
+        self.spm_table.setColumnWidth(1, 72)  # Depth
+        self.spm_table.setFixedWidth(160)
+
+        self.spm_table.verticalHeader().setVisible(False)
+        self.spm_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+
+        spm_layout.addWidget(self.spm_table)
+
+        # Add/Remove buttons container (outside the table)
+        spm_buttons_container = QWidget()
+        spm_buttons_layout = QHBoxLayout(spm_buttons_container)
+        spm_buttons_layout.setContentsMargins(0, 5, 0, 0)
+        spm_buttons_layout.setSpacing(10)
+
+        # Add row button
+        self.add_spm_btn = QPushButton()
+        self.add_spm_btn.setIcon(QIcon.fromTheme("list-add") if hasattr(QIcon, "fromTheme") else QIcon())
+        self.add_spm_btn.setToolTip("Add SPM Row")
+        self.add_spm_btn.setFixedSize(30, 30)
+        self.add_spm_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
+                color: white;
+                border-radius: 5px;
+                border: none;
+                font-weight: bold;
+                font-size: 14pt;
+            }
+            QPushButton:hover {
+                background-color: #219653;
+            }
+            QPushButton:disabled {
+                background-color: #95a5a6;
+            }
+        """)
+        self.add_spm_btn.clicked.connect(self.add_spm_row)
+
+        # Remove row button
+        self.remove_spm_btn = QPushButton()
+        self.remove_spm_btn.setIcon(QIcon.fromTheme("list-remove") if hasattr(QIcon, "fromTheme") else QIcon())
+        self.remove_spm_btn.setToolTip("Remove Selected SPM Row")
+        self.remove_spm_btn.setFixedSize(30, 30)
+        self.remove_spm_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                border-radius: 5px;
+                border: none;
+                font-weight: bold;
+                font-size: 14pt;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+            QPushButton:disabled {
+                background-color: #95a5a6;
+            }
+        """)
+        self.remove_spm_btn.clicked.connect(self.remove_selected_spm_row)
+        self.remove_spm_btn.setEnabled(False)
+
+        # Connect selection change to update remove button state
+        self.spm_table.itemSelectionChanged.connect(self.update_spm_buttons_state)
+
+        # Add stretch to push buttons to the left
+        spm_buttons_layout.addStretch()
+        spm_buttons_layout.addWidget(self.add_spm_btn)
+        spm_buttons_layout.addWidget(self.remove_spm_btn)
+        spm_buttons_layout.addStretch()
+
+        spm_layout.addWidget(spm_buttons_container)
+
+        # Initially hide SPM section
+        self.spm_section.setVisible(False)
+
+        gauge_type_layout.addWidget(self.spm_section)
+        gauge_type_layout.addStretch()  # Push everything to the top
+
+        # Add left and right sections to horizontal layout
+        drop_and_gauge_layout.addLayout(left_drop_layout)
+        drop_and_gauge_layout.addWidget(gauge_type_group)
 
         # Manual input section
         manual_input_group = QGroupBox("Survey Information")
@@ -141,7 +305,6 @@ class InputWidget(QWidget):
         self.sea_level_edit.setValidator(float_validator)
         self.sea_level_edit.editingFinished.connect(lambda: self.round_lineedit(self.sea_level_edit))
 
-
         # Add to layout
         manual_layout.addWidget(date_label, 0, 0)
         manual_layout.addWidget(self.date_edit, 0, 1)
@@ -164,34 +327,28 @@ class InputWidget(QWidget):
         station_layout = QVBoxLayout(station_group)
 
         # Set station group box to be wider
-        station_group.setMinimumWidth(395)
+        station_group.setMinimumWidth(357)
 
-        # Station table
+        # Station table with remove column
         self.station_table = QTableWidget()
-        self.station_table.setColumnCount(4)
+        self.station_table.setColumnCount(5)  # Changed from 4 to 5 to add remove column
         self.station_table.setHorizontalHeaderLabels([
-            "Station", "Depth (ft)", "Start Time", "End Time"
+            "Station", "Depth (ft)", "Start Time", "End Time", ""
         ])
-        self.station_table.verticalHeader().setVisible(False)  # <-- add this
-        self.setup_table_controls(self.station_table, is_station_table=True)
-        self.station_table.setColumnWidth(0,70)
+        self.station_table.verticalHeader().setVisible(False)
+        self.setup_station_table_controls()
+        self.station_table.setColumnWidth(0, 65)
+        self.station_table.setColumnWidth(1, 80)
+        self.station_table.setColumnWidth(2, 80)
+        self.station_table.setColumnWidth(3, 80)
+        self.station_table.setColumnWidth(4, 20)  # Remove column width
 
         # Set row selection to select entire rows
         self.station_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
 
-        # Add control buttons
-        station_buttons = QHBoxLayout()
-        add_station_btn = QPushButton("Add Station")
-        add_station_btn.clicked.connect(self.add_station_row)
-        remove_station_btn = QPushButton("Remove Selected")
-        remove_station_btn.clicked.connect(self.remove_station_row)
-        # Removed import timesheet button
+        # Add Add row at the bottom
+        self.add_station_add_row()
 
-        station_buttons.addWidget(add_station_btn)
-        station_buttons.addWidget(remove_station_btn)
-        station_buttons.addStretch()
-
-        station_layout.addLayout(station_buttons)
         station_layout.addWidget(self.station_table)
 
         # AHD/TVD mapping
@@ -202,55 +359,23 @@ class InputWidget(QWidget):
         # Set TVD group box to be narrower
         tvd_group.setMaximumWidth(350)
 
-        # TVD table
+        # TVD table with remove column
         self.tvd_table = QTableWidget()
-        self.tvd_table.setColumnCount(2)
-        self.tvd_table.setHorizontalHeaderLabels(["AHD", "TVD"])
-        self.tvd_table.verticalHeader().setVisible(False)  # <-- add this
-        self.setup_table_controls(self.tvd_table, is_station_table=False)
+        self.tvd_table.setColumnCount(3)  # Changed from 2 to 3 to add remove column
+        self.tvd_table.setHorizontalHeaderLabels(["AHD", "TVD",""])
+        self.tvd_table.verticalHeader().setVisible(False)
+        self.setup_tvd_table_controls()
+        self.tvd_table.setColumnWidth(0, 80)
+        self.tvd_table.setColumnWidth(1, 80)
+        self.tvd_table.setColumnWidth(2, 20)  # Remove column width
 
         # Set row selection to select entire rows
         self.tvd_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
 
-        # Add column control buttons layout
-        tvd_column_buttons_layout = QHBoxLayout()
+        # Add Add row at the bottom
+        self.add_tvd_add_row()
 
-        # AHD column
-        ahd_col_layout = QVBoxLayout()
-        ahd_col_layout.setSpacing(2)
-        tvd_column_buttons_layout.addLayout(ahd_col_layout)
-
-        # TVD column
-        tvd_col_layout = QVBoxLayout()
-        tvd_col_layout.setSpacing(2)
-        tvd_column_buttons_layout.addLayout(tvd_col_layout)
-
-        # Add spacing
-        tvd_column_buttons_layout.addStretch()
-
-        tvd_buttons = QHBoxLayout()
-        add_tvd_btn = QPushButton("Add Row")
-        add_tvd_btn.clicked.connect(self.add_tvd_row)
-        remove_tvd_btn = QPushButton("Remove Selected")
-        remove_tvd_btn.clicked.connect(self.remove_tvd_row)
-        # Removed import TVD button
-
-        tvd_buttons.addWidget(add_tvd_btn)
-        tvd_buttons.addWidget(remove_tvd_btn)
-        tvd_buttons.addStretch()
-
-        tvd_layout.addLayout(tvd_column_buttons_layout)
-        tvd_layout.addLayout(tvd_buttons)
         tvd_layout.addWidget(self.tvd_table)
-
-        self.station_table.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Preferred
-        )
-        self.tvd_table.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Preferred
-        )
 
         # --- Side-by-side container for survey / station / tvd ---
         middle_container = QWidget()
@@ -262,8 +387,15 @@ class InputWidget(QWidget):
             QSizePolicy.Policy.Maximum
         )
 
-        left_layout.addWidget(manual_input_group)
-        middle_layout.addLayout(left_layout)
+        # Create left container for drop zones and manual input
+        left_container = QWidget()
+        left_container_layout = QVBoxLayout(left_container)
+        left_container_layout.setContentsMargins(0, 0, 0, 0)
+        left_container_layout.setSpacing(20)
+        left_container_layout.addWidget(drop_and_gauge_container)
+        left_container_layout.addWidget(manual_input_group)
+
+        middle_layout.addWidget(left_container)
         middle_layout.addWidget(station_group)
         middle_layout.addWidget(tvd_group)
 
@@ -277,7 +409,6 @@ class InputWidget(QWidget):
         button_layout.addWidget(self.clear_all_btn)
 
         self.process_btn = self.create_button("Process Files", "#3498db", None, 40)
-        # self.process_btn.setEnabled(False)
         self.process_btn.clicked.connect(self.process_files)
         button_layout.addWidget(self.process_btn)
 
@@ -298,8 +429,9 @@ class InputWidget(QWidget):
         QTimer.singleShot(200, self.trigger_startup_animation_once)
 
         # Add initial rows
-        self.add_station_row()
-        self.add_tvd_row()
+        self.add_spm_row()
+        self.add_station_data_row()
+        self.add_tvd_data_row()
 
     def round_lineedit(self, lineedit: QLineEdit):
         text = lineedit.text()
@@ -312,42 +444,113 @@ class InputWidget(QWidget):
             except ValueError:
                 lineedit.setText("0.00")
 
-    def setup_table_controls(self, table, is_station_table=True):
-        table.insertRow(0)
-        table.setRowHeight(0, 55)
-        for col in range(table.columnCount()):
+
+    def add_spm_row(self):
+        """Add a new row to the SPM table"""
+        row = self.spm_table.rowCount()
+        self.spm_table.insertRow(row)
+
+        # SPM number (auto-incrementing)
+        spm_number = QLabel(f"SPM {row + 1}")
+        spm_number.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        spm_number.setStyleSheet("font-weight: bold; color: black; font-size: 9pt;")
+
+        # Center the label
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(spm_number)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.spm_table.setCellWidget(row, 0, container)
+
+        # Depth input
+        depth_spin = QDoubleSpinBox()
+        depth_spin.setRange(0, 100000)
+        depth_spin.setDecimals(2)
+        depth_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        depth_spin.setValue(0.0)
+        depth_spin.setStyleSheet("font-size: 9pt;")
+        self.spm_table.setCellWidget(row, 1, depth_spin)
+
+        # Remove button cell (empty, since we're using external buttons)
+        # Keep the cell but make it empty
+        placeholder = QLabel("")
+        placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.spm_table.setCellWidget(row, 2, placeholder)
+
+        # Set row height
+        self.spm_table.setRowHeight(row, 40)
+
+        # Update SPM numbers after adding
+        self.update_spm_numbers()
+
+    def remove_selected_spm_row(self):
+        """Remove selected row from the SPM table"""
+        selected_rows = self.spm_table.selectionModel().selectedRows()
+        if not selected_rows:
+            return
+
+        # Sort in reverse order to remove from bottom to top
+        rows_to_remove = sorted([row.row() for row in selected_rows], reverse=True)
+
+        for row in rows_to_remove:
+            if self.spm_table.rowCount() > 1:  # Keep at least one row
+                self.spm_table.removeRow(row)
+
+        # Update SPM numbers and button state
+        self.update_spm_numbers()
+        self.update_spm_buttons_state()
+
+    def update_spm_buttons_state(self):
+        """Update the state of add/remove buttons based on table state"""
+        has_selection = len(self.spm_table.selectionModel().selectedRows()) > 0
+        self.remove_spm_btn.setEnabled(has_selection and self.spm_table.rowCount() > 1)
+
+    def update_spm_numbers(self):
+        """Update SPM numbers after adding/removing rows"""
+        for row in range(self.spm_table.rowCount()):
+            spm_label_container = self.spm_table.cellWidget(row, 0)
+            if spm_label_container:
+                spm_label = spm_label_container.findChild(QLabel)
+                if spm_label:
+                    spm_label.setText(f"SPM {row + 1}")
+
+    def get_spm_depths(self):
+        """Collect SPM depth data from table"""
+        spm_depths = []
+        for row in range(self.spm_table.rowCount()):
+            depth_widget = self.spm_table.cellWidget(row, 1)
+            if isinstance(depth_widget, QDoubleSpinBox):
+                depth = depth_widget.value()
+                if depth > 0:  # Only include non-zero depths
+                    spm_depths.append(depth)
+        return spm_depths
+
+    def setup_station_table_controls(self):
+        """Setup the station table with control row"""
+        self.station_table.insertRow(0)
+        self.station_table.setRowHeight(0, 55)
+        for col in range(self.station_table.columnCount() - 1):  # Exclude remove column
             container = QWidget()
             layout = QVBoxLayout(container)
             layout.setContentsMargins(4, 2, 4, 2)
             layout.setSpacing(2)
 
             def make_clear(c):
-                return lambda: self.clear_table_column(c, is_station_table)
+                return lambda: self.clear_station_table_column(c)
 
             def make_paste(c):
-                return lambda: self.paste_column_data(c, is_station_table)
+                return lambda: self.paste_station_column_data(c)
 
-            if is_station_table:
-                if col == 0:
-                    clear_btn = QPushButton("Clear")
-                    clear_btn.setStyleSheet("color: black")
-                    clear_btn.clicked.connect(make_clear(col))
-                    layout.addWidget(clear_btn)
-                else:
-                    paste_btn = QPushButton("Paste")
-                    clear_btn = QPushButton("Clear")
-                    paste_btn.setStyleSheet("color: black")
-                    clear_btn.setStyleSheet("color: black")
-
-                    paste_btn.clicked.connect(make_paste(col))
-                    clear_btn.clicked.connect(make_clear(col))
-
-                    layout.addWidget(paste_btn)
-                    layout.addWidget(clear_btn)
+            if col == 0:
+                clear_btn = QPushButton("Clear")
+                clear_btn.setStyleSheet("color: black")
+                clear_btn.clicked.connect(make_clear(col))
+                layout.addWidget(clear_btn)
             else:
                 paste_btn = QPushButton("Paste")
                 clear_btn = QPushButton("Clear")
-
                 paste_btn.setStyleSheet("color: black")
                 clear_btn.setStyleSheet("color: black")
 
@@ -358,11 +561,695 @@ class InputWidget(QWidget):
                 layout.addWidget(clear_btn)
 
             layout.addStretch()
-            table.setCellWidget(0, col, container)
+            self.station_table.setCellWidget(0, col, container)
 
         # Lock control row
-        table.setRowHidden(0, False)
-        table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.station_table.setRowHidden(0, False)
+        self.station_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+
+    def add_station_add_row(self):
+        """Add the Add row at the bottom of station table"""
+        row = self.station_table.rowCount()
+        self.station_table.insertRow(row)
+
+        # Add button in first column
+        add_btn = QPushButton("+ Add Station")
+        add_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
+                color: white;
+                border-radius: 5px;
+                padding: 5px;
+                font-weight: bold;
+                font-size: 9pt;
+                border: none;
+                min-width: 100px;
+                max-width: 100px;
+                min-height: 25px;
+                max-height: 25px;
+            }
+            QPushButton:hover {
+                background-color: #219653;
+            }
+        """)
+        add_btn.clicked.connect(self.add_station_data_row)
+
+        # Center the button in the cell (spanning all columns)
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(add_btn)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.station_table.setCellWidget(row, 0, container)
+        self.station_table.setSpan(row, 0, 1, 5)  # Span across all 5 columns
+
+        # Set row height
+        self.station_table.setRowHeight(row, 40)
+
+    def add_station_data_row(self):
+        """Add a new data row to the station table"""
+        row = self.station_table.rowCount() - 1  # Insert before the Add row
+        self.station_table.insertRow(row)
+
+        # Station type combo box with black text
+        station_combo = QComboBox()
+        station_combo.addItems(["SGS", "FGS", "THP"])
+        station_combo.setStyleSheet("color: black;")
+        self.station_table.setCellWidget(row, 0, station_combo)
+
+        # Depth (ft) - without arrow buttons
+        depth_spin = QDoubleSpinBox()
+        depth_spin.setRange(0, 100000)
+        depth_spin.setDecimals(2)
+        depth_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.station_table.setCellWidget(row, 1, depth_spin)
+
+        # Start Time without arrow buttons
+        start_time = QTimeEdit()
+        start_time.setDisplayFormat("HH:mm:ss")
+        start_time.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+
+        def validate_time_input(widget):
+            text = widget.text()
+            parsed_time = self.parse_time_string(text)
+            if parsed_time is not None:
+                widget.setTime(parsed_time)
+            else:
+                widget.setTime(QTime(0, 0, 0))
+
+        start_time.editingFinished.connect(lambda: validate_time_input(start_time))
+        self.station_table.setCellWidget(row, 2, start_time)
+
+        # End Time without arrow buttons
+        end_time = QTimeEdit()
+        end_time.setDisplayFormat("HH:mm:ss")
+        end_time.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        end_time.editingFinished.connect(lambda: validate_time_input(end_time))
+        self.station_table.setCellWidget(row, 3, end_time)
+
+        # Remove button - red square
+        remove_btn = QPushButton("✕")
+        remove_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                border-radius: 5px;
+                padding: 5px;
+                font-weight: bold;
+                font-size: 9pt;
+                border: none;
+                min-width: 19px;
+                max-width: 19px;
+                min-height: 19px;
+                max-height: 19px;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+            QPushButton:pressed {
+                background-color: #a93226;
+            }
+        """)
+        remove_btn.clicked.connect(lambda: self.remove_station_row(row))
+
+        # Center the button in the cell
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(remove_btn)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.station_table.setCellWidget(row, 4, container)
+
+    def remove_station_row(self, row):
+        """Remove a row from station table"""
+        if self.station_table.rowCount() > 2:  # Keep at least one data row plus Add row
+            self.station_table.removeRow(row)
+
+    def setup_tvd_table_controls(self):
+        """Setup the TVD table with control row"""
+        self.tvd_table.insertRow(0)
+        self.tvd_table.setRowHeight(0, 55)
+        for col in range(self.tvd_table.columnCount() - 1):  # Exclude remove column
+            container = QWidget()
+            layout = QVBoxLayout(container)
+            layout.setContentsMargins(4, 2, 4, 2)
+            layout.setSpacing(2)
+
+            def make_clear(c):
+                return lambda: self.clear_tvd_table_column(c)
+
+            def make_paste(c):
+                return lambda: self.paste_tvd_column_data(c)
+
+            paste_btn = QPushButton("Paste")
+            clear_btn = QPushButton("Clear")
+            paste_btn.setStyleSheet("color: black")
+            clear_btn.setStyleSheet("color: black")
+
+            paste_btn.clicked.connect(make_paste(col))
+            clear_btn.clicked.connect(make_clear(col))
+
+            layout.addWidget(paste_btn)
+            layout.addWidget(clear_btn)
+            layout.addStretch()
+
+            self.tvd_table.setCellWidget(0, col, container)
+
+        # Lock control row
+        self.tvd_table.setRowHidden(0, False)
+        self.tvd_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+
+    def add_tvd_add_row(self):
+        """Add the Add row at the bottom of TVD table"""
+        row = self.tvd_table.rowCount()
+        self.tvd_table.insertRow(row)
+
+        # Add button in first column
+        add_btn = QPushButton("+ Add Row")
+        add_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
+                color: white;
+                border-radius: 5px;
+                padding: 5px;
+                font-weight: bold;
+                font-size: 9pt;
+                border: none;
+                min-width: 80px;
+                max-width: 80px;
+                min-height: 25px;
+                max-height: 25px;
+            }
+            QPushButton:hover {
+                background-color: #219653;
+            }
+        """)
+        add_btn.clicked.connect(self.add_tvd_data_row)
+
+        # Center the button in the cell (spanning all columns)
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(add_btn)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.tvd_table.setCellWidget(row, 0, container)
+        self.tvd_table.setSpan(row, 0, 1, 3)  # Span across all 3 columns
+
+        # Set row height
+        self.tvd_table.setRowHeight(row, 40)
+
+    def add_tvd_data_row(self):
+        """Add a new data row to the TVD table"""
+        row = self.tvd_table.rowCount() - 1  # Insert before the Add row
+        self.tvd_table.insertRow(row)
+
+        # AHD - without arrow buttons
+        ahd_spin = QDoubleSpinBox()
+        ahd_spin.setRange(-10000, 10000)
+        ahd_spin.setDecimals(2)
+        ahd_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.tvd_table.setCellWidget(row, 0, ahd_spin)
+
+        # TVD - without arrow buttons
+        tvd_spin = QDoubleSpinBox()
+        tvd_spin.setRange(-10000, 10000)
+        tvd_spin.setDecimals(2)
+        tvd_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.tvd_table.setCellWidget(row, 1, tvd_spin)
+
+        # Remove button - red square
+        remove_btn = QPushButton("✕")
+        remove_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                border-radius: 5px;
+                padding: 5px;
+                font-weight: bold;
+                font-size: 9pt;
+                border: none;
+                min-width: 19px;
+                max-width: 19px;
+                min-height: 19px;
+                max-height: 19px;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+            QPushButton:pressed {
+                background-color: #a93226;
+            }
+        """)
+        remove_btn.clicked.connect(lambda: self.remove_tvd_row(row))
+
+        # Center the button in the cell
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(remove_btn)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.tvd_table.setCellWidget(row, 2, container)
+
+    def remove_tvd_row(self, row):
+        """Remove a row from TVD table"""
+        if self.tvd_table.rowCount() > 2:  # Keep at least one data row plus Add row
+            self.tvd_table.removeRow(row)
+
+    # Update paste methods for station and TVD tables
+    def paste_station_column_data(self, column):
+        """Paste clipboard data into station table column"""
+        clipboard = QApplication.clipboard()
+        text = clipboard.text()
+        if not text.strip():
+            return
+
+        lines = text.strip().split('\n')
+        table = self.station_table
+
+        # Adjust row count (exclude control row and Add row)
+        current_data_rows = table.rowCount() - 2  # Exclude control row (0) and Add row
+        needed_rows = len(lines)
+
+        if needed_rows > current_data_rows:
+            # Add missing rows
+            for _ in range(needed_rows - current_data_rows):
+                self.add_station_data_row()
+        elif needed_rows < current_data_rows:
+            # Remove excess rows (from the bottom, before Add row)
+            for _ in range(current_data_rows - needed_rows):
+                table.removeRow(table.rowCount() - 2)  # Remove before Add row
+
+        # Populate column (skip control row at row 0 and Add row at the end)
+        for i, line in enumerate(lines):
+            row = i + 1  # shift by 1 to skip control row
+            value = line.strip()
+
+            if not value:
+                continue
+
+            if column == 0:  # Station combo box
+                widget = table.cellWidget(row, column)
+                if widget and isinstance(widget, QComboBox):
+                    index = widget.findText(value)
+                    if index >= 0:
+                        widget.setCurrentIndex(index)
+            elif column == 1:  # Depth column - check for THP
+                if isinstance(value, str) and "THP" in value.upper():
+                    # Set depth to 0
+                    widget = table.cellWidget(row, column)
+                    if widget and isinstance(widget, QDoubleSpinBox):
+                        widget.setValue(0.0)
+
+                    # Set station to "THP"
+                    station_widget = table.cellWidget(row, 0)
+                    if station_widget and isinstance(station_widget, QComboBox):
+                        index = station_widget.findText("THP")
+                        if index >= 0:
+                            station_widget.setCurrentIndex(index)
+                else:
+                    # Normal numeric value
+                    widget = table.cellWidget(row, column)
+                    if widget and isinstance(widget, QDoubleSpinBox):
+                        try:
+                            widget.setValue(float(value))
+                        except ValueError:
+                            pass
+            elif column in [2, 3]:  # Time columns
+                widget = table.cellWidget(row, column)
+                if widget and isinstance(widget, QTimeEdit):
+                    parsed_time = self.parse_time_string(value)
+                    if parsed_time is not None:
+                        widget.setTime(parsed_time)
+
+    def paste_tvd_column_data(self, column):
+        """Paste clipboard data into TVD table column"""
+        clipboard = QApplication.clipboard()
+        text = clipboard.text()
+        if not text.strip():
+            return
+
+        lines = text.strip().split('\n')
+        table = self.tvd_table
+
+        # Adjust row count (exclude control row and Add row)
+        current_data_rows = table.rowCount() - 2  # Exclude control row (0) and Add row
+        needed_rows = len(lines)
+
+        if needed_rows > current_data_rows:
+            # Add missing rows
+            for _ in range(needed_rows - current_data_rows):
+                self.add_tvd_data_row()
+        elif needed_rows < current_data_rows:
+            # Remove excess rows (from the bottom, before Add row)
+            for _ in range(current_data_rows - needed_rows):
+                table.removeRow(table.rowCount() - 2)  # Remove before Add row
+
+        # Populate column (skip control row at row 0 and Add row at the end)
+        for i, line in enumerate(lines):
+            row = i + 1  # shift by 1 to skip control row
+            value = line.strip()
+
+            if not value:
+                continue
+
+            widget = table.cellWidget(row, column)
+            if widget and isinstance(widget, QDoubleSpinBox):
+                try:
+                    widget.setValue(float(value))
+                except ValueError:
+                    pass
+
+    def clear_station_table_column(self, column):
+        """Clear all values in a specific column of station table"""
+        table = self.station_table
+        for row in range(1, table.rowCount() - 1):  # Skip control row and Add row
+            widget = table.cellWidget(row, column)
+            if widget:
+                if isinstance(widget, QComboBox):
+                    widget.setCurrentIndex(0)
+                elif isinstance(widget, QDoubleSpinBox):
+                    widget.setValue(0)
+                elif isinstance(widget, QTimeEdit):
+                    widget.setTime(QTime(0, 0, 0))
+
+    def clear_tvd_table_column(self, column):
+        """Clear all values in a specific column of TVD table"""
+        table = self.tvd_table
+        for row in range(1, table.rowCount() - 1):  # Skip control row and Add row
+            widget = table.cellWidget(row, column)
+            if widget and isinstance(widget, QDoubleSpinBox):
+                widget.setValue(0)
+
+    # Update get methods to handle new table structure
+    def get_station_timings(self):
+        """Collect station timings (skip control row and Add row)"""
+        stations = []
+        for row in range(1, self.station_table.rowCount() - 1):  # Skip control row and Add row
+            station_combo = self.station_table.cellWidget(row, 0)
+            depth_spin = self.station_table.cellWidget(row, 1)
+            start_time_widget = self.station_table.cellWidget(row, 2)
+            end_time_widget = self.station_table.cellWidget(row, 3)
+
+            if isinstance(station_combo, QComboBox) and \
+                    isinstance(depth_spin, QDoubleSpinBox) and \
+                    isinstance(start_time_widget, QTimeEdit) and \
+                    isinstance(end_time_widget, QTimeEdit):
+
+                survey_date = self.date_edit.date().toPyDate()
+
+                # Get time from widget
+                start_time = start_time_widget.time()
+                if not start_time.isValid():
+                    parsed_start = self.parse_time_string(start_time_widget.text())
+                    if parsed_start is not None:
+                        start_time = parsed_start
+                    else:
+                        start_time = QTime(0, 0, 0)
+
+                end_time = end_time_widget.time()
+                if not end_time.isValid():
+                    parsed_end = self.parse_time_string(end_time_widget.text())
+                    if parsed_end is not None:
+                        end_time = parsed_end
+                    else:
+                        end_time = QTime(0, 0, 0)
+
+                # Convert to Python time
+                start_py_time = start_time.toPyTime()
+                end_py_time = end_time.toPyTime()
+
+                if end_py_time < start_py_time:
+                    end_date = survey_date + datetime.timedelta(days=1)
+                else:
+                    end_date = survey_date
+
+                start_dt = datetime.datetime.combine(survey_date, start_py_time)
+                end_dt = datetime.datetime.combine(end_date, end_py_time)
+
+                duration = (end_dt - start_dt).total_seconds() / 3600.0
+
+                stations.append({
+                    'station': station_combo.currentText(),
+                    'depth': depth_spin.value(),
+                    'start': start_dt,
+                    'end': end_dt,
+                    'duration': duration
+                })
+
+        return stations
+
+    def get_tvd_data(self):
+        """Collect AHD/TVD data from table (skip control row and Add row)"""
+        ahd_values = []
+        tvd_values = []
+
+        for row in range(1, self.tvd_table.rowCount() - 1):  # Skip control row and Add row
+            ahd_widget = self.tvd_table.cellWidget(row, 0)
+            tvd_widget = self.tvd_table.cellWidget(row, 1)
+
+            if isinstance(ahd_widget, QDoubleSpinBox) and isinstance(tvd_widget, QDoubleSpinBox):
+                ahd_values.append(ahd_widget.value())
+                tvd_values.append(tvd_widget.value())
+
+        return {
+            'ahd_values': ahd_values,
+            'tvd_values': tvd_values
+        }
+
+    def clear_all_files(self):
+        """Clear all uploaded files and reset UI"""
+        for file_type in self.file_types:
+            self.clear_file(file_type)
+
+        # Clear manual inputs
+        self.date_edit.setDate(QDate.currentDate())
+        self.time_edit.setTime(QTime.currentTime())
+        self.location_edit.clear()
+        self.well_edit.clear()
+        self.bdf_edit.clear()
+        self.sea_level_edit.clear()
+
+        # Reset gauge type to SGS
+        self.sgs_toggle.setChecked(True)
+        self.fgs_toggle.setChecked(False)
+        self.on_gauge_type_toggled()
+
+        # Clear and reset SPM table
+        self.spm_table.setRowCount(0)
+        self.add_spm_add_row()
+        self.add_spm_data_row()
+
+        # Clear and reset other tables
+        self.station_table.setRowCount(0)
+        self.tvd_table.setRowCount(0)
+
+        # Re-add control rows and Add rows
+        self.setup_station_table_controls()
+        self.add_station_add_row()
+        self.add_station_data_row()
+
+        self.setup_tvd_table_controls()
+        self.add_tvd_add_row()
+        self.add_tvd_data_row()
+
+    def create_drop_area(self, text):
+        """Create a consistent drop area widget"""
+        drop_area = QLabel(text)
+        drop_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        drop_area.setStyleSheet("""
+            QLabel {
+                border: 3px dashed #aaa;
+                border-radius: 15px;
+                font: bold 12pt 'Segoe UI';
+                padding: 30px;
+                background-color: rgba(240, 240, 240, 100);
+            }
+        """)
+        drop_area.setMinimumSize(200, 100)
+        drop_area.setAcceptDrops(True)
+        drop_area.dragEnterEvent = self.dragEnterEvent
+        drop_area.dropEvent = lambda event, da=drop_area: self.dropEvent(event, da)
+        return drop_area
+
+
+    def create_file_buttons(self, file_type):
+        """Create browse/clear buttons for a file type"""
+        button_layout = QHBoxLayout()
+
+        browse_btn = self.create_button("Browse", "#3498db", "#2980b9", 25)
+        browse_btn.setStyleSheet(browse_btn.styleSheet() + "color: black;")
+        browse_btn.clicked.connect(lambda _, ft=file_type: self.browse_file(ft))
+
+        clear_btn = self.create_button("Clear", "#f8d7da", "#f5c6cb", 25)
+        clear_btn.setStyleSheet(clear_btn.styleSheet() + "color: #721c24;")
+        clear_btn.setEnabled(False)
+        clear_btn.clicked.connect(lambda _, ft=file_type: self.clear_file(ft))
+
+        button_layout.addWidget(browse_btn)
+        button_layout.addWidget(clear_btn)
+
+        # Store button references
+        self.browse_buttons[file_type] = browse_btn
+        self.clear_buttons[file_type] = clear_btn
+
+        return button_layout
+
+
+    # --- Helper Methods ---
+    def create_button(self, text, color, hover_color=None, height=None):
+        """Create standardized buttons with consistent styling"""
+        button = QPushButton(text)
+        if height:
+            button.setMinimumHeight(height)
+
+        style = f"""
+            QPushButton {{
+                background-color: {color};
+                color: white;
+                font-weight: bold;
+                border-radius: 10px;
+                padding: 8px;
+                font-size: 10pt;
+            }}
+            QPushButton:disabled {{
+                background-color: #cccccc;
+                color: #888888;
+            }}
+        """
+
+        if hover_color:
+            style += f"""
+            QPushButton:hover {{
+                background-color: {hover_color};
+            }}
+            """
+
+        button.setStyleSheet(style)
+        return button
+
+
+    def create_group_box(self, title, widget, label, buttons):
+        """Create a standardized group box container"""
+        group = QGroupBox(title)
+        group_layout = QVBoxLayout(group)
+        group_layout.addWidget(label)
+        group_layout.addWidget(widget)
+        group_layout.addLayout(buttons)
+        group.setStyleSheet(GROUPBOX_STYLE)
+        return group
+
+
+    def on_gauge_type_toggled(self):
+        """Handle gauge type toggle selection"""
+        sender = self.sender()
+
+        if sender == self.sgs_toggle:
+            if self.sgs_toggle.isChecked():
+                self.fgs_toggle.setChecked(False)
+                self.fgs_toggle.setStyleSheet("""
+                    QPushButton {
+                        padding: 8px 15px;
+                        border: 2px solid #3498db;
+                        border-radius: 5px;
+                        font-weight: bold;
+                        margin: 2px;
+                        font-size: 10pt;
+                        background-color: white;
+                        color: #3498db;
+                    }
+                    QPushButton:hover {
+                        background-color: #e3f2fd;
+                    }
+                """)
+                self.sgs_toggle.setStyleSheet("""
+                    QPushButton {
+                        padding: 8px 15px;
+                        border: 2px solid #3498db;
+                        border-radius: 5px;
+                        font-weight: bold;
+                        margin: 2px;
+                        font-size: 10pt;
+                        background-color: #3498db;
+                        color: white;
+                    }
+                """)
+                self.spm_section.setVisible(False)
+        elif sender == self.fgs_toggle:
+            if self.fgs_toggle.isChecked():
+                self.sgs_toggle.setChecked(False)
+                self.sgs_toggle.setStyleSheet("""
+                    QPushButton {
+                        padding: 8px 15px;
+                        border: 2px solid #3498db;
+                        border-radius: 5px;
+                        font-weight: bold;
+                        margin: 2px;
+                        font-size: 10pt;
+                        background-color: white;
+                        color: #3498db;
+                    }
+                    QPushButton:hover {
+                        background-color: #e3f2fd;
+                    }
+                """)
+                self.fgs_toggle.setStyleSheet("""
+                    QPushButton {
+                        padding: 8px 15px;
+                        border: 2px solid #3498db;
+                        border-radius: 5px;
+                        font-weight: bold;
+                        margin: 2px;
+                        font-size: 10pt;
+                        background-color: #3498db;
+                        color: white;
+                    }
+                """)
+                self.spm_section.setVisible(True)
+                # Ensure at least one SPM row exists
+                if self.spm_table.rowCount() == 0:
+                    self.add_spm_row()
+
+    def process_files(self):
+        """Process files when all are loaded"""
+        if all(config["file_path"] for config in self.file_types.values()):
+            # Get manual input data
+            survey_info = self.get_survey_info()
+
+            # Add gauge type information
+            survey_info['gauge_type'] = "FGS" if self.fgs_toggle.isChecked() else "SGS"
+            survey_info['spm_depths'] = self.get_spm_depths() if self.fgs_toggle.isChecked() else []
+
+            # Call callback with file paths and manual data
+            self.callback(
+                self.file_types["top"]["file_path"],
+                self.file_types["bottom"]["file_path"],
+                survey_info
+            )
+
+    # Also add this get_survey_info method to InputWidget:
+    def get_survey_info(self):
+        """Get all survey information from inputs"""
+        survey_info = {
+            'date': self.date_edit.date().toPyDate(),
+            'start_time': datetime.datetime.combine(
+                self.date_edit.date().toPyDate(),
+                self.time_edit.time().toPyTime()
+            ),
+            'location': self.location_edit.text(),
+            'well': self.well_edit.text(),
+            'bdf': float(self.bdf_edit.text()) if self.bdf_edit.text() else 0.0,
+            'sea_level': float(self.sea_level_edit.text()) if self.sea_level_edit.text() else 0.0,
+            'station_timings': self.get_station_timings(),
+            'tvd_data': self.get_tvd_data(),
+            'gauge_type': "FGS" if self.fgs_toggle.isChecked() else "SGS",
+            'spm_depths': self.get_spm_depths() if self.fgs_toggle.isChecked() else []
+        }
+        return survey_info
+
 
     def trigger_startup_animation_once(self):
         """Ensure animations only play once when the widget first becomes visible"""
@@ -380,6 +1267,7 @@ class InputWidget(QWidget):
 
         # Animate bottom button row after all boxes
         QTimer.singleShot(delay + 200, lambda: self.fade_widget(self.process_btn.parentWidget()))
+
 
     def fade_and_slide_in(self, widget):
         """Fade and slide-in animation for a widget"""
@@ -423,170 +1311,6 @@ class InputWidget(QWidget):
         anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
         widget._fade_anim = anim
 
-    # --- Helper Methods ---
-    def create_button(self, text, color, hover_color=None, height=None):
-        """Create standardized buttons with consistent styling"""
-        button = QPushButton(text)
-        if height:
-            button.setMinimumHeight(height)
-
-        style = f"""
-            QPushButton {{
-                background-color: {color};
-                color: white;
-                font-weight: bold;
-                border-radius: 10px;
-                padding: 8px;
-                font-size: 10pt;
-            }}
-            QPushButton:disabled {{
-                background-color: #cccccc;
-                color: #888888;
-            }}
-        """
-
-        if hover_color:
-            style += f"""
-            QPushButton:hover {{
-                background-color: {hover_color};
-            }}
-            """
-
-        button.setStyleSheet(style)
-        return button
-
-    def create_drop_area(self, text):
-        """Create a consistent drop area widget"""
-        drop_area = QLabel(text)
-        drop_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        drop_area.setStyleSheet("""
-            QLabel {
-                border: 3px dashed #aaa;
-                border-radius: 15px;
-                font: bold 12pt 'Segoe UI';
-                padding: 30px;
-                background-color: rgba(240, 240, 240, 100);
-            }
-        """)
-        drop_area.setMinimumSize(200, 100)
-        drop_area.setAcceptDrops(True)
-        drop_area.dragEnterEvent = self.dragEnterEvent
-        drop_area.dropEvent = lambda event, da=drop_area: self.dropEvent(event, da)
-        return drop_area
-
-    def create_file_buttons(self, file_type):
-        """Create browse/clear buttons for a file type"""
-        button_layout = QHBoxLayout()
-
-        browse_btn = self.create_button("Browse", "#3498db", "#2980b9", 25)
-        browse_btn.setStyleSheet(browse_btn.styleSheet() + "color: black;")
-        browse_btn.clicked.connect(lambda _, ft=file_type: self.browse_file(ft))
-
-        clear_btn = self.create_button("Clear", "#f8d7da", "#f5c6cb", 25)
-        clear_btn.setStyleSheet(clear_btn.styleSheet() + "color: #721c24;")
-        clear_btn.setEnabled(False)
-        clear_btn.clicked.connect(lambda _, ft=file_type: self.clear_file(ft))
-
-        button_layout.addWidget(browse_btn)
-        button_layout.addWidget(clear_btn)
-
-        # Store button references
-        self.browse_buttons[file_type] = browse_btn
-        self.clear_buttons[file_type] = clear_btn
-
-        return button_layout
-
-    def create_group_box(self, title, widget, label, buttons):
-        """Create a standardized group box container"""
-        group = QGroupBox(title)
-        group_layout = QVBoxLayout(group)
-        group_layout.addWidget(label)
-        group_layout.addWidget(widget)
-        group_layout.addLayout(buttons)
-        group.setStyleSheet(GROUPBOX_STYLE)
-        return group
-
-    def paste_column_data(self, column, is_station_table=True):
-        """Paste clipboard data into a table column, skipping control row at row 0"""
-        clipboard = QApplication.clipboard()
-        text = clipboard.text()
-        if not text.strip():
-            return
-
-        lines = text.strip().split('\n')
-        table = self.station_table if is_station_table else self.tvd_table
-
-        # Adjust row count (exclude control row)
-        current_rows = table.rowCount() - 1
-        needed_rows = len(lines)
-
-        if needed_rows > current_rows:
-            # Add missing rows
-            for _ in range(needed_rows - current_rows):
-                if is_station_table:
-                    self.add_station_row()
-                else:
-                    self.add_tvd_row()
-        elif needed_rows < current_rows:
-            # Remove excess rows (from the bottom)
-            for _ in range(current_rows - needed_rows):
-                table.removeRow(table.rowCount() - 1)
-
-        # Populate column (skip control row at row 0)
-        for i, line in enumerate(lines):
-            row = i + 1  # shift by 1
-            value = line.strip()
-
-            # Skip empty lines
-            if not value:
-                continue
-
-            if is_station_table:
-                if column == 0:  # Station combo box
-                    widget = table.cellWidget(row, column)
-                    if widget is None:
-                        continue
-                    if isinstance(widget, QComboBox):
-                        index = widget.findText(value)
-                        if index >= 0:
-                            widget.setCurrentIndex(index)
-                elif column == 1:  # Depth column - check for THP
-                    # Check if the value contains "THP" (case-insensitive)
-                    if isinstance(value, str) and "THP" in value.upper():
-                        # Set depth to 0
-                        widget = table.cellWidget(row, column)
-                        if widget and isinstance(widget, QDoubleSpinBox):
-                            widget.setValue(0.0)
-
-                        # Set the station cell (column 0) to "THP"
-                        station_widget = table.cellWidget(row, 0)
-                        if station_widget and isinstance(station_widget, QComboBox):
-                            index = station_widget.findText("THP")
-                            if index >= 0:
-                                station_widget.setCurrentIndex(index)
-                    else:
-                        # Normal numeric value
-                        widget = table.cellWidget(row, column)
-                        if widget and isinstance(widget, QDoubleSpinBox):
-                            try:
-                                widget.setValue(float(value))
-                            except ValueError:
-                                pass
-                elif column in [2, 3]:  # Time columns - FIXED
-                    widget = table.cellWidget(row, column)
-                    if widget and isinstance(widget, QTimeEdit):
-                        # Try to parse the time string with various delimiters
-                        parsed_time = self.parse_time_string(value)
-                        if parsed_time is not None:
-                            widget.setTime(parsed_time)
-            else:
-                # TVD table
-                widget = table.cellWidget(row, column)
-                if widget and isinstance(widget, QDoubleSpinBox):
-                    try:
-                        widget.setValue(float(value))
-                    except ValueError:
-                        pass
 
     def parse_time_string(self, time_str):
         """Convert various time formats to standard HH:mm:ss"""
@@ -649,106 +1373,6 @@ class InputWidget(QWidget):
         # Return None if parsing failed
         return None
 
-    def clear_table_column(self, column, is_station_table=True):
-        """Clear all values in a specific column"""
-        table = self.station_table if is_station_table else self.tvd_table
-
-        for row in range(table.rowCount()):
-            widget = table.cellWidget(row, column)
-            if widget:
-                if isinstance(widget, QComboBox):
-                    widget.setCurrentIndex(0)
-                elif isinstance(widget, QDoubleSpinBox):
-                    widget.setValue(0)
-                elif isinstance(widget, QTimeEdit):
-                    widget.setTime(QTime(0, 0, 0))
-
-    # Also add a method to handle manual typing in the time fields
-    def add_station_row(self):
-        """Add a new row to the station table"""
-        row = self.station_table.rowCount()
-        self.station_table.insertRow(row)
-
-        # Station type combo box with black text
-        station_combo = QComboBox()
-        station_combo.addItems(["SGS", "FGS", "THP"])
-        station_combo.setStyleSheet("color: black;")  # Set text color to black
-        self.station_table.setCellWidget(row, 0, station_combo)
-
-        # Depth (ft) - without arrow buttons
-        depth_spin = QDoubleSpinBox()
-        depth_spin.setRange(0, 100000)
-        depth_spin.setDecimals(2)
-        depth_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.station_table.setCellWidget(row, 1, depth_spin)
-
-        # Start Time with custom validation
-        start_time = QTimeEdit()
-        start_time.setDisplayFormat("HH:mm:ss")
-
-        # Connect to custom time validation
-        def validate_time_input(widget):
-            text = widget.text()
-            parsed_time = self.parse_time_string(text)
-            if parsed_time is not None:
-                widget.setTime(parsed_time)
-            else:
-                # Reset to last valid time if parsing fails
-                widget.setTime(QTime(0, 0, 0))
-
-        start_time.editingFinished.connect(lambda: validate_time_input(start_time))
-        self.station_table.setCellWidget(row, 2, start_time)
-
-        # End Time with custom validation
-        end_time = QTimeEdit()
-        end_time.setDisplayFormat("HH:mm:ss")
-        end_time.editingFinished.connect(lambda: validate_time_input(end_time))
-        self.station_table.setCellWidget(row, 3, end_time)
-
-    def remove_station_row(self):
-        """Remove selected rows from station table - FIXED"""
-        selected_rows = sorted(set(item.row() for item in self.station_table.selectedItems()), reverse=True)
-
-        # Remove rows in reverse order
-        for row in selected_rows:
-            self.station_table.removeRow(row)
-
-        # Ensure at least one row exists
-        if self.station_table.rowCount() == 0:
-            self.add_station_row()
-
-    # --- TVD Table Methods ---
-    def add_tvd_row(self):
-        """Add a new row to the TVD table"""
-        row = self.tvd_table.rowCount()
-        self.tvd_table.insertRow(row)
-
-        # AHD - without arrow buttons
-        ahd_spin = QDoubleSpinBox()
-        ahd_spin.setRange(-10000, 10000)
-        ahd_spin.setDecimals(2)
-        ahd_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.tvd_table.setCellWidget(row, 0, ahd_spin)
-
-        # TVD - without arrow buttons
-        tvd_spin = QDoubleSpinBox()
-        tvd_spin.setRange(-10000, 10000)
-        tvd_spin.setDecimals(2)
-        tvd_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.tvd_table.setCellWidget(row, 1, tvd_spin)
-
-    def remove_tvd_row(self):
-        """Remove selected rows from TVD table - FIXED"""
-        selected_rows = sorted(set(item.row() for item in self.tvd_table.selectedItems()), reverse=True)
-
-        # Remove rows in reverse order
-        for row in selected_rows:
-            self.tvd_table.removeRow(row)
-
-        # Ensure at least one row exists
-        if self.tvd_table.rowCount() == 0:
-            self.add_tvd_row()
-
     # --- File Handling ---
     def handle_file_drop(self, drop_area, file_path):
         """Handle file drop on a specific area"""
@@ -760,17 +1384,6 @@ class InputWidget(QWidget):
 
         MessageBoxWindow.message_simple(self, "Invalid File", "Please drop the correct file type in each area")
 
-    def browse_file(self, file_type):
-        """Open file dialog for specific file type"""
-        config = self.file_types[file_type]
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            f"Open {file_type.capitalize()} File",
-            "",
-            f"Files ({' '.join(['*' + ext for ext in config['extensions']])})"
-        )
-        if file_path:
-            self.set_file(file_type, file_path)
 
     def set_file(self, file_type, file_path):
         """Set file for a specific type and update UI"""
@@ -793,6 +1406,19 @@ class InputWidget(QWidget):
         self.clear_buttons[file_type].setEnabled(True)
         self.update_process_button()
 
+    def browse_file(self, file_type):
+        """Open file dialog for specific file type"""
+        config = self.file_types[file_type]
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            f"Open {file_type.capitalize()} File",
+            "",
+            f"Files ({' '.join(['*' + ext for ext in config['extensions']])})"
+        )
+        if file_path:
+            self.set_file(file_type, file_path)
+
+
     def clear_file(self, file_type):
         """Clear file for a specific type and reset UI"""
         config = self.file_types[file_type]
@@ -813,27 +1439,6 @@ class InputWidget(QWidget):
         self.clear_buttons[file_type].setEnabled(False)
         self.update_process_button()
 
-    def clear_all_files(self):
-        """Clear all uploaded files and reset UI"""
-        for file_type in self.file_types:
-            self.clear_file(file_type)
-
-        # Clear manual inputs
-        self.date_edit.setDate(QDate.currentDate())
-        self.time_edit.setTime(QTime.currentTime())
-        self.location_edit.clear()
-        self.well_edit.clear()
-        self.bdf_edit.setValue(0)
-        self.sea_level_edit.setValue(0)
-
-        # Clear tables
-        self.station_table.setRowCount(0)
-        self.tvd_table.setRowCount(0)
-
-        # Add default rows
-        self.add_station_row()
-        self.add_tvd_row()
-
     def update_process_button(self):
         """Enable process button when both files are loaded"""
         files_loaded = all(
@@ -842,114 +1447,6 @@ class InputWidget(QWidget):
         )
 
         self.process_btn.setEnabled(files_loaded)
-
-    # --- Data Collection Methods ---
-    def get_survey_info(self):
-        """Collect all manual input data"""
-        survey_date = self.date_edit.date().toPyDate()
-        survey_time = self.time_edit.time().toPyTime()
-        start_datetime = datetime.datetime.combine(survey_date, survey_time)
-
-        return {
-            'date': survey_date,
-            'start_time': start_datetime,
-            'location': self.location_edit.text(),
-            'well': self.well_edit.text(),
-            'bdf': self.bdf_edit.text(),
-            'sea_level': self.sea_level_edit.text(),
-            'station_timings': self.get_station_timings(),
-            'tvd_data': self.get_tvd_data()
-        }
-
-    # Also update the get_station_timings method to be more robust
-    def get_station_timings(self):
-        stations = []
-        for row in range(1, self.station_table.rowCount()):  # start from row 1 to skip control row
-            station_combo = self.station_table.cellWidget(row, 0)
-            depth_spin = self.station_table.cellWidget(row, 1)
-            start_time_widget = self.station_table.cellWidget(row, 2)
-            end_time_widget = self.station_table.cellWidget(row, 3)
-
-            if isinstance(station_combo, QComboBox) and \
-                    isinstance(depth_spin, QDoubleSpinBox) and \
-                    isinstance(start_time_widget, QTimeEdit) and \
-                    isinstance(end_time_widget, QTimeEdit):
-
-                survey_date = self.date_edit.date().toPyDate()
-
-                # Get time from widget and ensure it's valid
-                start_time = start_time_widget.time()
-                if not start_time.isValid():
-                    # Try to parse the text if the time is invalid
-                    parsed_start = self.parse_time_string(start_time_widget.text())
-                    if parsed_start is not None:
-                        start_time = parsed_start
-                    else:
-                        start_time = QTime(0, 0, 0)
-
-                end_time = end_time_widget.time()
-                if not end_time.isValid():
-                    # Try to parse the text if the time is invalid
-                    parsed_end = self.parse_time_string(end_time_widget.text())
-                    if parsed_end is not None:
-                        end_time = parsed_end
-                    else:
-                        end_time = QTime(0, 0, 0)
-
-                # Convert to Python time
-                start_py_time = start_time.toPyTime()
-                end_py_time = end_time.toPyTime()
-
-                if end_py_time < start_py_time:
-                    end_date = survey_date + datetime.timedelta(days=1)
-                else:
-                    end_date = survey_date
-
-                start_dt = datetime.datetime.combine(survey_date, start_py_time)
-                end_dt = datetime.datetime.combine(end_date, end_py_time)
-
-                duration = (end_dt - start_dt).total_seconds() / 3600.0
-
-                stations.append({
-                    'station': station_combo.currentText(),
-                    'depth': depth_spin.value(),
-                    'start': start_dt,
-                    'end': end_dt,
-                    'duration': duration
-                })
-
-        return stations
-
-    def get_tvd_data(self):
-        """Collect AHD/TVD data from table, skipping control row"""
-        ahd_values = []
-        tvd_values = []
-
-        for row in range(1, self.tvd_table.rowCount()):  # skip control row at row 0
-            ahd_widget_container = self.tvd_table.cellWidget(row, 0)
-            tvd_widget_container = self.tvd_table.cellWidget(row, 1)
-
-            # Extract QDoubleSpinBox from container if needed
-            def get_spinbox(widget):
-                if isinstance(widget, QDoubleSpinBox):
-                    return widget
-                elif isinstance(widget, QWidget):
-                    children = widget.findChildren(QDoubleSpinBox)
-                    if children:
-                        return children[0]
-                return None
-
-            ahd_spin = get_spinbox(ahd_widget_container)
-            tvd_spin = get_spinbox(tvd_widget_container)
-
-            if ahd_spin and tvd_spin:
-                ahd_values.append(ahd_spin.value())
-                tvd_values.append(tvd_spin.value())
-
-        return {
-            'ahd_values': ahd_values,
-            'tvd_values': tvd_values
-        }
 
     # --- Event Handlers ---
     def dragEnterEvent(self, event: QDragEnterEvent):
@@ -994,22 +1491,10 @@ class InputWidget(QWidget):
                     }
                 """)
 
-    def process_files(self):
-        """Process files when all are loaded"""
-        if all(config["file_path"] for config in self.file_types.values()):
-            # Get manual input data
-            survey_info = self.get_survey_info()
-
-            # Call callback with file paths and manual data
-            self.callback(
-                self.file_types["top"]["file_path"],
-                self.file_types["bottom"]["file_path"],
-                survey_info
-            )
-
 class SurveyApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.tvd_data = None
         self.setWindowTitle("SGS / FGS txt processing")
         self.setFixedSize(1400,800)
         self.save_file_path = None
@@ -1088,25 +1573,18 @@ class SurveyApp(QWidget):
         template_group = QGroupBox("Download Blank Templates")
         template_layout = QVBoxLayout(template_group)
         template_layout.setSpacing(8)
+        templates = {
+            "Interpretation": self.download_interpretation_template,
+            "TVD Calculation": self.download_md_tvd_template,
+            "Timesheet": self.download_timesheet_template
+        }
 
-        download_template_button = QPushButton("Interpretation")
-        download_template_button.setIcon(QIcon(get_icon_path('download')))
-        download_template_button.setStyleSheet(TEMPLATE_BUTTON)
-        download_template_button.clicked.connect(self.download_interpretation_template)
-
-        download_md_tvd_button = QPushButton("TVD Calculation")
-        download_md_tvd_button.setIcon(QIcon(get_icon_path('download')))
-        download_md_tvd_button.setStyleSheet(TEMPLATE_BUTTON)
-        download_md_tvd_button.clicked.connect(self.download_md_tvd_template)
-
-        download_timesheet_button = QPushButton("Timesheet")
-        download_timesheet_button.setIcon(QIcon(get_icon_path('download')))
-        download_timesheet_button.setStyleSheet(TEMPLATE_BUTTON)
-        download_timesheet_button.clicked.connect(self.download_timesheet_template)
-
-        template_layout.addWidget(download_template_button)
-        template_layout.addWidget(download_md_tvd_button)
-        template_layout.addWidget(download_timesheet_button)
+        for label, download_method in templates.items():
+            download_button = QPushButton(label)
+            download_button.setIcon(QIcon(get_icon_path('download')))
+            download_button.setStyleSheet(TEMPLATE_BUTTON)
+            download_button.clicked.connect(download_method)
+            template_layout.addWidget(download_button)
 
         instruction_group = QGroupBox("Quick Guide")
         instruction_layout = QVBoxLayout(instruction_group)
@@ -1114,10 +1592,10 @@ class SurveyApp(QWidget):
         # Update instruction steps for new workflow
         instruction_steps = [
             ("Step 1:", "Open PPS SmartView/MetroWin and convert raw (.rec/.p3w) files into .txt files"),
-            ("Step 2:", "Drag and drop Top Gauge and Bottom Gauge .txt files"),
+            ("Step 2:", "Drag and drop top and bottom Gauge .txt files"),
             ("Step 3:", "Enter survey information (date, location, well, THF, DFE)"),
-            ("Step 4:", "Enter station data (or import from timesheet)"),
-            ("Step 5:", "Enter AHD/TVD mapping (or import from TVD calculation file)"),
+            ("Step 4:", "Enter station data from timesheet"),
+            ("Step 5:", "Enter AHD/TVD mapping from TVD Calculation"),
             ("Step 6:", "Click 'Process Files'")
         ]
 
@@ -1280,7 +1758,7 @@ class SurveyApp(QWidget):
 
         # Group Box 2: Actions
         action_group = QGroupBox("Actions")
-        action_layout = QVBoxLayout(action_group)
+        action_layout = QHBoxLayout(action_group)
         action_layout.setSpacing(8)
 
         self.copy_button = QPushButton()
@@ -1292,8 +1770,13 @@ class SurveyApp(QWidget):
 
         self.generate_as2_button = QPushButton("Generate AS2 Files")
         self.generate_as2_button.setStyleSheet(ACTION_BUTTON)
-        self.generate_as2_button.clicked.connect(self.generate_as2_files)
+        self.generate_as2_button.clicked.connect(lambda: self.generate_as2_files())
         self.generate_as2_button.setEnabled(False)
+
+        self.generate_tvd_button = QPushButton("Generate TVD File")
+        self.generate_tvd_button.setStyleSheet(ACTION_BUTTON)
+        self.generate_tvd_button.clicked.connect(lambda: self.generate_tvd_file())
+        # self.generate_tvd_button.setEnabled(False)
 
         self.process_data_button = QToolButton()
         self.process_data_button.setIcon(QIcon(get_icon_path('export')))
@@ -1321,6 +1804,7 @@ class SurveyApp(QWidget):
 
         action_layout.addWidget(self.copy_button)
         action_layout.addWidget(self.generate_as2_button)
+        action_layout.addWidget(self.generate_tvd_button)
 
         # Add group boxes to the button layout
         button_layout.addWidget(template_group, 1)
@@ -1502,6 +1986,117 @@ class SurveyApp(QWidget):
         for widget in self.findChildren(QPushButton) + self.findChildren(QToolButton):
             widget.installEventFilter(self.cursor_filter)
 
+    def download_md_tvd_template(self):
+        """Download the MD-to-TVD template Excel file"""
+        return self._download_template(
+            "MD_TVD_Template.xlsx",
+            "Save MD-to-TVD Template"
+        )
+
+    def generate_tvd_file(self):
+        """Generate MD-to-TVD Excel file from template"""
+
+        if not self.save_file_path:
+            QMessageBox.warning(self, "No Survey", "Please save or load a survey first.")
+            return
+
+        if not self.tvd_data:
+            QMessageBox.warning(self, "No TVD Data", "No AHD/TVD mapping data available.")
+            return
+
+        template_path = get_path(f"assets/resources/MD_TVD_Template.xlsx")
+
+        save_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save TVD Calculation File",
+            os.path.splitext(self.save_file_path)[0] + "_TVD.xlsx",
+            "Excel Files (*.xlsx)"
+        )
+
+        if not save_path:
+            return
+
+        try:
+            wb = openpyxl.load_workbook(template_path)
+            sheet = wb["Calculation"]
+
+            # --------------------------------------------------
+            # Header values
+            # --------------------------------------------------
+            sheet["D2"] = self.bdf
+            sheet["D3"] = self.sea_level
+            sheet["D4"] = getattr(self, "gauge_type", "")
+
+            sheet["I2"] = self.date
+            sheet["I3"] = self.location
+            sheet["I4"] = self.well
+
+            # --------------------------------------------------
+            # Depths → Column B (starting B9)
+            # --------------------------------------------------
+            start_row = 9
+            for i, station in enumerate(self.station_timings):
+                depth = station.get("depth")
+                if depth is not None:
+                    sheet.cell(row=start_row + i, column=2).value = depth
+            # --------------------------------------------------
+            # Clear columns B–K below last depth row
+            # --------------------------------------------------
+            last_depth_row = start_row + len(self.station_timings) - 1
+
+            max_clear_row = sheet.max_row
+            for row in range(last_depth_row + 1, max_clear_row + 1):
+                for col in range(2, 11):  # B (2) to K (11)
+                    sheet.cell(row=row, column=col).value = None
+
+            # --------------------------------------------------
+            # SPM Depths → Column C (starting C31)
+            # --------------------------------------------------
+            spm_start_row = 31
+            spm_depths = getattr(self, "spm_depths", [])
+
+            if spm_depths:
+                # Read formulas from row 9 (C–K)
+                base_formulas = {}
+                for col in range(3, 11):  # C (3) to K (11)
+                    base_formulas[col] = sheet.cell(row=9, column=col).value
+
+                for i, depth in enumerate(spm_depths):
+                    row = spm_start_row + i
+
+                    # Paste SPM depth
+                    sheet.cell(row=row, column=3).value = depth  # Column C
+
+                    # Copy formulas into C–K
+                    for col in range(3, 11):
+                        sheet.cell(row=row, column=col).value = base_formulas[col]
+
+            # --------------------------------------------------
+            # AHD / TVD Mapping → Columns L & M (starting row 3)
+            # --------------------------------------------------
+            ahd_values = self.tvd_data.get("ahd_values", [])
+            tvd_values = self.tvd_data.get("tvd_values", [])
+
+            map_start_row = 3
+            for i, (ahd, tvd) in enumerate(zip(ahd_values, tvd_values)):
+                sheet.cell(row=map_start_row + i, column=12).value = ahd  # L
+                sheet.cell(row=map_start_row + i, column=13).value = tvd  # M
+
+            wb.save(save_path)
+
+            QMessageBox.information(
+                self,
+                "TVD File Generated",
+                f"TVD calculation file successfully created:\n\n{save_path}"
+            )
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error Generating TVD File",
+                str(e)
+            )
+
     def process_sgs_txt_file(self, file_path):
         """Process SGS text file with memory-efficient streaming"""
         try:
@@ -1614,18 +2209,181 @@ class SurveyApp(QWidget):
             MessageBoxWindow.message_simple(self, "Error", f"Failed to process data file:\n{str(e)}", "warning")
             return None
 
+    def update_info_labels(self):
+        """Update the information labels on the results screen"""
+        self.location_label.setText(f"Location\t: {self.location}")
+        self.well_label.setText(f"Well No.\t: {self.well}")
+        self.bdf_label.setText(f"THF\t\t: {self.bdf} ft BDF")
+        self.sea_level_label.setText(f"DFE\t\t: {self.sea_level} ft AMSL")
+        if self.date:
+            self.date_label.setText(f"Date of Survey\t: {self.date.strftime('%d/%m/%Y')}")
+        if self.start_time:
+            self.time_label.setText(f"Start Time\t: {self.start_time.strftime('%H:%M:%S')}")
+
+    def populate_station_table(self):
+        self.table_widget.setRowCount(len(self.station_timings))
+
+        # Handle different data formats
+        if isinstance(self.top_data, np.ndarray):
+            top_data = self.top_data
+        else:
+            top_data = np.array(self.top_data, dtype=object) if self.top_data else None
+
+        if isinstance(self.bottom_data, np.ndarray):
+            bottom_data = self.bottom_data
+        else:
+            bottom_data = np.array(self.bottom_data, dtype=object) if self.bottom_data else None
+
+        for row, station in enumerate(self.station_timings):
+            # Basic station info
+            self.table_widget.setItem(row, 0, QTableWidgetItem(station['station']))
+            self.table_widget.setItem(row, 1, QTableWidgetItem(str(station.get('depth', 'N/A'))))
+            self.table_widget.setItem(row, 2, QTableWidgetItem(station['start'].strftime("%H:%M:%S")))
+            self.table_widget.setItem(row, 3, QTableWidgetItem(station['end'].strftime("%H:%M:%S")))
+
+            # --- AHD / TVD calculation (Excel-equivalent) ---
+            depth_raw = station.get('depth')
+
+            if depth_raw is None:
+                ahd_calc, tvd_calc = None, None
+            else:
+                try:
+                    depth = float(depth_raw)
+                    ahd_list = self.tvd_data.get('ahd_values', [])
+                    tvd_list = self.tvd_data.get('tvd_values', [])
+
+                    # Create DataFrame
+                    df = pd.DataFrame({
+                        'AHD': ahd_list,
+                        'TVD': tvd_list
+                    })
+
+                    print(df)
+
+                    ahd_calc, tvd_calc = self.calculate_ahd_tvd(
+                        thf=self.bdf,
+                        depth=depth,
+                        ahd_list=ahd_list,
+                        tvd_list=tvd_list
+                    )
+                except Exception:
+                    ahd_calc, tvd_calc = None, None
+
+            # Write to table
+            self.table_widget.setItem(
+                row, 4,
+                QTableWidgetItem(f"{ahd_calc:.2f}" if ahd_calc is not None else "N/A")
+            )
+
+            self.table_widget.setItem(
+                row, 5,
+                QTableWidgetItem(f"{tvd_calc:.2f}" if tvd_calc is not None else "N/A")
+            )
+
+            # Process gauge statistics
+            for col_offset, data, gauge_name in [
+                (6, top_data, 'top'),
+                (12, bottom_data, 'bottom')
+            ]:
+                if data is None or len(data) == 0:
+                    continue
+
+                # Handle both structured arrays and object arrays
+                if hasattr(data, 'dtype') and data.dtype.names is not None:
+                    # Structured array
+                    times = data['datetime']
+                    pressures = data['pressure']
+                    temps = data['temperature']
+                else:
+                    # Object array
+                    times = data[:, 0]
+                    pressures = data[:, 1].astype(float)
+                    temps = data[:, 2].astype(float)
+
+                start_dt = np.datetime64(station['start'])
+                end_dt = np.datetime64(station['end'])
+
+                mask = (times >= start_dt) & (times <= end_dt)
+                if not np.any(mask):
+                    stats = ["N/A"] * 6
+                else:
+                    p_slice = pressures[mask]
+                    t_slice = temps[mask]
+                    stats = [
+                        np.max(p_slice), np.min(p_slice), np.median(p_slice),
+                        np.max(t_slice), np.min(t_slice), np.median(t_slice)
+                    ]
+
+                for i, stat in enumerate(stats):
+                    item = QTableWidgetItem(f"{stat:.2f}" if isinstance(stat, float) else str(stat))
+                    self.table_widget.setItem(row, col_offset + i, item)
+
+        # Auto-generate events after populating table
+        try:
+            self.auto_generate_events()
+        except Exception as e:
+            print(e)
+
+        # Enable UI components
+        for btn in [self.copy_button, self.generate_as2_button, self.copy_graphs_button, self.process_data_button]:
+            btn.setEnabled(True)
+
+        self.table_widget.resizeColumnsToContents()
+
+    def calculate_ahd_tvd(self, thf, depth, ahd_list, tvd_list):
+        """
+        Excel-equivalent AHD/TVD calculation.
+        """
+
+        # ---- C9 ----
+        ahd_calc = thf + depth
+
+        # ---- MATCH(C9, L:L, 1) ----
+        idx = None
+        for i in range(len(ahd_list) - 1):
+            if ahd_list[i] <= ahd_calc < ahd_list[i + 1]:
+                idx = i
+                break
+
+        if idx is None:
+            raise ValueError("AHD outside mapping range")
+
+        # ---- INDEX / OFFSET equivalents ----
+        ahd_top = ahd_list[idx]
+        tvd_top = tvd_list[idx]
+
+        ahd_bottom = ahd_list[idx + 1]
+        tvd_bottom = tvd_list[idx + 1]
+
+        # ---- I9 ----
+        tvd_calc = (
+                ((tvd_bottom - tvd_top) / (ahd_bottom - ahd_top))
+                * (ahd_calc - ahd_top)
+                + tvd_top
+        )
+
+        return ahd_calc, tvd_calc
+
     def process_data(self):
         """Streamlined data processing pipeline"""
         try:
-            self._get_template_path()
+            # Get template path from user
+            if not self._get_template_path():
+                return  # User cancelled the save dialog
+
+            # Get the template directory to save AS2 files in the same location
+            template_dir = os.path.dirname(self.template_path)
+
+            # Process data and generate files
             self.copy_statistics()
             self.paste_to_template(self.template_path)
-            self.generate_as2_files()
+            self.generate_tvd_file()
+            self.generate_as2_files(template_dir)
 
             MessageBoxWindow.message_simple(self, "Processing Complete",
                                             "Data processed successfully!\n\n"
                                             f"Template saved as: {os.path.basename(self.template_path)}\n"
-                                            "AS2 files generated for both gauges")
+                                            f"AS2 files saved in: {template_dir}")
         except Exception as e:
             MessageBoxWindow.message_simple(self, "Processing Error", f"Failed to process data:\n{str(e)}", "warning")
 
@@ -1645,6 +2403,8 @@ class SurveyApp(QWidget):
             self.sea_level = survey_info['sea_level']
             self.station_timings = survey_info['station_timings']
             self.tvd_data = survey_info['tvd_data']
+            self.gauge_type = survey_info['gauge_type']
+            self.spm_depths = survey_info['spm_depths']
 
             # Process both gauge data files
             self.top_data = self.process_sgs_txt_file(top_file_path)
@@ -2171,83 +2931,6 @@ class SurveyApp(QWidget):
         # Add legend to the graph container
         parent_container.layout().addWidget(legend_frame, 0, Qt.AlignmentFlag.AlignTop)
 
-    def populate_station_table(self):
-        self.table_widget.setRowCount(len(self.station_timings))
-
-        # Handle different data formats
-        if isinstance(self.top_data, np.ndarray):
-            top_data = self.top_data
-        else:
-            top_data = np.array(self.top_data, dtype=object) if self.top_data else None
-
-        if isinstance(self.bottom_data, np.ndarray):
-            bottom_data = self.bottom_data
-        else:
-            bottom_data = np.array(self.bottom_data, dtype=object) if self.bottom_data else None
-
-        for row, station in enumerate(self.station_timings):
-            # Basic station info
-            self.table_widget.setItem(row, 0, QTableWidgetItem(station['station']))
-            self.table_widget.setItem(row, 1, QTableWidgetItem(str(station.get('depth', 'N/A'))))
-            self.table_widget.setItem(row, 2, QTableWidgetItem(station['start'].strftime("%H:%M:%S")))
-            self.table_widget.setItem(row, 3, QTableWidgetItem(station['end'].strftime("%H:%M:%S")))
-
-            # TVD data
-            ahd = self.tvd_data.get('ahd_values', [])
-            tvd = self.tvd_data.get('tvd_values', [])
-            self.table_widget.setItem(row, 4, QTableWidgetItem(f"{ahd[row]:.2f}" if row < len(ahd) else "N/A"))
-            self.table_widget.setItem(row, 5, QTableWidgetItem(f"{tvd[row]:.2f}" if row < len(tvd) else "N/A"))
-
-            # Process gauge statistics
-            for col_offset, data, gauge_name in [
-                (6, top_data, 'top'),
-                (12, bottom_data, 'bottom')
-            ]:
-                if data is None or len(data) == 0:
-                    continue
-
-                # Handle both structured arrays and object arrays
-                if hasattr(data, 'dtype') and data.dtype.names is not None:
-                    # Structured array
-                    times = data['datetime']
-                    pressures = data['pressure']
-                    temps = data['temperature']
-                else:
-                    # Object array
-                    times = data[:, 0]
-                    pressures = data[:, 1].astype(float)
-                    temps = data[:, 2].astype(float)
-
-                start_dt = np.datetime64(station['start'])
-                end_dt = np.datetime64(station['end'])
-
-                mask = (times >= start_dt) & (times <= end_dt)
-                if not np.any(mask):
-                    stats = ["N/A"] * 6
-                else:
-                    p_slice = pressures[mask]
-                    t_slice = temps[mask]
-                    stats = [
-                        np.max(p_slice), np.min(p_slice), np.median(p_slice),
-                        np.max(t_slice), np.min(t_slice), np.median(t_slice)
-                    ]
-
-                for i, stat in enumerate(stats):
-                    item = QTableWidgetItem(f"{stat:.2f}" if isinstance(stat, float) else str(stat))
-                    self.table_widget.setItem(row, col_offset + i, item)
-
-        # Auto-generate events after populating table
-        try:
-            self.auto_generate_events()
-        except Exception as e:
-            print(e)
-
-        # Enable UI components
-        for btn in [self.copy_button, self.generate_as2_button, self.copy_graphs_button, self.process_data_button]:
-            btn.setEnabled(True)
-
-        self.table_widget.resizeColumnsToContents()
-
     def show_file_upload(self):
         """Show file upload screen and reset state"""
         self.content_stack.setCurrentIndex(0)
@@ -2504,13 +3187,6 @@ class SurveyApp(QWidget):
                 MessageBoxWindow.message_simple(self, "Error", f"Failed to download template:\n{str(e)}")
             return None
 
-    def download_md_tvd_template(self):
-        """Download the MD-to-TVD template Excel file"""
-        return self._download_template(
-            "MD_TVD_Template.xlsx",
-            "Save MD-to-TVD Template"
-        )
-
     def download_timesheet_template(self):
         """Download the MD-to-TVD template Excel file"""
         return self._download_template(
@@ -2531,59 +3207,92 @@ class SurveyApp(QWidget):
         self.template_path = self.download_interpretation_template(silent=False)
         return bool(self.template_path)
 
-    def generate_as2_files(self):
+    def generate_as2_files(self, output_dir=None):
         """Generate AS2 files for both top and bottom gauges"""
         if not self.top_data or not self.bottom_data:
             MessageBoxWindow.message_simple(self, "No Data", "No gauge data available to generate AS2 files", "warning")
             return
 
-        def generate_as2_file(input_file_path, data):
+        def generate_as2_file(input_file_path, data, output_directory=None):
             """Generate AS2 formatted file from processed data with right-aligned columns"""
-            # Determine output file path
-            if input_file_path.endswith('.txt'):
-                output_file_path = input_file_path.replace('.txt', '.AS2')
-            else:
-                output_file_path = input_file_path + '.AS2'
+            try:
+                # Determine output file path
+                if output_directory:
+                    # Use the provided output directory
+                    base_filename = os.path.basename(input_file_path)
+                    if base_filename.endswith('.txt'):
+                        output_filename = base_filename.replace('.txt', '.AS2')
+                    else:
+                        output_filename = base_filename + '.AS2'
+                    output_file_path = os.path.join(output_directory, output_filename)
+                else:
+                    # Use original file location
+                    if input_file_path.endswith('.txt'):
+                        output_file_path = input_file_path.replace('.txt', '.AS2')
+                    else:
+                        output_file_path = input_file_path + '.AS2'
 
-            if not data:
-                # Create empty file if no data
-                with open(output_file_path, 'w'):
-                    pass
+                if not data:
+                    # Create empty file if no data
+                    with open(output_file_path, 'w'):
+                        pass
+                    return output_file_path
+
+                # Create event lookup dictionary
+                event_dict = {dt.strftime("%Y-%m-%d %H:%M:%S"): desc for dt, desc in self.events}
+
+                # Calculate column widths
+                if data:
+                    max_pressure_width = max(len(f"{p:.2f}") for _, p, _ in data)
+                    max_temp_width = max(len(f"{t:.3f}") for _, _, t in data)
+                else:
+                    max_pressure_width = 10
+                    max_temp_width = 10
+
+                with open(output_file_path, 'w') as f:
+                    for dt, pressure, temperature in data:
+                        date_str = dt.strftime("%d/%m/%Y")
+                        time_str = dt.strftime("%H:%M:%S")
+                        datetime_str = dt.strftime("%Y-%m-%d %H:%M:%S")
+
+                        temp_str = f"{temperature:.2f}".rjust(max_temp_width)
+                        pressure_str = f"{pressure:.3f}".rjust(max_pressure_width)
+
+                        event_desc = event_dict.get(datetime_str, "")
+                        line = f"{date_str}  {time_str}    {temp_str}     {pressure_str}  {event_desc}\n"
+                        f.write(line)
+
                 return output_file_path
-
-            # Create event lookup dictionary
-            event_dict = {dt.strftime("%Y-%m-%d %H:%M:%S"): desc for dt, desc in self.events}
-
-            # Calculate column widths
-            max_pressure_width = max(len(f"{p:.2f}") for _, p, _ in data) if data else 0
-            max_temp_width = max(len(f"{t:.3f}") for _, _, t in data) if data else 0
-
-            with open(output_file_path, 'w') as f:
-                for dt, pressure, temperature in data:
-                    date_str = dt.strftime("%d/%m/%Y")
-                    time_str = dt.strftime("%H:%M:%S")
-                    datetime_str = dt.strftime("%Y-%m-%d %H:%M:%S")
-
-                    temp_str = f"{temperature:.2f}".rjust(max_temp_width)
-                    pressure_str = f"{pressure:.3f}".rjust(max_pressure_width)
-
-                    event_desc = event_dict.get(datetime_str, "")
-                    line = f"{date_str}  {time_str}    {temp_str}     {pressure_str}  {event_desc}\n"
-                    f.write(line)
-
-            return output_file_path
+            except Exception as e:
+                print(f"Error generating AS2 file: {e}")
+                return None
 
         try:
-            top_as2_path = generate_as2_file(self.top_file_path, self.top_data)
-            bottom_as2_path = generate_as2_file(self.bottom_file_path, self.bottom_data)
+            # Determine output directory
+            output_directory = output_dir
+
+            # If no output directory provided, use the template directory if available
+            if not output_directory and hasattr(self, 'template_path') and self.template_path:
+                output_directory = os.path.dirname(self.template_path)
+
+            top_as2_path = generate_as2_file(self.top_file_path, self.top_data, output_directory)
+            bottom_as2_path = generate_as2_file(self.bottom_file_path, self.bottom_data, output_directory)
 
             if top_as2_path and bottom_as2_path:
+                # Show success message with file locations
+                if output_directory:
+                    message = (f"Successfully created AS2 files in:\n{output_directory}\n\n"
+                               f"• {os.path.basename(top_as2_path)}\n"
+                               f"• {os.path.basename(bottom_as2_path)}")
+                else:
+                    message = (f"Successfully created AS2 files:\n\n"
+                               f"Top Gauge: {top_as2_path}\n"
+                               f"Bottom Gauge: {bottom_as2_path}")
+
                 MessageBoxWindow.message_simple(
                     self,
                     "Files Created",
-                    f"Successfully created AS2 files:\n\n"
-                    f"Top Gauge: {top_as2_path.split('/')[-1]}\n"
-                    f"Bottom Gauge: {bottom_as2_path.split('/')[-1]}",
+                    message,
                     "check_green")
         except Exception as e:
             MessageBoxWindow.message_simple(self, "Error", f"Failed to create AS2 files:\n{str(e)}", "warning")
@@ -2620,6 +3329,8 @@ class SurveyApp(QWidget):
                 'start_time': self.start_time,
                 'bdf': self.bdf,
                 'sea_level': self.sea_level,
+                'gauge_type': self.gauge_type if hasattr(self, 'gauge_type') else 'SGS',
+                'spm_depths': self.spm_depths if hasattr(self, 'spm_depths') else [],
                 'app_version': '1.0'
             }
 
@@ -2674,6 +3385,8 @@ class SurveyApp(QWidget):
             self.bdf = state.get('bdf')
             self.sea_level = state.get('sea_level')
             self.save_file_path = file_path
+            self.gauge_type = state.get('gauge_type', 'SGS')
+            self.spm_depths = state.get('spm_depths', [])
 
             # Update UI
             self.content_stack.setCurrentIndex(1)  # Show results screen
@@ -2820,6 +3533,63 @@ class SurveyApp(QWidget):
             # Calculate unused rows
             U = 69 - x
 
+            # --- Handle SGS/FGS specific changes ---
+            if hasattr(self, 'gauge_type'):
+                if self.gauge_type == "SGS":
+                    # SGS: Change B1 to "STATIC GRADIENT SURVEY"
+                    sheet['B1'] = "STATIC GRADIENT SURVEY"
+
+                    # Hide columns X to Z
+                    for col in ['X', 'Y', 'Z']:
+                        sheet.column_dimensions[col].hidden = True
+
+                elif self.gauge_type == "FGS":
+                    # FGS: Change B1 to "FLOWING GRADIENT SURVEY"
+                    sheet['B1'] = "FLOWING GRADIENT SURVEY"
+
+                    # Make sure columns X-Z are not hidden
+                    for col in ['X', 'Y', 'Z']:
+                        sheet.column_dimensions[col].hidden = False
+
+                    # Change all cells in column B that contain "static. grad" to "flw. grad"
+                    for row in sheet.iter_rows(min_col=2, max_col=2):  # Column B is column 2
+                        cell = row[0]
+                        if cell.value and "static. grad" in str(cell.value):
+                            cell.value = str(cell.value).replace("static. grad", "flw. grad")
+
+                    # Write SPM data if available
+                    if hasattr(self, 'spm_depths') and self.spm_depths:
+                        start_row = 12
+                        # Write SPM numbers in column AB (column 28)
+                        for i, spm_num in enumerate(range(1, len(self.spm_depths) + 1)):
+                            cell = sheet.cell(row=start_row + i, column=24)  # Column AB = 28
+                            cell.value = spm_num
+
+                        # Write SPM depths in column AC (column 29)
+                        for i, depth in enumerate(self.spm_depths):
+                            cell = sheet.cell(row=start_row + i, column=25)  # Column AC = 29
+                            cell.value = float(depth)
+
+                        # Clear contents and formatting from all cells below the last SPM row in columns AB to AD
+                        last_spm_row = start_row + len(self.spm_depths)
+                        max_row = sheet.max_row
+
+                        for row in range(last_spm_row, max_row + 1):
+                            for col in [24, 25, 36]:  # Columns AB, AC, AD
+                                cell = sheet.cell(row=row, column=col)
+                                cell.value = None
+                                # Clear formatting by setting style to default
+                                cell.style = 'Normal'
+                    else:
+                        # If no SPM depths but FGS is selected, clear columns AB-AD
+                        start_row = 12
+                        max_row = sheet.max_row
+                        for row in range(start_row, max_row + 1):
+                            for col in [24, 25, 26]:
+                                cell = sheet.cell(row=row, column=col)
+                                cell.value = None
+                                cell.style = 'Normal'
+
             # Delete unused rows if needed
             if U > 0:
                 # Delete from top section (row 80-U to 80)
@@ -2851,38 +3621,56 @@ class SurveyApp(QWidget):
             sheet.cell(row=4, column=18, value=self.sea_level)
             sheet.cell(row=5, column=18, value=self.bdf)
 
+            # Change the second last cell in column B to "2nd lubr."
+            # Find the last row with data (assuming data ends at row 13 + x - 1)
+            last_data_row = 14 + x - 1
+            second_last_row = last_data_row - 1
+            sheet.cell(row=second_last_row, column=2, value="2nd lubr.")
+
+            # # ------------------ CREATE PRESSURE / TEMPERATURE CHART ------------------
+            #
+            # # Define data range
+            # start_row = 14
+            # end_row = last_data_row
+            #
+            # # Create references for the data
+            # pressures = Reference(sheet, min_col=7, min_row=start_row, max_row=end_row)  # Column G
+            # depths = Reference(sheet, min_col=4, min_row=start_row, max_row=end_row)  # Column D
+            #
+            # # Create the chart
+            # chart = ScatterChart()
+            # chart.title = "Pressure vs Depth"
+            # chart.x_axis.title = "Pressure (psi)"
+            # chart.y_axis.title = "Depth (ft)"
+            #
+            # # Create an XYSeries (dedicated series for charts with x and y series)
+            # series = XYSeries()
+            # series.yVal = pressures  # Y values (vertical axis)
+            # series.xVal = depths  # X values (horizontal axis)
+            #
+            # # Customize the series appearance
+            # series.marker = Marker('circle', size=8)
+            # series.graphicalProperties.line.noFill = True
+            #
+            # # Add the series to the chart
+            # chart.series.append(series)
+            #
+            # # Add the chart to the worksheet
+            # sheet.add_chart(chart, "P5")
+            #
+            # # Save the workbook
+            # output_path = template_path.replace('.xlsx', '_filled.xlsx')
+            # wb.save(output_path)
+            # print(f"Workbook saved to: {output_path}")
+
             wb.save(template_path)
-
-            # Access the first chart
-            chart = sheet._charts[0]
-
-            # Get Pressure Min/Max (Column G)
-            pressure_values = [
-                sheet.cell(row=r, column=7).value
-                for r in range(13, 13 + x)
-                if isinstance(sheet.cell(row=r, column=7).value, (int, float))
-            ]
-            if pressure_values:
-                chart.x_axis.scaling.min = min(pressure_values)
-                chart.x_axis.scaling.max = max(pressure_values)
-
-            # Get Temperature Min/Max (Column E)
-            temp_values = [
-                sheet.cell(row=r, column=10).value
-                for r in range(13, 13 + x)
-                if isinstance(sheet.cell(row=r, column=10).value, (int, float))
-            ]
-
-            # Save the workbook again after modifying chart axes
-            wb.save(template_path)
-
-            return True
 
         except Exception as e:
-            MessageBoxWindow.message_simple(self, "Paste Error", f"Failed to paste to template:\n{str(e)}", "warning")
-            return False
+            print(f"Error in paste_to_template: {e}")
+            import traceback
+            traceback.print_exc()
 
-    # Add this helper method to the class
+
     def set_button_success_feedback(self, button, success_text, success_icon, original_text, original_icon):
         """Set button to success state and schedule reset"""
         button.setStyleSheet(f"""
@@ -2899,18 +3687,6 @@ class SurveyApp(QWidget):
 
         # Set timer to revert button after 3 seconds
         QTimer.singleShot(3000, lambda: self.reset_button(button, original_text, original_icon))
-
-    # Helper methods needed for compatibility
-    def update_info_labels(self):
-        """Update the information labels on the results screen"""
-        self.location_label.setText(f"Location\t: {self.location}")
-        self.well_label.setText(f"Well No.\t: {self.well}")
-        self.bdf_label.setText(f"THF\t\t: {self.bdf} ft BDF")
-        self.sea_level_label.setText(f"DFE\t\t: {self.sea_level} ft AMSL")
-        if self.date:
-            self.date_label.setText(f"Date of Survey\t: {self.date.strftime('%d/%m/%Y')}")
-        if self.start_time:
-            self.time_label.setText(f"Start Time\t: {self.start_time.strftime('%H:%M:%S')}")
 
     def populate_events_table(self):
         """Populate the events table with saved events"""

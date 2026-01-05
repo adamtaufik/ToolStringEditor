@@ -60,27 +60,29 @@ class InitializationManager:
 # -------------------------
 main_window = None  # global reference to prevent GC
 
-def show_trial_check_and_start_window(user_name, user_email):
+def show_trial_check_and_start_window(user_name, user_email, trial):
     global main_window
 
-    # Trial Check
-    expiration_date = datetime(2026, 1, 15)
-    today = datetime.today()
-    days_left = (expiration_date - today).days
+    if trial:
 
-    if days_left < 0:
-        QMessageBox.critical(
-            splash,
-            "Trial Expired",
-            "The free trial period has ended.\nPlease contact Adam to continue using the app.",
-        )
-        sys.exit(0)
-    else:
-        QMessageBox.information(
-            splash,
-            "Free Trial",
-            f"Valid until {expiration_date.strftime('%d %B %Y')}.\nDays remaining: {days_left} day(s).",
-        )
+        # Trial Check
+        expiration_date = datetime(2026, 1, 31)
+        today = datetime.today()
+        days_left = (expiration_date - today).days
+
+        if days_left < 0:
+            QMessageBox.critical(
+                splash,
+                "Trial Expired",
+                "The free trial period has ended.\nPlease contact Adam to continue using the app.",
+            )
+            sys.exit(0)
+        else:
+            QMessageBox.information(
+                splash,
+                "Free Trial",
+                f"Valid until {expiration_date.strftime('%d %B %Y')}.\nDays remaining: {days_left} day(s).",
+            )
 
     # Initialization
     app.setFont(QFont("Roboto", 10))
@@ -119,6 +121,11 @@ if __name__ == "__main__":
     splash.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, False)
     splash.show()
 
+    login = False
+    # trial = False
+    # login = True
+    trial = True
+
     # -------------------------
     # Start login in background
     # -------------------------
@@ -139,11 +146,13 @@ if __name__ == "__main__":
         print(f"Login successful: {user_name} ({user_email})")
 
         # Continue with trial check and initialization
-        show_trial_check_and_start_window(user_name, user_email)
+        show_trial_check_and_start_window(user_name, user_email, trial)
 
-    login_thread = LoginWorker()
-    login_thread.finished.connect(on_login_finished)
-    login_thread.start()
+    if login:
+        login_thread = LoginWorker()
+        login_thread.finished.connect(on_login_finished)
+        login_thread.start()
+    else:
+        show_trial_check_and_start_window("user_name", "user_email", trial)
 
-    # show_trial_check_and_start_window("user_name", "user_email")
     sys.exit(app.exec())
