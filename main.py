@@ -121,10 +121,10 @@ if __name__ == "__main__":
     splash.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, False)
     splash.show()
 
-    login = False
-    # trial = False
-    # login = True
-    trial = True
+    # login = False
+    trial = False
+    login = True
+    # trial = True
 
     # -------------------------
     # Start login in background

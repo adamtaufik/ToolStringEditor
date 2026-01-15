@@ -5,8 +5,10 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QMessageBox, QHBox
 from features.calculator.MDtoTVD_tab import MDtoTVDTab
 from features.calculator.hydrostatic_tab import HydrostaticTab
 from features.calculator.shear_pin_tab import ShearPinTab
+from features.calculator.spool_capacity_tab import SpoolCapacityTab
 from features.calculator.weight_tab import WeightTab
 from features.calculator.wirefall_tab import WirefallTab
+from features.calculator.wireweight_tab import WireWeightTab
 from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
 from ui.components.ui_titlebar import CustomTitleBar
@@ -18,12 +20,20 @@ from utils.theme_manager import apply_theme, toggle_theme
 data = [
     ("2 3/8\"", "0.092\"", 10),
     ("2 3/8\"", "0.108\"", 8),
+    ("2 3/8\"", "0.125\"", 5),
     ("2 7/8\"", "0.092\"", 12),
     ("2 7/8\"", "0.108\"", 10),
     ("2 7/8\"", "0.125\"", 8),
     ("3 1/2\"", "0.092\"", 16),
     ("3 1/2\"", "0.108\"", 15),
     ("3 1/2\"", "0.125\"", 7),
+    ("4 1/2\"", "0.108\"", 27),
+    ("4 1/2\"", "0.125\"", 22),
+    ("5 1/2\"", "0.108\"", 40),
+    ("5 1/2\"", "0.125\"", 35),
+    ("7 5/8\"", "0.108\"", 120),
+    ("7 5/8\"", "0.125\"", 110),
+    ("9 5/8\"", "0.125\"", 300),
 ]
 df = pd.DataFrame(data, columns=["Tubing O.D.", "Wire Size", "Wire Fall/1000'"])
 
@@ -31,7 +41,7 @@ class WirelineCalculatorApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Wireline Calculator")
-        self.setMinimumWidth(1300)
+        self.setMinimumWidth(1280)
         self.setMinimumHeight(get_height() - 10)  # ✅ Set minimum resizable height
 
         # Top-level vertical layout (entire window)
@@ -57,8 +67,10 @@ class WirelineCalculatorApp(QWidget):
         self.tabs.addTab(HydrostaticTab(), "Hydrostatic Pressure")
         self.tabs.addTab(WirefallTab(data), "Wirefall")
         self.tabs.addTab(WeightTab(), "Tool String Weight")
+        self.tabs.addTab(WireWeightTab(), "Wire Weight")
         self.tabs.addTab(ShearPinTab(), "Shear Pins")
         self.tabs.addTab(MDtoTVDTab(), "MD to TVD")
+        self.tabs.addTab(SpoolCapacityTab(), "Spool Capacity")
         self.set_tab_stylesheet(self.tabs)  # Apply styling to tabs
 
         # ✅ Toolbar-style sidebar (left) for Save/Load

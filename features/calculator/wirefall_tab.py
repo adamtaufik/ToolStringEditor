@@ -76,61 +76,97 @@ class WirefallTab(QWidget):
         main_layout.addWidget(splitter)
 
     def create_input_section(self):
-        input_layout = QGridLayout()
+        layout = QGridLayout()
 
-        # Create and add all input widgets
-        self.depth_input = QLineEdit()
-        self.length_input = QLineEdit()
+        row = 0
+
+        # A – Depth of Tool String
+        layout.addWidget(QLabel("Depth of End of Tool String (A):"), row, 0)
+        self.input_A = QLineEdit()
+        layout.addWidget(self.input_A, row, 1)
+
         self.unit_toggle_btn = QPushButton("Units: ft")
         self.unit_toggle_btn.setCheckable(True)
         self.unit_toggle_btn.clicked.connect(self.toggle_units)
+        layout.addWidget(self.unit_toggle_btn, row, 2)
+        row += 1
 
-        self.tubing_combo = QComboBox()
-        self.tubing_combo.addItems(sorted(self.df["Tubing O.D."].unique()))
+        # B – Odometer reading
+        layout.addWidget(QLabel("Odometer Reading (Wire into Drum) (B):"), row, 0)
+        self.input_B = QLineEdit()
+        layout.addWidget(self.input_B, row, 1)
+        row += 1
 
+        # D – S/B to wireline deck
+        layout.addWidget(QLabel("S/B to Wireline Deck (D):"), row, 0)
+        self.input_D = QLineEdit()
+        layout.addWidget(self.input_D, row, 1)
+        row += 1
+
+        # E – RSU to hay pulley
+        layout.addWidget(QLabel("RSU to Hay Pulley (E):"), row, 0)
+        self.input_E = QLineEdit()
+        layout.addWidget(self.input_E, row, 1)
+        row += 1
+
+        # F – Length of tool string
+        layout.addWidget(QLabel("Length of tool string (F):"), row, 0)
+        self.input_F = QLineEdit()
+        layout.addWidget(self.input_F, row, 1)
+        row += 1
+
+        # H – Length from S/B to zero point
+        layout.addWidget(QLabel("Length from S/B to zero point (H):"), row, 0)
+        self.input_H = QLineEdit()
+        layout.addWidget(self.input_H, row, 1)
+        row += 1
+
+        # Wire & Tubing selection
+        layout.addWidget(QLabel("Wire Size:"), row, 0)
         self.wire_combo = QComboBox()
         self.wire_combo.addItems(sorted(self.df["Wire Size"].unique()))
+        layout.addWidget(self.wire_combo, row, 1)
+        row += 1
 
-        # Add to layout
-        input_layout.addWidget(QLabel("Top of Rope Socket Depth:"), 0, 0)
-        input_layout.addWidget(self.depth_input, 0, 1)
-        input_layout.addWidget(self.unit_toggle_btn, 0, 2)
+        layout.addWidget(QLabel("Tubing O.D.:"), row, 0)
+        self.tubing_combo = QComboBox()
+        self.tubing_combo.addItems(sorted(self.df["Tubing O.D."].unique()))
+        layout.addWidget(self.tubing_combo, row, 1)
+        row += 1
 
-        input_layout.addWidget(QLabel("Length of Wire Left in Hole:"), 1, 0)
-        input_layout.addWidget(self.length_input, 1, 1)
-
-        input_layout.addWidget(QLabel("Wire Size:"), 2, 0)
-        input_layout.addWidget(self.wire_combo, 2, 1)
-
-        input_layout.addWidget(QLabel("Tubing Size:"), 3, 0)
-        input_layout.addWidget(self.tubing_combo, 3, 1)
-
+        # Calculate button
         self.calculate_btn = QPushButton("Calculate")
         self.calculate_btn.clicked.connect(self.calculate_wirefall)
+        self.calculate_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.calculate_btn.setStyleSheet("""
             QPushButton {
                 background-color: #800020;
                 color: white;
-                padding: 5px;
+                padding: 6px;
                 border-radius: 4px;
             }
             QPushButton:hover {
                 background-color: #a00028;
             }
         """)
-        self.calculate_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        input_layout.addWidget(self.calculate_btn, 4, 0, 1, 3)
+        layout.addWidget(self.calculate_btn, row, 0, 1, 3)
+        row += 1
 
-        # Output labels
-        self.output_fall_per_1000 = QLabel("Wire Fall Back per 1000': -")
-        self.output_total_fall = QLabel("Wire Fall Back Total: -")
-        self.output_top_wire = QLabel("Top of Wire (Approximate): -")
+        # Outputs
+        self.output_G1 = QLabel("Wire Fall Back per 1000': -")
+        self.output_G2 = QLabel("Wire Fall Back Total: -")
+        self.output_W1 = QLabel("Wire Left in Hole (W1): -")
+        self.output_W2 = QLabel("Top of Wire (W2): -")
 
-        input_layout.addWidget(self.output_fall_per_1000, 5, 0, 1, 3)
-        input_layout.addWidget(self.output_total_fall, 6, 0, 1, 3)
-        input_layout.addWidget(self.output_top_wire, 7, 0, 1, 3)
+        layout.addWidget(self.output_G1, row, 0, 1, 3)
+        row += 1
+        layout.addWidget(self.output_G2, row, 0, 1, 3)
+        row += 1
+        layout.addWidget(self.output_W1, row, 0, 1, 3)
+        row += 1
+        layout.addWidget(self.output_W2, row, 0, 1, 3)
 
-        return input_layout
+        return layout
 
     def create_formula_section(self):
         formula_layout = QVBoxLayout()
@@ -166,11 +202,14 @@ class WirefallTab(QWidget):
 
     def calculate_wirefall(self):
         try:
-            depth = float(self.depth_input.text())
-            wire_left = float(self.length_input.text())
-            if self.unit_toggle_btn.text() == "Units: m":
-                depth *= 3.28084
-                wire_left *= 3.28084
+            A = float(self.input_A.text())
+            B = float(self.input_B.text())
+            D = float(self.input_D.text())
+            E = float(self.input_E.text())
+            F = float(self.input_F.text())
+            H = float(self.input_H.text())
+
+            C = H - F
 
             tubing = self.tubing_combo.currentText()
             wire = self.wire_combo.currentText()
@@ -180,16 +219,19 @@ class WirefallTab(QWidget):
                 self.formula_display.setHtml("<div style='color: red;'>No data for this combination.</div>")
                 return
 
-            fall_per_1000 = row.iloc[0]["Wire Fall/1000'"]
-            total_fall = (fall_per_1000 / 1000) * wire_left
-            top_wire = (depth - wire_left) + total_fall
+            G1 =  row.iloc[0]["Wire Fall/1000'"]
+            W1 = B + C + D + E
+            G2 = (G1 / 1000) * W1
+            A2 = A - F
+            W2 = A2 - (W1 - G2)
 
-            self.output_fall_per_1000.setText(f"Wire Fall Back per 1000': {fall_per_1000} ft")
-            self.output_total_fall.setText(f"Wire Fall Back Total: {total_fall:.2f} ft")
-            self.output_top_wire.setText(f"Top of Wire (Approximate): {top_wire:.2f} ft")
+            self.output_G1.setText(f"Wire Fall Back per 1000': {G1} ft")
+            self.output_G2.setText(f"Wire Fall Back Total: {G2:.2f} ft")
+            self.output_W1.setText(f"Wire left in hole (Approximate): {W1:.2f} ft")
+            self.output_W2.setText(f"Top of Wire (Approximate): {W2:.2f} ft")
 
             # Update the wire illustration
-            self.wire_illustration.update_illustration(depth, wire_left, top_wire, total_fall)
+            self.wire_illustration.update_illustration(A2, W1, W2, G2)
 
             self.formula_display.setHtml(f"""
                 <style>                    
@@ -221,20 +263,24 @@ class WirefallTab(QWidget):
                     }}
                 </style>
 
+                <div class="result">Wire Left in Hole (Approximate)</div>
+                <div class="formula"><i>W1</i> = {B:.2f} + {C:.2f} + {D:.2f} + {E:.2f}</div>
+                <div class="formula">= {W1:.2f} <span class="unit">ft</span></div>
+                
                 <div class="result">Wire Fall Back Total</div>
                 <div class="formula">
-                    <i>F</i><sub>total</sub> = 
+                    <i>G</i><sub>total</sub> = 
                     <span class="frac">
-                        <span class="numerator">{fall_per_1000}</span>
+                        <span class="numerator">{G1}</span>
                         <span class="denominator">/1000</span>
                     </span>
-                    × {wire_left:.2f}
+                    × {W1:.2f}
                 </div>
-                <div class="formula">= {total_fall:.2f} <span class="unit">ft</span></div>
+                <div class="formula">= {G2:.2f} <span class="unit">ft</span></div>
 
                 <div class="result">Top of Wire (Approximate)</div>
-                <div class="formula"><i>T</i> = ( {depth:.2f} − {wire_left:.2f} ) + {total_fall:.2f}</div>
-                <div class="formula">= {top_wire:.2f} <span class="unit">ft</span></div>
+                <div class="formula"><i>W2</i> = {A2:.2f} − ({W1:.2f} - {G2:.2f})</div>
+                <div class="formula">= {W2:.2f} <span class="unit">ft</span></div>
             """)
 
         except ValueError:

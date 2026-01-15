@@ -30,7 +30,7 @@ class HydrostaticTab(QWidget):
         # Input section
         input_widget = QWidget()
         input_widget.setLayout(self.create_input_section())
-        left_layout.addWidget(input_widget, stretch=1)
+        left_layout.addWidget(input_widget)
 
         # Illustration
         self.well_illustration = FluidIllustration()
@@ -64,10 +64,10 @@ class HydrostaticTab(QWidget):
 
         self.fluid_list = QListWidget()
         self.fluid_list.addItems([
+            "Oil (Light) - 0.35 psi/ft",
             "Fresh Water - 0.433 psi/ft",
             "Seawater - 0.445 psi/ft",
             "Mud (10 ppg) - 0.52 psi/ft",
-            "Oil (Light) - 0.35 psi/ft",
             "Brine - 0.48 psi/ft",
             "Gas - 0.06 psi/ft"
         ])
@@ -85,7 +85,7 @@ class HydrostaticTab(QWidget):
         self.fluid_list.setCursor(Qt.CursorShape.PointingHandCursor)
         fluid_layout.addWidget(self.fluid_list)
         input_layout.addWidget(fluid_group)
-        self.fluid_list.setFixedHeight(118)
+        self.fluid_list.setFixedHeight(100)
 
         # Calculator section
         calculator_group = QWidget()
@@ -101,20 +101,27 @@ class HydrostaticTab(QWidget):
         tvd_note.setAlignment(Qt.AlignmentFlag.AlignCenter)
         calculator_layout.addWidget(tvd_note)
 
+        lowerleft_layout = QHBoxLayout()
+
         # Calculate button
         self.calculate_btn = self.create_calculate_button()
-        calculator_layout.addWidget(self.calculate_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        lowerleft_layout.addWidget(self.calculate_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        result_layout = QVBoxLayout()
 
         # Result labels
-        self.result_label = QLabel("Hydrostatic Pressure (incl. CITHP): — psi (— kPa)")
+        self.result_label = QLabel("Hydrostatic Pressure: — psi")
         self.result_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.result_label.setStyleSheet("font-size: 12pt; margin-top: 10px")
-        calculator_layout.addWidget(self.result_label)
+        result_layout.addWidget(self.result_label)
 
         self.diff_label = QLabel("")  # shows only when RP/PB provided
         self.diff_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.diff_label.setStyleSheet("font-size: 12pt; color: #0D47A1;")
-        calculator_layout.addWidget(self.diff_label)
+        result_layout.addWidget(self.diff_label)
+
+        lowerleft_layout.addLayout(result_layout)
+        calculator_layout.addLayout(lowerleft_layout)
 
         input_layout.addWidget(calculator_group)
         return input_layout
@@ -145,7 +152,7 @@ class HydrostaticTab(QWidget):
             line.addLayout(imp_box)
 
             # Spacer between the two systems (optional)
-            line.addSpacing(12)
+            line.addSpacing(8)
 
             # Metric
             met_box = QHBoxLayout()
@@ -430,6 +437,7 @@ class HydrostaticTab(QWidget):
     def calculate_hydrostatic_pressure(self):
         try:
             psi_ft = float(self.gradient_psi_ft.text())
+            gas_psi_ft = 0.06
             fluid_level = float(self.fluid_level_ft.text())
             target_depth = float(self.target_depth_ft.text())
 
@@ -447,12 +455,13 @@ class HydrostaticTab(QWidget):
 
             # Base hydrostatic (from gradient) + CITHP
             hydrostatic_from_gradient = psi_ft * fluid_column_height
-            hp_total_psi = hydrostatic_from_gradient + cithp_psi  # include CITHP
+            gas_hydrostatic = gas_psi_ft * fluid_level
+            hp_total_psi = hydrostatic_from_gradient + gas_hydrostatic + cithp_psi
 
             # Update results
             hp_total_kpa = hp_total_psi * self.PSI_TO_KPA
             self.result_label.setText(
-                f"Hydrostatic Pressure (incl. CITHP): {hp_total_psi:,.2f} psi ({hp_total_kpa:,.2f} kPa)"
+                f"Hydrostatic Pressure: {hp_total_psi:,.2f} psi"
             )
 
             # Differential pressure if RP is provided
@@ -460,7 +469,7 @@ class HydrostaticTab(QWidget):
                 diff_psi = rp_psi - hp_total_psi
                 diff_kpa = diff_psi * self.PSI_TO_KPA
                 self.diff_label.setText(
-                    f"Differential Pressure: {diff_psi:,.2f} psi ({diff_kpa:,.2f} kPa)"
+                    f"Differential Pressure: {diff_psi:,.2f} psi"
                 )
             else:
                 self.diff_label.setText("")
@@ -524,25 +533,22 @@ class HydrostaticTab(QWidget):
                 }}
             </style>
 
-            <div class="formula">Pressure Gradient = <i>G</i> = {gradient:.3f} psi/ft</div>
+            <div class="formula">Liquid Gradient, <i>G</i><sub>liquid</sub> = {gradient:.3f} psi/ft</div>
+            <div class="formula">Gas Gradient, <i>G</i><sub>gas</sub> = 0.06 psi/ft</div>
             <div class="formula">Fluid Level = {fluid_level:.1f} ft (TVD)</div>
             <div class="formula">Target Depth = {target_depth:.1f} ft (TVD)</div>
-
-            <div class="formula">Fluid Column Height = Target Depth − Fluid Level</div>
-            <div class="formula"><span class="overline">   </span> = {target_depth:.1f} − {fluid_level:.1f}</div>
-            <div class="formula"><span class="overline">   </span> = {column_height:.1f} ft</div>
-
-            <div class="result">Hydrostatic (from gradient)</div>
-            <div class="formula"><i>P</i><sub>grad</sub> = <i>G</i> × Height</div>
-            <div class="formula"><span class="overline">   </span> = {gradient:.3f} × {column_height:.1f}</div>
-            <div class="formula"><span class="overline">   </span> = {hydrostatic_from_gradient:.2f} psi</div>
-
-            <div class="result">CITHP (at surface)</div>
             <div class="formula"><i>P</i><sub>CITHP</sub> = {cithp:.2f} psi</div>
 
+            <div class="result">Column Heights</div>
+            <div class="formula">Liquid Column Height, <i>H</i><sub>liquid</sub> = Target Depth − Fluid Level</div>
+            <div class="formula"><span class="overline">   </span> = {target_depth:.1f} − {fluid_level:.1f}</div>
+            <div class="formula"><span class="overline">   </span> = {column_height:.1f} ft</div>
+            <div class="formula">Gas Column Height, <i>H</i><sub>gas</sub> = {fluid_level:.1f} ft</div>
+
             <div class="result">Hydrostatic Pressure (incl. CITHP)</div>
-            <div class="formula"><i>HP</i> = <i>P</i><sub>grad</sub> + <i>P</i><sub>CITHP</sub></div>
-            <div class="formula"><span class="overline">   </span> = {hydrostatic_from_gradient:.2f} + {cithp:.2f}</div>
+            <div class="formula"><i>HP</i> = <i>P</i><sub>liquid</sub> + <i>P</i><sub>gas</sub> + <i>P</i><sub>CITHP</sub></div>
+            <div class="formula"><i>HP</i> = <i>G</i><sub>liquid</sub> × <i>H</i><sub>liquid</sub> + <i>G</i><sub>gas</sub> × <i>H</i><sub>gas</sub>  + <i>P</i><sub>CITHP</sub></div>
+            <div class="formula"><span class="overline">   </span> = ({gradient:.3f} × {column_height:.1f}) + (0.06 × {fluid_level:.1f}) + {cithp:.2f}</div>
             <div class="formula"><span class="overline">   </span> = {hp_total:.2f} psi</div>
 
             {rp_lines}
