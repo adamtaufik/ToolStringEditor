@@ -151,18 +151,19 @@ class StartWindow(QWidget):
     def __init__(self, app_icon=None):
         super().__init__()
         self.setWindowTitle("Deleum WireHub")
-        self.setFixedSize(940, 600)
+        self.setFixedSize(int(1920/1.75), int(1080/1.75))
         session = SessionManager()
         self.user_info = session.get_user()
 
         if app_icon:
             self.setWindowIcon(app_icon)
+
         # ---- Background Wave Animation ----
         video_path = get_path(os.path.join("assets", "backgrounds", "Wave Loop.mp4"))
 
         self.scene = QGraphicsScene(self)
         self.video_item = QGraphicsVideoItem()
-        self.video_item.setOpacity(0.55)  # adjust transparency if needed
+        # self.video_item.setOpacity(0.55)
         self.scene.addItem(self.video_item)
 
         self.bg_view = QGraphicsView(self.scene, self)
@@ -183,19 +184,17 @@ class StartWindow(QWidget):
         # Media Player
         self.player = QMediaPlayer(self)
         self.audio = QAudioOutput(self)
-        self.audio.setVolume(0.0)  # mute (background animation should not play audio)
+        self.audio.setVolume(0.0)
         self.player.setAudioOutput(self.audio)
         self.player.setVideoOutput(self.video_item)
         self.player.setSource(QUrl.fromLocalFile(video_path))
         self.player.play()
         self.player.setLoops(QMediaPlayer.Loops.Infinite)
 
-        # background style same as before...
+        # Remove the background gradient from the main window
         self.setStyleSheet("""
             QWidget {
                 font-family: 'Segoe UI';
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #101418, stop:0.45 #151a21, stop:1 #1a2028);
                 color: white;
             }
         """)
@@ -206,18 +205,19 @@ class StartWindow(QWidget):
         if os.path.exists(logo_path):
             logo.setPixmap(QPixmap(logo_path).scaledToHeight(100, Qt.TransformationMode.SmoothTransformation))
         logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo.setStyleSheet("background: transparent;")  # Make logo background transparent
 
         session = SessionManager()
         user_name, user_email = session.get_user()
         user_label = QLabel(f"Signed in as {user_name} ({user_email})")
         user_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-        user_label.setStyleSheet("color: #9aa7b5; font-size: 11px; padding-right: 12px;")
+        user_label.setStyleSheet(
+            "background: transparent; color: #9aa7b5; font-size: 11px; padding-right: 12px;")  # Added transparent background
 
         header_layout = QVBoxLayout()
         header_layout.setContentsMargins(10, 10, 10, 0)
         header_layout.addWidget(logo)
         header_layout.addWidget(user_label)
-
 
         # ---- Center: app cards grid ----
         grid = QGridLayout()
@@ -245,7 +245,7 @@ class StartWindow(QWidget):
         ]
 
         row, col = 0, 0
-        max_cols = 3  # like your example: 3 tiles centered
+        max_cols = 3
         for icon_rel, title, subtitle_text, callback in cards_spec:
             icon_abs = get_path(icon_rel)
             card = AppCard(icon_abs, title, subtitle_text)
@@ -255,6 +255,7 @@ class StartWindow(QWidget):
             if col >= max_cols:
                 col = 0
                 row += 1
+
         # ---- Footer: version ----
         footer_widget = FooterWidget()
         footer_version_info = footer_widget.get_version_info()
@@ -262,16 +263,7 @@ class StartWindow(QWidget):
         footer.setAlignment(Qt.AlignmentFlag.AlignRight)
         footer.setStyleSheet("color: #9aa7b5; font-size: 11px; padding: 6px 10px;")
 
-        # ---- Main layout ----
-        main = QVBoxLayout(self)
-        main.setContentsMargins(0, 0, 0, 0)
-        main.addLayout(header_layout)
-        main.addSpacing(10)
-        main.addLayout(grid)
-        main.addStretch()
-        main.addWidget(footer)
-
-
+        # ---- Action buttons ----
         buttons_layout = QHBoxLayout()
         buttons_layout.setContentsMargins(0, 0, 12, 12)
         buttons_layout.setSpacing(8)
@@ -289,7 +281,7 @@ class StartWindow(QWidget):
         # feedback button
         self.feedback_btn = QPushButton()
         self.feedback_btn.setFixedSize(34, 34)
-        self.feedback_btn.setIcon(QIcon(get_icon_path("feedback")))  # you can use a 📨 or 💬 icon
+        self.feedback_btn.setIcon(QIcon(get_icon_path("feedback")))
         self.feedback_btn.setIconSize(QSize(18, 18))
         self.feedback_btn.setToolTip("Send feedback")
         self.feedback_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -304,7 +296,7 @@ class StartWindow(QWidget):
         self.exit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.exit_btn.clicked.connect(self.close_app)
 
-        # shared style
+        # shared style for buttons
         button_style = """
             QPushButton {
                 border-radius: 17px;
@@ -325,7 +317,14 @@ class StartWindow(QWidget):
         buttons_layout.addWidget(self.feedback_btn)
         buttons_layout.addWidget(self.exit_btn)
 
-        # ✅ Add buttons *before* footer
+        # ---- Main layout ----
+        main = QVBoxLayout(self)
+        main.setContentsMargins(0, 0, 0, 0)
+        main.setSpacing(0)  # Remove spacing between widgets
+        main.addLayout(header_layout)
+        main.addSpacing(10)
+        main.addLayout(grid)
+        main.addStretch()
         main.addLayout(buttons_layout)
         main.addWidget(footer)
 
