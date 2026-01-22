@@ -1,193 +1,171 @@
-from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton, QComboBox, QGraphicsDropShadowEffect
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QCursor, QColor
+# ui/components/toolstring_editor/tool_widget.py
+from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QComboBox
+from PyQt6.QtCore import Qt, QSignalBlocker, QPoint
+from PyQt6.QtGui import QPixmap, QCursor, QMouseEvent, QDrag
 from database.logic_database import get_tool_data
-from features.editors.logic_image_processing import expand_and_center_images
-from utils.path_finder import get_tool_image_path  # ✅ Import helper function
-from utils.styles import COMBO_STYLE, COMBO_STYLE_BLACK
+from utils.path_finder import get_tool_image_path
+from utils.styles import COMBO_STYLE_BLACK
 
 
 class ToolWidget(QWidget):
-    """Widget representing a tool inside the DropZone."""
-    BACKGROUND_WIDTH = 80  # Expanded background width for uniformity
-    
+    """Widget representing a tool inside the DropZone for tool string editor."""
+
     def __init__(self, tool_name, drop_zone, summary_widget=None):
         super().__init__(drop_zone)
-        self.tool_name = tool_name
-        self.drop_zone = drop_zone
-        self.summary_widget = summary_widget
 
-        shadow = []
-        for i in range(4):
-            # **Soft Shadow Effect**
-            shadow.append(QGraphicsDropShadowEffect())
-            shadow[i].setBlurRadius(10)  # Softness of the shadow
-            shadow[i].setXOffset(2)  # Horizontal shadow offset
-            shadow[i].setYOffset(2)  # Vertical shadow offset
-            shadow[i].setColor(QColor(50, 50, 50, 100))  # Shadow color with transparency
+        try:
+            self.tool_name = tool_name
+            self.base_name = tool_name
+            self.display_name = tool_name
+            self.drop_zone = drop_zone
+            self.summary_widget = summary_widget
+            self.drag_start_pos = None
 
-        # **Retrieve tool data**
-        self.tool_data = get_tool_data(tool_name)
-        if not self.tool_data:
-            print(f"⚠️ WARNING: No data found for tool '{tool_name}'!")
+            # --- load DB first ---
+            self.tool_data = get_tool_data(tool_name)
+            if not self.tool_data:
+                print(f"⚠️ No data for '{tool_name}'")
+                return
+
+            # --- build UI ---
+            self.layout = QHBoxLayout(self)
+            self.layout.setSpacing(5)
+            self.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            self.layout.setContentsMargins(7, 0, 0, 0)
+
+            # image (make draggable) - copied from PCE editor
+            self.image_label = QLabel()
+            self.image_label.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
+            image_path = get_tool_image_path(tool_name)
+            pixmap = QPixmap(image_path)
+            self.image_label.setPixmap(pixmap)
+
+            # Store original image size for centering
+            self.original_width = pixmap.width()
+            self.original_height = pixmap.height()
+
+            self.image_label.setFixedSize(self.original_width, self.original_height)
+            self.image_label.setStyleSheet("background: transparent; border: none;")
+            self.image_label.mousePressEvent = self._image_mouse_press
+            self.image_label.mouseMoveEvent = self._image_mouse_move
+            self.layout.addWidget(self.image_label)
+
+            # tool name
+            self.label = QLabel(tool_name)
+            self.label.setFixedSize(118, 35)
+            self.label.setWordWrap(True)
+            self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.label.setStyleSheet(
+                "border: 0; border-bottom: 1px solid #A9A9A9; background: lightgray; color: black;"
+            )
+            self.layout.addWidget(self.label)
+
+            # **Nominal Size Selector**
+            self.nominal_size_selector = QComboBox()
+            self.nominal_size_selector.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            self.nominal_size_selector.setFixedWidth(87)
+
+            nominal_sizes = []
+            for size in self.tool_data.get("Nominal Sizes", []):
+                nominal_sizes.append(str(size))
+            self.nominal_size_selector.addItems(nominal_sizes)
+            self.nominal_size_selector.setStyleSheet(COMBO_STYLE_BLACK)
+            self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
+            if self.summary_widget:
+                self.nominal_size_selector.currentTextChanged.connect(self.summary_widget.update_summary)
+            self.layout.addWidget(self.nominal_size_selector)
+
+            # **OD Label**
+            self.od_label = QLabel("N/A")
+            self.od_label.setFixedWidth(62)
+            self.od_label.setStyleSheet("border: none; color: black;")
+            self.od_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.layout.addWidget(self.od_label)
+
+            # **Length Label**
+            self.length_label = QLabel("N/A")
+            self.length_label.setFixedWidth(60)
+            self.length_label.setStyleSheet("border: none; color: black;")
+            self.length_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.layout.addWidget(self.length_label)
+
+            # **Weight Label**
+            self.weight_label = QLabel("N/A")
+            self.weight_label.setFixedWidth(67)
+            self.weight_label.setStyleSheet("border: none; color: black;")
+            self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.layout.addWidget(self.weight_label)
+
+            # **Top Connection Label**
+            self.top_connection_label = QLabel("N/A")
+            self.top_connection_label.setFixedWidth(82)
+            self.top_connection_label.setStyleSheet("border: none; color: black;")
+            self.top_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.layout.addWidget(self.top_connection_label)
+
+            # **Lower Connection Selector**
+            self.lower_connection_label = QComboBox()
+            self.lower_connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            self.lower_connection_label.setFixedWidth(127)
+            self.lower_connection_label.setStyleSheet(COMBO_STYLE_BLACK)
+            self.lower_connection_label.currentTextChanged.connect(self.update_tool_info)
+            if self.summary_widget:
+                self.lower_connection_label.currentTextChanged.connect(self.summary_widget.update_summary)
+            self.layout.addWidget(self.lower_connection_label)
+
+            # Apply layout and update details
+            self.setLayout(self.layout)
+            self.update_tool_info()
+        except Exception as e:
+            print(f"Error creating ToolWidget: {e}")
+
+    # Drag and drop methods - same as PCE editor
+    def _image_mouse_press(self, event: QMouseEvent):
+        """Handle mouse press on image for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_start_pos = event.pos()
+            self.image_label.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
+        event.accept()
+
+    def _image_mouse_move(self, event: QMouseEvent):
+        """Handle mouse move to initiate drag."""
+        if not (event.buttons() & Qt.MouseButton.LeftButton) or not self.drag_start_pos:
             return
 
+        # Check if mouse has moved enough to start drag
+        if (event.pos() - self.drag_start_pos).manhattanLength() < 10:
+            return
 
-        # **Main Layout**
-        self.layout = QHBoxLayout(self)
-        self.layout.setSpacing(5)
-        self.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.layout.setContentsMargins(7, 0, 0, 0)
+        # Start drag operation
+        self.drop_zone.start_drag(self)
+        self.drag_start_pos = None
+        self.image_label.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
+        event.accept()
 
-        # **Tool Image (Original Size, Expanded Background)**
-        self.image_label = QLabel()
-
-        image_path = get_tool_image_path(tool_name)
-        pixmap = QPixmap(image_path)
-
-        # Store original image size
-        self.original_width = pixmap.width()
-        self.original_height = pixmap.height()
-
-        # **Create Transparent Background**
-        self.image_label.setPixmap(pixmap)
-        self.image_label.setFixedSize(self.original_width, self.original_height)  # Expand background width only
-        self.image_label.setStyleSheet("background-color: transparent; border: none;")
-
-        self.layout.addWidget(self.image_label)
-
-        # **Tool Name**
-        self.label = QLabel(tool_name)
-        self.label.setFixedSize(118, 35)
-        self.label.setWordWrap(True)
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensures text is centered
-        self.label.setStyleSheet("border: 0px solid black; border-bottom: 1px solid #A9A9A9; background-color: lightgray; color: black;")
-        self.layout.addWidget(self.label)
-
-        self.label.setGraphicsEffect(shadow[0])
-
-        # **Nominal Size Selector**
-        self.nominal_size_selector = QComboBox()
-        self.nominal_size_selector.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.nominal_size_selector.setFixedWidth(90)
-
-        nominal_sizes = []
-        for size in self.tool_data.get("Nominal Sizes", []):
-            nominal_sizes.append(str(size))
-        self.nominal_size_selector.addItems(nominal_sizes)
-        self.nominal_size_selector.setStyleSheet(COMBO_STYLE_BLACK)
-        self.nominal_size_selector.currentTextChanged.connect(self.update_tool_info)
-        self.nominal_size_selector.currentTextChanged.connect(self.summary_widget.update_summary)
-        self.layout.addWidget(self.nominal_size_selector)
-
-        # **OD Label**
-        self.od_label = QLabel("N/A")
-        self.od_label.setFixedWidth(70)
-        self.od_label.setStyleSheet("border: none; color: black;")
-        self.od_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.layout.addWidget(self.od_label)
-
-        # **Length Label**
-        self.length_label = QLabel("N/A")
-        self.length_label.setFixedWidth(65)
-        self.length_label.setStyleSheet("border: none; color: black;")
-        self.length_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.layout.addWidget(self.length_label)
-
-        # **Weight Label**
-        self.weight_label = QLabel("N/A")
-        self.weight_label.setFixedWidth(72)
-        self.weight_label.setStyleSheet("border: none; color: black;")
-        self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.layout.addWidget(self.weight_label)
-
-        # **Top Connection Selector**
-        self.top_connection_label = QLabel("N/A")
-        self.top_connection_label.setFixedWidth(90)
-        self.top_connection_label.setStyleSheet("border: none; color: black;")
-        self.top_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.layout.addWidget(self.top_connection_label)
-
-        # **Lower Connection Selector**
-        self.lower_connection_label = QComboBox()
-        self.lower_connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.lower_connection_label.setFixedWidth(130)
-        self.lower_connection_label.setStyleSheet(COMBO_STYLE_BLACK)
-        # self.lower_connection_label.setStyleSheet("border: 1px solid gray; border-radius: 4px; color: black")
-        self.layout.addWidget(self.lower_connection_label)
-
-        self.layout.addSpacing(7)
-
-        # **Move Up Button**
-        self.up_button = QPushButton("↑")
-        self.up_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.up_button.setFixedSize(28, 30)
-        self.up_button.setStyleSheet("""
-            QPushButton {
-                background-color: lightblue;
-                color: black;
-                border: none;
-            }
-            QPushButton:hover {
-                background-color: #87CEEB;  /* Slightly darker blue */
-            }
-        """)
-        self.up_button.clicked.connect(self.move_up)
-        self.layout.addWidget(self.up_button)
-        self.up_button.setGraphicsEffect(shadow[1])
-
-        # **Move Down Button**
-        self.down_button = QPushButton("↓")
-        self.down_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.down_button.setFixedSize(28, 30)
-        self.down_button.setStyleSheet("""
-            QPushButton {
-                background-color: lightblue;
-                color: black;
-                border: none;
-            }
-            QPushButton:hover {
-                background-color: #87CEEB;  /* Slightly darker blue */
-            }
-        """)
-        self.down_button.clicked.connect(self.move_down)
-        self.layout.addWidget(self.down_button)
-        self.down_button.setGraphicsEffect(shadow[2])
-
-        self.layout.addSpacing(7)
-
-        # **Remove Button**
-        self.remove_button = QPushButton("X")
-        self.remove_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.remove_button.setFixedSize(30, 30)
-        self.remove_button.setStyleSheet("""
-            QPushButton {
-                font-weight: bold;
-                background-color: red;
-                color: white;
-                border: none;
-            }
-            QPushButton:hover {
-                background-color: #CC0000;  /* Darker red */
-            }
-        """)
-        self.remove_button.clicked.connect(self.remove_tool)
-        self.layout.addWidget(self.remove_button)
-        self.remove_button.setGraphicsEffect(shadow[3])
-
-        # **Apply layout and update details**
-        self.setLayout(self.layout)
-        self.update_tool_info()
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        """Reset cursor when mouse is released."""
+        self.image_label.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
+        self.drag_start_pos = None
+        super().mouseReleaseEvent(event)
 
     def update_tool_info(self):
         """Updates OD, Length, Weight, and Lower/Top Connections dynamically."""
         selected_size = self.nominal_size_selector.currentText()
         size_data = self.tool_data.get("Sizes", {}).get(selected_size, {})
 
+        if not size_data:
+            self.od_label.setText("N/A")
+            self.length_label.setText("N/A")
+            self.weight_label.setText("N/A")
+            self.top_connection_label.setText("N/A")
+            self.lower_connection_label.clear()
+            self.lower_connection_label.addItem("-")
+            return
+
         # Update dimension labels
-        self.od_label.setText(f"{size_data.get('OD', 0):.3f} in")
-        self.length_label.setText(f"{size_data.get('Length', 0):.1f} ft")
-        self.weight_label.setText(f"{size_data.get('Weight', 0):.1f} lbs")
+        self.od_label.setText(f"{float(size_data.get('OD', 0)):.3f} in")
+        self.length_label.setText(f"{float(size_data.get('Length', 0)):.1f} ft")
+        self.weight_label.setText(f"{float(size_data.get('Weight', 0)):.1f} lbs")
 
         # Extract connections
         lower_conns = size_data.get("Lower Connections", [])
@@ -205,6 +183,7 @@ class ToolWidget(QWidget):
             self.lower_connection_label.addItems(mod_lower_conns)
 
             if lower_conns == top_conns:
+                # Connect for synchronization
                 self.lower_connection_label.currentTextChanged.connect(self.sync_top_connection)
                 self.sync_top_connection()  # Initial sync
             else:
@@ -213,9 +192,7 @@ class ToolWidget(QWidget):
         else:
             self.lower_connection_label.addItem("-")
             mod_top_conns = [self._modify_connection(conn, side="top") for conn in top_conns]
-            self.top_connection_label.setText(mod_top_conns[0] if mod_top_conns else "-"
-                                                                                     "")
-            # self.top_connection_label.setText("-")
+            self.top_connection_label.setText(mod_top_conns[0] if mod_top_conns else "-")
 
     def sync_top_connection(self):
         """Synchronizes top connection label with the selected lower connection."""
@@ -230,27 +207,11 @@ class ToolWidget(QWidget):
             return f"{conn} {'Pin' if side == 'lower' else 'Box'}"
         return conn
 
-    def move_up(self):
-        """Moves the tool up in the DropZone."""
-        index = self.drop_zone.layout.indexOf(self)
-        if index > 0:
-            self.drop_zone.layout.insertWidget(index - 1, self)
-        self.summary_widget.update_summary()  # ✅ Update summary after movement
+    # Helper methods for display name (if you need dynamic naming like in PCE editor)
+    def set_display_name(self, name: str):
+        """Set what's shown on the label (does not affect DB lookups)."""
+        self.display_name = name
+        self.label.setText(name)
 
-    def move_down(self):
-        """Moves the tool down in the DropZone."""
-        index = self.drop_zone.layout.indexOf(self)
-        if index < self.drop_zone.layout.count() - 1:
-            self.drop_zone.layout.insertWidget(index + 1, self)
-        self.summary_widget.update_summary()  # ✅ Update summary after movement
-
-    def remove_tool(self):
-        """Removes the tool from the DropZone."""
-        if self in self.drop_zone.tool_widgets:
-            self.drop_zone.tool_widgets.remove(self)
-        self.setParent(None)
-        self.deleteLater()
-        expand_and_center_images(self.drop_zone.tool_widgets,
-                                 self.drop_zone.diagram_width)
-        self.drop_zone.update_placeholder()  # ✅ Ensure placeholder updates
-        self.summary_widget.update_summary()  # ✅ Ensure summary updates
+    def get_display_name(self) -> str:
+        return self.display_name

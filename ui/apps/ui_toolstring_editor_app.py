@@ -45,7 +45,7 @@ class ToolStringEditor(BaseEditor):
         # Create drop zone now that super().__init__() is complete
         self.drop_zone = self.create_drop_zone()
 
-        content_layout = self.setup_common_sidebar("Tool Library", drop_zone_width=870)
+        content_layout = self.setup_common_sidebar("Tool Library", drop_zone_width=784)
 
         # Add angle input for ToolStringEditor
         self.max_angle = AngleInput()
