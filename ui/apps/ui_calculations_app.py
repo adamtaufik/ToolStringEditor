@@ -4,10 +4,12 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QMessageBox, QHBox
 
 from features.calculator.MDtoTVD_tab import MDtoTVDTab
 from features.calculator.hydrostatic_tab import HydrostaticTab
+from features.calculator.perforation_correlation_tab import PerforationOffsetTab
 from features.calculator.shear_pin_tab import ShearPinTab
 from features.calculator.spool_capacity_tab import SpoolCapacityTab
+from features.calculator.toollift_tab import ToolLiftTab
 from features.calculator.weight_tab import WeightTab
-from features.calculator.wirefall_tab import WirefallTab
+# from features.calculator.wirefall_tab import WirefallTab
 from features.calculator.wireweight_tab import WireWeightTab
 from ui.components.ui_footer import FooterWidget
 from ui.components.ui_sidebar_widget import SidebarWidget
@@ -65,12 +67,14 @@ class WirelineCalculatorApp(QWidget):
         # Create tab widget
         self.tabs = QTabWidget()
         self.tabs.addTab(HydrostaticTab(), "Hydrostatic Pressure")
-        self.tabs.addTab(WirefallTab(data), "Wirefall")
+        self.tabs.addTab(ToolLiftTab(), "Tool Lift Calculation")
+        # self.tabs.addTab(WirefallTab(data), "Wirefall")
         self.tabs.addTab(WeightTab(), "Tool String Weight")
         self.tabs.addTab(WireWeightTab(), "Wire Weight")
         self.tabs.addTab(ShearPinTab(), "Shear Pins")
         self.tabs.addTab(MDtoTVDTab(), "MD to TVD")
         self.tabs.addTab(SpoolCapacityTab(), "Spool Capacity")
+        self.tabs.addTab(PerforationOffsetTab(), "Perforation Correlation")
         self.set_tab_stylesheet(self.tabs)  # Apply styling to tabs
 
         # ✅ Toolbar-style sidebar (left) for Save/Load
