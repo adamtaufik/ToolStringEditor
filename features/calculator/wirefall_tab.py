@@ -99,6 +99,7 @@ class WirefallTab(QWidget):
             }
         """)
         layout.addWidget(self.reference_btn, row+1, 2)
+        #reference button
 
         # A – Depth of Tool String
         layout.addWidget(QLabel("Depth of End of Tool String (A):"), row, 0)
