@@ -771,7 +771,7 @@ class PDFReportGenerator:
         ]))
 
         elements.append(counter_table)
-        elements.append(Spacer(1, 0.4 * inch))
+        elements.append(Spacer(1, 0.2 * inch))
 
         # Final Results - Highlighted
         elements.append(Paragraph("2.3 FINAL RESULTS - NET FORCES", ParagraphStyle(
@@ -813,7 +813,7 @@ class PDFReportGenerator:
         ]))
 
         elements.append(final_table)
-        elements.append(Spacer(1, 0.4 * inch))
+        elements.append(Spacer(1, 0.2 * inch))
 
         # Additional Calculated Parameters
         elements.append(Paragraph("2.4 Additional Calculated Parameters", ParagraphStyle(
@@ -1418,7 +1418,7 @@ class ToolLiftTab(QWidget):
         notes_layout.addWidget(notes_text)
         notes_group.setLayout(notes_layout)
 
-        main_layout.addWidget(notes_group)
+        # main_layout.addWidget(notes_group)
 
         d_group.setStyleSheet(GROUPBOX_WHITE_STYLE)
         well_group.setStyleSheet(GROUPBOX_WHITE_STYLE)

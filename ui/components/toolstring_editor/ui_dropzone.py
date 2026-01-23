@@ -73,7 +73,7 @@ class DropZone(QFrame):
         trash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         trash_label.setStyleSheet("color: red; font-weight: bold; font-size: 10px;")
         trash_label.setWordWrap(True)
-        trash_layout.addWidget(trash_label)
+        # trash_layout.addWidget(trash_label)
 
         self.trash_area = trash_container
 

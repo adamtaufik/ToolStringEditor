@@ -2,7 +2,8 @@ import math
 
 from PyQt6.QtCore import Qt, QPointF, QTimer, QRectF
 from PyQt6.QtWidgets import QWidget, QGridLayout, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QTextEdit, \
-    QHBoxLayout, QApplication, QSplitter, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsEllipseItem
+    QHBoxLayout, QApplication, QSplitter, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsEllipseItem, \
+    QDialog, QScrollArea
 from PyQt6.QtGui import QFont, QPainter, QPen, QColor, QBrush, QPolygonF, QPixmap, QImage, QPainterPath
 import pandas as pd
 
@@ -79,6 +80,25 @@ class WirefallTab(QWidget):
         layout = QGridLayout()
 
         row = 0
+
+        # Reference image button
+        self.reference_btn = QPushButton("Reference")
+        self.reference_btn.setFixedWidth(90)
+        self.reference_btn.clicked.connect(self.show_reference_image)
+        self.reference_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.reference_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #555;
+                color: white;
+                padding: 4px;
+                border-radius: 4px;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: #777;
+            }
+        """)
+        layout.addWidget(self.reference_btn, row+1, 2)
 
         # A – Depth of Tool String
         layout.addWidget(QLabel("Depth of End of Tool String (A):"), row, 0)
@@ -167,6 +187,35 @@ class WirefallTab(QWidget):
         layout.addWidget(self.output_W2, row, 0, 1, 3)
 
         return layout
+
+    def show_reference_image(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Wirefall Reference")
+        dialog.resize(600, 800)
+
+        layout = QVBoxLayout(dialog)
+
+        # Scroll area (important for large images)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+
+        image_label = QLabel()
+        image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Load reference image
+        image_path = get_tool_image_path("Wirefall Reference")  # adjust key as needed
+        pixmap = QPixmap(image_path)
+
+        if pixmap.isNull():
+            image_label.setText("Reference image not found.")
+        else:
+            image_label.setPixmap(pixmap)
+            image_label.setScaledContents(True)
+
+        scroll_area.setWidget(image_label)
+        layout.addWidget(scroll_area)
+
+        dialog.exec()
 
     def create_formula_section(self):
         formula_layout = QVBoxLayout()

@@ -108,7 +108,8 @@ class ToolWidget(QWidget):
             self.lower_connection_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             self.lower_connection_label.setFixedWidth(127)
             self.lower_connection_label.setStyleSheet(COMBO_STYLE_BLACK)
-            self.lower_connection_label.currentTextChanged.connect(self.update_tool_info)
+            self.lower_connection_label.currentTextChanged.connect(self.sync_top_connection)
+
             if self.summary_widget:
                 self.lower_connection_label.currentTextChanged.connect(self.summary_widget.update_summary)
             self.layout.addWidget(self.lower_connection_label)
@@ -149,55 +150,65 @@ class ToolWidget(QWidget):
         super().mouseReleaseEvent(event)
 
     def update_tool_info(self):
-        """Updates OD, Length, Weight, and Lower/Top Connections dynamically."""
+        """Updates OD, Length, Weight, and Connections based on selected nominal size."""
         selected_size = self.nominal_size_selector.currentText()
-        size_data = self.tool_data.get("Sizes", {}).get(selected_size, {})
+        size_data = self.tool_data.get("Sizes", {}).get(selected_size)
 
+        # ---- Reset UI if no data ----
         if not size_data:
             self.od_label.setText("N/A")
             self.length_label.setText("N/A")
             self.weight_label.setText("N/A")
             self.top_connection_label.setText("N/A")
-            self.lower_connection_label.clear()
-            self.lower_connection_label.addItem("-")
+
+            with QSignalBlocker(self.lower_connection_label):
+                self.lower_connection_label.clear()
+                self.lower_connection_label.addItem("-")
             return
 
-        # Update dimension labels
+        # ---- Dimensions ----
         self.od_label.setText(f"{float(size_data.get('OD', 0)):.3f} in")
         self.length_label.setText(f"{float(size_data.get('Length', 0)):.1f} ft")
         self.weight_label.setText(f"{float(size_data.get('Weight', 0)):.1f} lbs")
 
-        # Extract connections
-        lower_conns = size_data.get("Lower Connections", [])
-        top_conns = size_data.get("Top Connections", [])
+        # ---- Connections ----
+        lowers = [x for x in size_data.get("Lower Connections", []) if x and x != "nan"]
+        tops = [x for x in size_data.get("Top Connections", []) if x and x != "nan"]
 
-        # Handle NaNs or blanks
-        lower_conns = [] if lower_conns == ['nan'] else lower_conns
-        top_conns = [] if top_conns == ['nan'] else top_conns
+        # ---- Rebuild lower-connection combo safely ----
+        with QSignalBlocker(self.lower_connection_label):
+            self.lower_connection_label.clear()
 
-        # Update lower connection dropdown
-        self.lower_connection_label.clear()
-
-        if lower_conns:
-            mod_lower_conns = [self._modify_connection(conn, side="lower") for conn in lower_conns]
-            self.lower_connection_label.addItems(mod_lower_conns)
-
-            if lower_conns == top_conns:
-                # Connect for synchronization
-                self.lower_connection_label.currentTextChanged.connect(self.sync_top_connection)
-                self.sync_top_connection()  # Initial sync
+            if lowers:
+                mod_lowers = [self._modify_connection(c, "lower") for c in lowers]
+                self.lower_connection_label.addItems(mod_lowers)
             else:
-                mod_top_conns = [self._modify_connection(conn, side="top") for conn in top_conns]
-                self.top_connection_label.setText(mod_top_conns[0] if mod_top_conns else "N/A")
+                self.lower_connection_label.addItem("-")
+
+        # ---- Determine top connection ----
+        if lowers and tops and set(lowers) == set(tops):
+            # Sync mode
+            self._sync_enabled = True
+            self.sync_top_connection()
         else:
-            self.lower_connection_label.addItem("-")
-            mod_top_conns = [self._modify_connection(conn, side="top") for conn in top_conns]
-            self.top_connection_label.setText(mod_top_conns[0] if mod_top_conns else "-")
+            self._sync_enabled = False
+            if tops:
+                self.top_connection_label.setText(
+                    self._modify_connection(tops[0], "top")
+                )
+            else:
+                self.top_connection_label.setText("-")
 
     def sync_top_connection(self):
         """Synchronizes top connection label with the selected lower connection."""
-        raw_conn = self.lower_connection_label.currentText().replace(" Pin", "").replace(" Box", "")
-        self.top_connection_label.setText(self._modify_connection(raw_conn, side="top"))
+        if not getattr(self, "_sync_enabled", False):
+            return
+
+        raw = self.lower_connection_label.currentText()
+        raw = raw.replace(" Pin", "").replace(" Box", "")
+        self.top_connection_label.setText(
+            self._modify_connection(raw, side="top")
+        )
 
     def _modify_connection(self, conn, side="lower"):
         """Modifies the connection name based on position and standard rules."""

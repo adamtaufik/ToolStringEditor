@@ -64,8 +64,8 @@ class InputWidget(QWidget):
         }
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(20)
+        layout.setContentsMargins(10, 10, 10, 0)
+        # layout.setSpacing(20)
 
         # Create drop areas and store references
         self.drop_areas = {}
@@ -327,7 +327,7 @@ class InputWidget(QWidget):
         station_layout = QVBoxLayout(station_group)
 
         # Set station group box to be wider
-        station_group.setMinimumWidth(357)
+        station_group.setMinimumWidth(342)
 
         # Station table with remove column
         self.station_table = QTableWidget()
@@ -338,9 +338,9 @@ class InputWidget(QWidget):
         self.station_table.verticalHeader().setVisible(False)
         self.setup_station_table_controls()
         self.station_table.setColumnWidth(0, 65)
-        self.station_table.setColumnWidth(1, 80)
-        self.station_table.setColumnWidth(2, 80)
-        self.station_table.setColumnWidth(3, 80)
+        self.station_table.setColumnWidth(1, 75)
+        self.station_table.setColumnWidth(2, 75)
+        self.station_table.setColumnWidth(3, 75)
         self.station_table.setColumnWidth(4, 20)  # Remove column width
 
         # Set row selection to select entire rows
@@ -412,8 +412,8 @@ class InputWidget(QWidget):
         self.process_btn.clicked.connect(self.process_files)
         button_layout.addWidget(self.process_btn)
 
-        layout.addWidget(middle_container, 0)
-        layout.addWidget(button_container, 0)
+        layout.addWidget(middle_container, 1)  # Give middle container stretch factor 1
+        layout.addWidget(button_container, 0)  # Keep button container at 0
 
         # Initially hide all group boxes and bottom buttons for startup animation
         for group_box in self.findChildren(QGroupBox):
@@ -671,7 +671,9 @@ class InputWidget(QWidget):
                 background-color: #a93226;
             }
         """)
-        remove_btn.clicked.connect(lambda: self.remove_station_row(row))
+
+        # Connect to a method that finds the current row
+        remove_btn.clicked.connect(lambda checked, r=row: self.remove_station_row_by_button(r))
 
         # Center the button in the cell
         container = QWidget()
@@ -685,7 +687,40 @@ class InputWidget(QWidget):
     def remove_station_row(self, row):
         """Remove a row from station table"""
         if self.station_table.rowCount() > 2:  # Keep at least one data row plus Add row
+            # Get the widgets before removing
+            station_widget = self.station_table.cellWidget(row, 0)
+            depth_widget = self.station_table.cellWidget(row, 1)
+            start_widget = self.station_table.cellWidget(row, 2)
+            end_widget = self.station_table.cellWidget(row, 3)
+
+            # Remove the row
             self.station_table.removeRow(row)
+
+            # Clean up widgets to prevent memory leaks
+            if station_widget:
+                station_widget.deleteLater()
+            if depth_widget:
+                depth_widget.deleteLater()
+            if start_widget:
+                start_widget.deleteLater()
+            if end_widget:
+                end_widget.deleteLater()
+
+    def remove_tvd_row(self, row):
+        """Remove a row from TVD table"""
+        if self.tvd_table.rowCount() > 2:  # Keep at least one data row plus Add row
+            # Get the widgets before removing
+            ahd_widget = self.tvd_table.cellWidget(row, 0)
+            tvd_widget = self.tvd_table.cellWidget(row, 1)
+
+            # Remove the row
+            self.tvd_table.removeRow(row)
+
+            # Clean up widgets to prevent memory leaks
+            if ahd_widget:
+                ahd_widget.deleteLater()
+            if tvd_widget:
+                tvd_widget.deleteLater()
 
     def setup_tvd_table_controls(self):
         """Setup the TVD table with control row"""
@@ -803,7 +838,9 @@ class InputWidget(QWidget):
                 background-color: #a93226;
             }
         """)
-        remove_btn.clicked.connect(lambda: self.remove_tvd_row(row))
+
+        # Connect to a method that finds the current row
+        remove_btn.clicked.connect(lambda checked, r=row: self.remove_tvd_row_by_button(r))
 
         # Center the button in the cell
         container = QWidget()
@@ -813,6 +850,30 @@ class InputWidget(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.tvd_table.setCellWidget(row, 2, container)
+
+    def remove_station_row_by_button(self, row):
+        """Remove station row by finding the button's current position"""
+        # Find the current row by checking which row contains the clicked button
+        for current_row in range(1, self.station_table.rowCount() - 1):  # Skip control row and Add row
+            cell_widget = self.station_table.cellWidget(current_row, 4)
+            if cell_widget:
+                # Get the button from the container
+                button = cell_widget.findChild(QPushButton)
+                if button and button == self.sender():
+                    self.remove_station_row(current_row)
+                    break
+
+    def remove_tvd_row_by_button(self, row):
+        """Remove TVD row by finding the button's current position"""
+        # Find the current row by checking which row contains the clicked button
+        for current_row in range(1, self.tvd_table.rowCount() - 1):  # Skip control row and Add row
+            cell_widget = self.tvd_table.cellWidget(current_row, 2)
+            if cell_widget:
+                # Get the button from the container
+                button = cell_widget.findChild(QPushButton)
+                if button and button == self.sender():
+                    self.remove_tvd_row(current_row)
+                    break
 
     def remove_tvd_row(self, row):
         """Remove a row from TVD table"""
@@ -1039,22 +1100,32 @@ class InputWidget(QWidget):
         self.on_gauge_type_toggled()
 
         # Clear and reset SPM table
-        self.spm_table.setRowCount(0)
-        self.add_spm_add_row()
-        self.add_spm_data_row()
+        self.clear_spm_table()
 
-        # Clear and reset other tables
+        # Clear and reset station table
+        self.clear_station_table()
+
+        # Clear and reset TVD table
+        self.clear_tvd_table()
+
+    def clear_station_table(self):
+        """Clear and reset station table to default"""
         self.station_table.setRowCount(0)
+        self.setup_station_table_controls()  # Add control row (row 0)
+        self.add_station_add_row()  # Add "Add Station" row at the bottom
+        self.add_station_data_row()  # Add one default data row
+
+    def clear_tvd_table(self):
+        """Clear and reset TVD table to default"""
         self.tvd_table.setRowCount(0)
+        self.setup_tvd_table_controls()  # Add control row (row 0)
+        self.add_tvd_add_row()  # Add "Add Row" at the bottom
+        self.add_tvd_data_row()  # Add one default data row
 
-        # Re-add control rows and Add rows
-        self.setup_station_table_controls()
-        self.add_station_add_row()
-        self.add_station_data_row()
-
-        self.setup_tvd_table_controls()
-        self.add_tvd_add_row()
-        self.add_tvd_data_row()
+    def clear_spm_table(self):
+        """Clear and reset SPM table to default"""
+        self.spm_table.setRowCount(0)
+        self.add_spm_row()  # Add one default row
 
     def create_drop_area(self, text):
         """Create a consistent drop area widget"""
@@ -1496,7 +1567,7 @@ class SurveyApp(QWidget):
         super().__init__()
         self.tvd_data = None
         self.setWindowTitle("SGS / FGS txt processing")
-        self.setFixedSize(1400,800)
+        self.setFixedSize(1290,800)
         self.save_file_path = None
         self.start_time = None
         self.date = None
@@ -1595,13 +1666,13 @@ class SurveyApp(QWidget):
             ("Step 2:", "Drag and drop top and bottom Gauge .txt files"),
             ("Step 3:", "Enter survey information (date, location, well, THF, DFE)"),
             ("Step 4:", "Enter station data from timesheet"),
-            ("Step 5:", "Enter AHD/TVD mapping from TVD Calculation"),
+            ("Step 5:", "Enter AHD/TVD mapping from well deviation survey"),
             ("Step 6:", "Click 'Process Files'")
         ]
 
         # Hanging indent CSS
         style = """
-        <div style='margin-left: 0px; text-indent: -45px; margin-left: 45px; font-family: "Segoe UI", sans-serif; font-size: 14px; line-height: 1.5; color: white;'>
+        <div style='margin-left: 0px; text-indent: -45px; margin-left: 45px; font-family: "Segoe UI", sans-serif; font-size: 14px; line-height: 1.1; color: white;'>
             <i>{step}</i> {desc}
         </div>
         """
@@ -1985,6 +2056,10 @@ class SurveyApp(QWidget):
         # Apply to all buttons
         for widget in self.findChildren(QPushButton) + self.findChildren(QToolButton):
             widget.installEventFilter(self.cursor_filter)
+
+        self.resize(1250, 700)
+        # Set window to start maximized
+        # self.showMaximized()
 
     def download_md_tvd_template(self):
         """Download the MD-to-TVD template Excel file"""
