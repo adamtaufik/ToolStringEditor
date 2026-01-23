@@ -46,7 +46,7 @@ class PCEEditor(BaseEditor):
         # Create drop zone now that super().__init__() is complete
         self.drop_zone = self.create_drop_zone()
 
-        content_layout = self.setup_common_sidebar("PCE Library", drop_zone_width=1020)
+        content_layout = self.setup_common_sidebar("PCE Library", drop_zone_width=907)
 
         # Right Sidebar (fixed width for PCE)
         self.right_panel = self.setup_common_right_sidebar(fixed_width=150)

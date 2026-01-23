@@ -1,11 +1,12 @@
+# ui/components/pce_editor/tool_widget.py
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton, QComboBox, QGraphicsDropShadowEffect
-from PyQt6.QtCore import Qt, QSignalBlocker
-from PyQt6.QtGui import QPixmap, QCursor, QColor
+from PyQt6.QtCore import Qt, QSignalBlocker, QPoint, QMimeData
+from PyQt6.QtGui import QPixmap, QCursor, QColor, QMouseEvent, QDrag
 from pandas import factorize
 
 from database.logic_database import get_pce_data
 from features.editors.logic_image_processing import expand_and_center_images
-from utils.path_finder import get_pce_image_path  # ✅ Import helper function
+from utils.path_finder import get_pce_image_path
 from utils.styles import COMBO_STYLE, COMBO_STYLE_BLACK
 
 
@@ -15,12 +16,11 @@ class ToolWidget(QWidget):
 
         try:
             self.tool_name = tool_name
-
-            self.base_name = tool_name  # immutable source name for logic
-            self.display_name = tool_name  # what the user sees
-
+            self.base_name = tool_name
+            self.display_name = tool_name
             self.drop_zone = drop_zone
             self.summary_widget = summary_widget
+            self.drag_start_pos = None
 
             # --- load DB first ---
             self.tool_data = get_pce_data(tool_name)
@@ -28,26 +28,24 @@ class ToolWidget(QWidget):
                 print(f"⚠️ No data for '{tool_name}'")
                 return
 
-            # --- build UI (all widgets must exist before we fill them) ---
+            # --- build UI ---
             self.layout = QHBoxLayout(self)
             self.layout.setSpacing(5)
             self.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.layout.setContentsMargins(7, 0, 0, 0)
 
-            # image
+            # image (make draggable)
             self.image_label = QLabel()
+            self.image_label.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
             pixmap = QPixmap(get_pce_image_path(tool_name))
             self.image_label.setPixmap(pixmap)
-            # factors = {'3.5"':0.8,
-            #            '4.5"':0.85,
-            #            '5.5"':0.9,
-            #            '7"':1}
-            # factor = factors[self.nominal_size_selector]
             factor = 1
             width = int(round(pixmap.width() * factor))
             height = int(round(pixmap.height() * factor))
             self.image_label.setFixedSize(width, height)
             self.image_label.setStyleSheet("background: transparent; border: none;")
+            self.image_label.mousePressEvent = self._image_mouse_press
+            self.image_label.mouseMoveEvent = self._image_mouse_move
             self.layout.addWidget(self.image_label)
 
             # tool name
@@ -60,7 +58,7 @@ class ToolWidget(QWidget):
             )
             self.layout.addWidget(self.label)
 
-            # --- combos (create first, fill later) ---
+            # --- combos ---
             self.brand_label = QComboBox()
             self.brand_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             self.brand_label.setFixedWidth(85)
@@ -73,8 +71,10 @@ class ToolWidget(QWidget):
             self.nominal_size_selector.setStyleSheet(COMBO_STYLE_BLACK)
             self.layout.addWidget(self.nominal_size_selector)
 
-            self.id_label = QLabel("N/A"); self.id_label.setFixedWidth(44)
-            self.id_label.setAlignment(Qt.AlignmentFlag.AlignCenter); self.id_label.setStyleSheet("border:none;color:black;")
+            self.id_label = QLabel("N/A");
+            self.id_label.setFixedWidth(44)
+            self.id_label.setAlignment(Qt.AlignmentFlag.AlignCenter);
+            self.id_label.setStyleSheet("border:none;color:black;")
             self.layout.addWidget(self.id_label)
 
             self.service_label = QComboBox()
@@ -84,123 +84,89 @@ class ToolWidget(QWidget):
             self.layout.addWidget(self.service_label)
 
             # Working Pressure
-            self.wp_label = QLabel("N/A"); self.wp_label.setFixedWidth(65)
-            self.wp_label.setAlignment(Qt.AlignmentFlag.AlignCenter); self.wp_label.setStyleSheet("border:none;color:black;")
+            self.wp_label = QLabel("N/A");
+            self.wp_label.setFixedWidth(65)
+            self.wp_label.setAlignment(Qt.AlignmentFlag.AlignCenter);
+            self.wp_label.setStyleSheet("border:none;color:black;")
             self.layout.addWidget(self.wp_label)
 
             # metrics
-            self.length_label = QLabel("N/A"); self.length_label.setFixedWidth(55)
-            self.length_label.setAlignment(Qt.AlignmentFlag.AlignCenter); self.length_label.setStyleSheet("border:none;color:black;")
+            self.length_label = QLabel("N/A");
+            self.length_label.setFixedWidth(55)
+            self.length_label.setAlignment(Qt.AlignmentFlag.AlignCenter);
+            self.length_label.setStyleSheet("border:none;color:black;")
             self.layout.addWidget(self.length_label)
 
-            self.weight_label = QLabel("N/A"); self.weight_label.setFixedWidth(65)
-            self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter); self.weight_label.setStyleSheet("border:none;color:black;")
+            self.weight_label = QLabel("N/A");
+            self.weight_label.setFixedWidth(65)
+            self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter);
+            self.weight_label.setStyleSheet("border:none;color:black;")
             self.layout.addWidget(self.weight_label)
 
-            # --- connections (labels now; both wrap) ---
+            # connections
             self.top_connection_label = QLabel("N/A")
             self.top_connection_label.setFixedWidth(70)
-            self.top_connection_label.setWordWrap(True)  # ← enable wrapping
+            self.top_connection_label.setWordWrap(True)
             self.top_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.top_connection_label.setStyleSheet("border:none; color:black;")
             font = self.top_connection_label.font()
-            font.setPointSize(8)  # Set the desired font size
+            font.setPointSize(8)
             self.top_connection_label.setFont(font)
             self.layout.addWidget(self.top_connection_label)
 
-            self.lower_connection_label = QLabel("N/A")  # ← was QComboBox before
+            self.lower_connection_label = QLabel("N/A")
             self.lower_connection_label.setFixedWidth(70)
-            self.lower_connection_label.setWordWrap(True)  # ← enable wrapping
+            self.lower_connection_label.setWordWrap(True)
             self.lower_connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.lower_connection_label.setStyleSheet("border:none; color:black;")
             font = self.lower_connection_label.font()
-            font.setPointSize(8)  # Set the desired font size
+            font.setPointSize(8)
             self.lower_connection_label.setFont(font)
             self.layout.addWidget(self.lower_connection_label)
 
-            self.layout.addSpacing(7)
+            # Remove move up/down and delete buttons entirely
 
-            # **Move Up Button**
-            self.up_button = QPushButton("↑")
-            self.up_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-            self.up_button.setFixedSize(28, 30)
-            self.up_button.setStyleSheet("""
-                QPushButton {
-                    background-color: lightblue;
-                    color: black;
-                    border: none;
-                }
-                QPushButton:hover {
-                    background-color: #87CEEB;  /* Slightly darker blue */
-                }
-            """)
-            self.up_button.clicked.connect(self.move_up)
-            self.layout.addWidget(self.up_button)
-
-            # **Move Down Button**
-            self.down_button = QPushButton("↓")
-            self.down_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-            self.down_button.setFixedSize(28, 30)
-            self.down_button.setStyleSheet("""
-                QPushButton {
-                    background-color: lightblue;
-                    color: black;
-                    border: none;
-                }
-                QPushButton:hover {
-                    background-color: #87CEEB;  /* Slightly darker blue */
-                }
-            """)
-            self.down_button.clicked.connect(self.move_down)
-            self.layout.addWidget(self.down_button)
-
-            self.layout.addSpacing(7)
-
-            # **Remove Button**
-            self.remove_button = QPushButton("X")
-            self.remove_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-            self.remove_button.setFixedSize(30, 30)
-            self.remove_button.setStyleSheet("""
-                QPushButton {
-                    font-weight: bold;
-                    background-color: red;
-                    color: white;
-                    border: none;
-                }
-                QPushButton:hover {
-                    background-color: #CC0000;  /* Darker red */
-                }
-            """)
-            self.remove_button.clicked.connect(self.remove_tool)
-            self.layout.addWidget(self.remove_button)
-
-            def _make_shadow():
-                eff = QGraphicsDropShadowEffect(self)
-                eff.setBlurRadius(10)
-                eff.setXOffset(2)
-                eff.setYOffset(2)
-                eff.setColor(QColor(50, 50, 50, 100))
-                return eff
-
-            self.up_button.setGraphicsEffect(_make_shadow())
-            self.down_button.setGraphicsEffect(_make_shadow())
-            self.remove_button.setGraphicsEffect(_make_shadow())
-            # (optional) self.label.setGraphicsEffect(_make_shadow())
-
-            # **Apply layout and update details**
+            # Apply layout and update details
             self.setLayout(self.layout)
-            # --- now that widgets exist, populate them ---
-            self.init_brand_size_service_combos()   # fills brand -> size -> service
+            self.init_brand_size_service_combos()
 
-            # --- connect signals AFTER initial population ---
+            # Connect signals
             self.brand_label.currentTextChanged.connect(self.on_brand_changed)
             self.nominal_size_selector.currentTextChanged.connect(self.on_size_changed)
             self.service_label.currentTextChanged.connect(self.on_service_changed)
 
-            # finish: paint current record
+            # Update tool info
             self.update_tool_info()
         except Exception as e:
             print(e)
+
+    def _image_mouse_press(self, event: QMouseEvent):
+        """Handle mouse press on image for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_start_pos = event.pos()
+            self.image_label.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
+        event.accept()
+
+    def _image_mouse_move(self, event: QMouseEvent):
+        """Handle mouse move to initiate drag."""
+        if not (event.buttons() & Qt.MouseButton.LeftButton) or not self.drag_start_pos:
+            return
+
+        # Check if mouse has moved enough to start drag
+        if (event.pos() - self.drag_start_pos).manhattanLength() < 10:
+            return
+
+        # Start drag operation
+        self.drop_zone.start_drag(self)
+        self.drag_start_pos = None
+        self.image_label.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
+        event.accept()
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        """Reset cursor when mouse is released."""
+        self.image_label.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
+        self.drag_start_pos = None
+        super().mouseReleaseEvent(event)
 
     def _modify_connection(self, conn, side="lower"):
         """Modifies the connection name based on position and standard rules."""
@@ -212,32 +178,7 @@ class ToolWidget(QWidget):
         except Exception as e:
             print(e)
 
-    def move_up(self):
-        index = self.drop_zone.layout.indexOf(self)
-        if index > 0:
-            self.drop_zone.layout.insertWidget(index - 1, self)
-        self.drop_zone.refresh_dynamic_names()  # ← NEW
-        if self.summary_widget:
-            self.summary_widget.update_summary()
-
-    def move_down(self):
-        index = self.drop_zone.layout.indexOf(self)
-        if index < self.drop_zone.layout.count() - 1:
-            self.drop_zone.layout.insertWidget(index + 1, self)
-        self.drop_zone.refresh_dynamic_names()  # ← NEW
-        if self.summary_widget:
-            self.summary_widget.update_summary()
-
-    def remove_tool(self):
-        if self in self.drop_zone.tool_widgets:
-            self.drop_zone.tool_widgets.remove(self)
-        self.setParent(None)
-        self.deleteLater()
-        expand_and_center_images(self.drop_zone.tool_widgets, self.drop_zone.diagram_width)
-        self.drop_zone.update_placeholder()
-        self.drop_zone.refresh_dynamic_names()  # ← NEW
-        if self.summary_widget:
-            self.summary_widget.update_summary()
+    # REMOVED: move_up, move_down, and remove_tool methods
 
     def init_brand_size_service_combos(self):
         brands = self.tool_data.get("brands", [])
@@ -282,8 +223,6 @@ class ToolWidget(QWidget):
             self.service_label.addItems(services)
             if services and current not in services:
                 self.service_label.setCurrentText(services[0])
-        # Optional: hide service combo if empty
-        # self.service_label.setVisible(bool(services))
 
     # -------- signal handlers --------
     def on_brand_changed(self, brand):
@@ -324,7 +263,7 @@ class ToolWidget(QWidget):
             self.length_label.setText("N/A")
             self.weight_label.setText("N/A")
             self.top_connection_label.setText("N/A")
-            self.lower_connection_label.setText("-")  # label now
+            self.lower_connection_label.setText("-")
             return
 
         self.id_label.setText(f"{float(rec.get('ID', 0)):.3f}\"")
@@ -335,25 +274,18 @@ class ToolWidget(QWidget):
         lowers = [x.strip() for x in rec.get("Lower Connections", []) if x and x.lower() != "nan"]
         tops = [x.strip() for x in rec.get("Top Connections", []) if x and x.lower() != "nan"]
 
-        # choose what to display in labels
-        # (current behavior: show the first available option; wrapping handles long names)
         lower_text = self._modify_connection(lowers[0], "lower") if lowers else "-"
         if lowers and tops and set(lowers) == set(tops):
-            # if sets are the same, mirror the lower (no selection now, so we mirror the first)
             top_text = self._modify_connection(lowers[0], "top")
         else:
             top_text = self._modify_connection(tops[0], "top") if tops else "-"
 
-        # if you prefer to show ALL options, switch to:
-        # lower_text = "\n".join(self._modify_connection(c, "lower") for c in lowers) if lowers else "-"
-        # top_text   = "\n".join(self._modify_connection(c, "top")   for c in (lowers if set(lowers)==set(tops) else tops)) if (lowers or tops) else "-"
-
         self.lower_connection_label.setText(lower_text)
         self.top_connection_label.setText(top_text)
 
-    # add these helper methods to ToolWidget:
+    # Helper methods for display name
     def set_display_name(self, name: str):
-        """Set what’s shown on the label (does not affect DB lookups)."""
+        """Set what's shown on the label (does not affect DB lookups)."""
         self.display_name = name
         self.label.setText(name)
 

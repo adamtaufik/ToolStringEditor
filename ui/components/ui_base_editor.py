@@ -1,4 +1,4 @@
-# ui/windows/base_editor.py
+# ui/components/base_editor.py
 from PyQt6.QtCore import Qt, QDate, QPropertyAnimation, QEasingCurve, QTimer, QRect, QRectF
 from PyQt6.QtGui import QCursor, QPixmap, QGuiApplication, QRegion, QPainterPath
 from PyQt6.QtWidgets import (
