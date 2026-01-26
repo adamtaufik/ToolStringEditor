@@ -36,79 +36,102 @@ class ToolLiftModel:
         # =========================
         # INPUT CELLS (YELLOW)
         # =========================
-        D6 = self.i["D6"]
-        D14 = self.i["D14"]
-        D15 = self.i["D15"]
-        D16 = self.i["D16"]
-        D17 = self.i["D17"]
-        D18 = self.i["D18"]
+        D6 = self.i["D6"] #Surface pressure (psia)
+        D14 = self.i["D14"] #Surface gas flowrate (mscfd)
+        D15 = self.i["D15"] #Surface oil flowrate (bopd)
+        D16 = self.i["D16"] #Surface water flowrate (bwpd)
+        D17 = self.i["D17"] #Oil solution GOR at Pwf (scf/bbl)
+        D18 = self.i["D18"] #Bo, formation volume factor oil (RB/STB)
 
-        H6 = self.i["H6"]
-        H7 = self.i["H7"]
-        H8 = self.i["H8"]
-        H9 = self.i["H9"]
-        H10 = self.i["H10"]
-        H11 = self.i["H11"]
-        H12 = self.i["H12"]
-        H13 = self.i["H13"]
-        H14 = self.i["H14"]
-        H15 = self.i["H15"]
+        H6 = self.i["H6"] #Well deviation (Degrees)
+        H7 = self.i["H7"] #Tubing ID (inches)
+        H8 = self.i["H8"] #Casing ID or next ID (inches)
+        H9 = self.i["H9"] #Tool OD (inches)
+        H10 = self.i["H10"] #Tool Length (ft)
+        H11 = self.i["H11"] #Wireline OD (inches)
+        H12 = self.i["H12"] #Tubing depth (ft)
+        H13 = self.i["H13"] #Toolstring depth (ft)
+        H14 = self.i["H14"] #Line weight in air (lbs/1000ft)
+        H15 = self.i["H15"] #Toolstring weight in air (lbs)
 
-        I23 = 0.0035
+        I23 = 0.0035 #Friction factor
 
         # =========================
         # DERIVED VARIABLES
         # =========================
         # Fixed constants
-        D9 = 0.96  # downhole density of water
-        D10 = 41.1  # surface oil API
-        D11 = 237  # deg F
+        D9 = 0.96  # downhole density of water (g/cc)
+        D10 = 41.1  # surface oil API (degrees)
+        D11 = 237  # downhole temperature (deg F)
         D13 = 0.800  # gas specific gravity
-        H16 = 25  # wire friction
+        H16 = 25  # wire friction (lbs)
         H17 = 0.0035  # line friction factor
-        H18 = 20  # surface pull on line
+        H18 = 20  # surface pull on line (lbs)
 
-        Z7 = 0.758
-        Z15 = 0.857
 
         # Volumes & ratios (V variables)
-        V3 = 0.8
-        V5 = (D11 + 60) / 2 + 460
-        V6 = (D6 + (D6 + 0.45 * H13)) / 2  # D7 will be defined later
-        V7 = Z7
-        V8 = 0.0283 * V5 * V7 / V6
-        V9 = V8 / 5.615 * 1000
+        V3 = D13 #Gas specific gravity
+        V5 = (D11 + 60) / 2 + 460 #Temperature (degrees R) for Bg calculation at tubing
+        V6 = (D6 + (D6 + 0.45 * H13)) / 2  #Average pressure (psia) for Bg calculation at tubing
 
-        V13 = D11 + 460
-        V14 = D6 + 0.45 * H13  # D7
-        V15 = Z15
-        V16 = 0.0283 * (V13 * V15 / V14)
-        V17 = V16 / 5.615 * 1000
+        V13 = D11 + 460 #Temperature (degrees R) for Bg calculation at tool
+        V14 = D6 + 0.45 * H13  #Average pressure (psia) for Bg calculation at tool
+
+        #Gas Volume Ratio for Wire
+        Z5 = 667+15*V3-37.5*(V3**2) #PPC
+        AB5 = 168 + 325*V3 - 12.5 * (V3**2) #TPC
+        AD5 = V6/Z5 #PPR
+        AF5 = V5/AB5 #TPR
+        Z6 = 1.39*math.sqrt(AF5 - 0.92) - 0.36*AF5 - 0.101 #A
+        AB6 = (0.62-0.23*AF5)*AD5+(0.066/(AF5-0.86)-0.037)*(AD5**2) #B
+        AD6 = 0.32/10**(9*(AF5-1))*(AD5**6) #BA
+        AF6 =0.132-0.32*math.log10(AF5) #C
+        AH6 =10**(0.3106-0.49*AF5+0.1824*(AF5**2)) #D
+        Z7 =Z6+(1-Z6)/math.exp(AB6+AD6)+AF6*(AD5**AH6) #Z
+
+        #Gas Volume Ratio for Tool
+        Z13 =667+15*V3-37.5*(V3**2) #PPC
+        AB13 =168+325*V3-12.5*(V3**2) #TPC
+        AD13 =V14/Z13 #PPR
+        AF13 =(V13)/AB13 #TPR
+        Z14 =1.39*math.sqrt(AF13-0.92)-0.36*AF13-0.101 #A
+        AB14 =(0.62-0.23*AF13)*AD13+(0.066/(AF13-0.86)-0.037)*(AD13**2) #B
+        AD14 =0.32/10**(9*(AF13-1))*AD13**6 #BA
+        AF14 =0.132-0.32*math.log10(AF13) #C
+        AH14 =10**(0.3106-0.49*AF13+0.1824*(AF13**2)) #D
+        Z15 =Z14 + (1 - Z14) / math.exp(AB14 + AD14) + AF14 * (AD13**AH14) #Z
+
+        V7 = Z7 #Z factor for Bg calculation at tubing
+        V15 = Z15 #Z factor for Bg calculation at tool
+        V8 = 0.0283 * V5 * V7 / V6 #Bg at tubing (rcf/scf)
+        V9 = V8 / 5.615 * 1000 #Bg at tubing (bbls/mscf)
+        V16 = 0.0283 * (V13 * V15 / V14) #Bg at tool (rcf/scf)
+        V17 = V16 / 5.615 * 1000 #Bg at tool (bbls/mscf)
 
         # =========================
         # CALCULATED TOOL / FLUID VALUES
         # =========================
-        # D7 depends on H13
-        D7 = D6 + (0.45 * H13)
-
         # S10, S11 depend on V variables
-        S10 = (0.043234 * V6 * V3) / (V5 * V7)
-        S11 = (0.043234 * V14 * V3) / (V13 * V15)
+        S10 = (0.043234 * V6 * V3) / (V5 * V7) #Gas density in tubing (g/cc)
+        S11 = (0.043234 * V14 * V3) / (V13 * V15) #Gas density at tool (g/cc)
+
+        # D7 depends on H13
+        D7 = D6 + (0.45 * H13) #Pressure at toolstring (psia)
 
         # D8 depends on S11
-        D8 = S11
+        D8 = S11 #Calculated downhole density gas (g/cc)
 
         # Oil & Gas calculations
         if D10 == 0:
-            M11 = 0
-            O10 = 0
-            O11 = 0
+            M11 = 0 #Downhole API
+            O10 = 0 #Surface density (g/cc)
+            O11 = 0 #Downhole density (g/cc)
         else:
             M11 = (D10 - 0.059175 * ((D11 - 60) * -1)) / (1 + 0.00045 * ((D11 - 60) * -1))
             O10 = 141.5 / (D10 + 131.5)
             O11 = 141.5 / (M11 + 131.5)
 
-        D12 = O11
+        D12 = O11 #Calculated downhole density of oil (g/cc)
 
         # =========================
         # N & P SERIES CALCULATIONS
@@ -116,28 +139,37 @@ class ToolLiftModel:
         # N5
         if D14 > 0:
             if (D17 * D15) < D14 * 1000:
-                N5 = (((D14 * 1000) - (D15 * D17)) / 5.615) * V8
+                N5 = (((D14 * 1000) - (D15 * D17)) / 5.615) * V8 #Downhole gas flowrate (BGPD)
             else:
                 N5 = 0
         else:
             N5 = ((D14 * 1000) / 5.615) * V8
 
-        N6 = D15 * D18
-        N7 = D16 * 1.05
-        N8 = N5 + N6 + N7
+        #########
+        #Average downhole flowrate and density for wire
+        #########
+
+        N6 = D15 * D18 #Downhole oil flowrate (BOPD)
+        N7 = D16 * 1.05 #Downhole water flowrate (BWPD)
+        N8 = N5 + N6 + N7 #Total downhole flowrate
 
         # P series
-        P5 = N5 / N8
-        P6 = N6 / N8
-        P7 = N7 / N8
-        P8 = P5 + P6 + P7
+        P5 = N5 / N8 #Fraction of gas flowrate
+        P6 = N6 / N8 #Fraction of oil flowrate
+        P7 = N7 / N8 #Fraction of water flowrate
+        P8 = P5 + P6 + P7 #Total
 
         # Q series
-        Q5 = P5 * S10
-        Q6 = P6 * D12
-        Q7 = P7 * D9
+        Q5 = P5 * S10 #Density fraction gas
+        Q6 = P6 * D12 #Density fraction oil
+        Q7 = P7 * D9 #Density fraction water
 
-        Q8 = Q5 + Q6 + Q7 if (D14 + D15 + D16) != 0 else D8
+        Q8 = Q5 + Q6 + Q7 if (D14 + D15 + D16) != 0 else D8 #Density fraction total
+
+
+        #########
+        #Downhole flowrate and density at tool
+        #########
 
         # N14–N17
         if D14 > 0:
@@ -847,7 +879,7 @@ class PDFReportGenerator:
 
         elements.append(calc_table)
 
-        elements.append(Spacer(1, 0.5 * inch))
+        # elements.append(Spacer(1, 0.5 * inch))
 
     def create_conclusions_section(self, elements):
         elements.append(PageBreak())

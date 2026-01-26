@@ -9,11 +9,11 @@ from PyQt6.QtCore import Qt, QSize, QRectF, QUrl, QSizeF
 from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 
 from ui.apps.ui_calculations_app import WirelineCalculatorApp
+from ui.apps.ui_logging_program_app import LoggingProgramApp
 from ui.apps.ui_pce_editor_app import PCEEditor
 from ui.apps.ui_survey_app import SurveyApp
 from ui.apps.ui_simulator_app import WirelineSimulatorApp
 from ui.apps.ui_toolstring_editor_app import ToolStringEditor
-# from ui.apps.ui_sgs_fgs_app import SGSFGSApp
 
 from ui.components.ui_footer import FooterWidget
 from utils.path_finder import get_path, get_icon_path
@@ -242,6 +242,9 @@ class StartWindow(QWidget):
 
             (os.path.join("assets", "icons", "app_simulator.jpg"),
              "Wireline Simulator", "Model tension/overpull vs depth", self.open_simulator_app),
+
+            (os.path.join("assets", "icons", "app_simulator.jpg"),
+             "Logging Planner", "Plan a wireline logging program", self.open_logging_app),
         ]
 
         row, col = 0, 0
@@ -358,6 +361,11 @@ class StartWindow(QWidget):
     def open_simulator_app(self):
         self.simulator_app = WirelineSimulatorApp()
         self.simulator_app.show()
+        self.close()
+
+    def open_logging_app(self):
+        self.logging_app = LoggingProgramApp()
+        self.logging_app.show()
         self.close()
 
     def open_version_window(self):

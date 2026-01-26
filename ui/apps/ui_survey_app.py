@@ -2437,6 +2437,8 @@ class SurveyApp(QWidget):
                 + tvd_top
         )
 
+        # print(ahd_calc,tvd_calc)
+
         return ahd_calc, tvd_calc
 
     def process_data(self):
