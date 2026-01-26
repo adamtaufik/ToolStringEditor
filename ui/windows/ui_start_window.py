@@ -243,7 +243,7 @@ class StartWindow(QWidget):
             (os.path.join("assets", "icons", "app_simulator.jpg"),
              "Wireline Simulator", "Model tension/overpull vs depth", self.open_simulator_app),
 
-            (os.path.join("assets", "icons", "app_simulator.jpg"),
+            (os.path.join("assets", "icons", "app_logging.jpg"),
              "Logging Planner", "Plan a wireline logging program", self.open_logging_app),
         ]
 
