@@ -1,7 +1,7 @@
 # styles.py
 from utils.path_finder import get_icon_path
 DARK_STYLE = """
-    QMainWindow, SurveyApp, HydrostaticPressureApp, WirelineCalculatorApp {
+    QMainWindow, SurveyApp, HydrostaticPressureApp, WirelineCalculatorApp, LoggingProgramApp {
         background: qlineargradient(
             x1: 0, y1: 0,
             x2: 1, y2: 1,
@@ -145,7 +145,7 @@ DARK_STYLE = """
 """
 
 DELEUM_STYLE = """
-    QMainWindow, SurveyApp, HydrostaticPressureApp, WirelineCalculatorApp, WirelineSimulatorApp {
+    QMainWindow, SurveyApp, HydrostaticPressureApp, WirelineCalculatorApp, WirelineSimulatorApp, LoggingProgramApp {
         background: qlineargradient(
             x1: 0, y1: 0,
             x2: 1, y2: 1,
